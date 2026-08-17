@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="mr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Notice / नोटीस</title>
+
+  <style>
+    body {
+      font-family: 'Noto Sans Devanagari', Arial, sans-serif;
+      font-size: 10px;
+      padding: 20px;
+      max-width: 900px;
+      margin: auto;
+    }
+
+    .container {
+      border: 1px solid #000;
+      padding: 15px 20px;
+      margin-bottom: 20px;
+      min-height: 650px;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .header-title {
+      font-size: 12px;
+      margin-bottom: 5px;
+    }
+
+    .corporation-brand {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 5px;
+    }
+
+    .logo {
+      width: 55px;
+      height: 55px;
+      object-fit: contain;
+    }
+
+    .corporation-name {
+      font-size: 22px;
+      font-weight: bold;
+      color: #0b68af;
+      line-height: 1;
+    }
+
+    /* Office */
+    .office-section {
+      margin-top: 20px;
+      margin-bottom: 25px;
+    }
+
+    .office-label {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    /* Receiver */
+    .receiver-section {
+      margin-top: 20px;
+      line-height: 1.7;
+    }
+
+    .dotted-line {
+      display: inline-block;
+      min-width: 150px;
+      border-bottom: 1px dotted #000;
+    }
+
+    /* Subject */
+    .subject {
+      text-align: center;
+      font-weight: bold;
+      margin: 20px 0;
+      font-size: 11px;
+    }
+
+    /* Notice */
+    .notice-heading {
+      font-weight: bold;
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+
+    .notice-content {
+      text-align: justify;
+      line-height: 1.8;
+      font-size: 10.5px;
+    }
+
+    /* Dynamic values */
+    .dynamic {
+      font-weight: bold;
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 45px;
+      width: 100%;
+    }
+
+    .footer-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 7px;
+      line-height: 1.5;
+    }
+
+    .footer-label {
+      width: 150px;
+      text-align: left;
+      font-weight: bold;
+    }
+
+    .footer-value {
+      width: 180px;
+      text-align: left;
+    }
+
+    /* Print */
+    @media print {
+      body {
+        padding: 0;
+        margin: 0;
+      }
+
+      .container {
+        border: 1px solid #000;
+        min-height: 100vh;
+        page-break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+
+    <!-- Notice Header -->
+    <div class="header">
+
+      <div class="header-title">
+        Notice
+      </div>
+
+      <div class="corporation-brand">
+        <img src="{{corporationLogo}}" alt="Corporation Logo" class="logo">
+        <span class="corporation-name">{{corporationName}}</span>
+      </div>
+
+    </div>
+
+
+    <!-- Regional Office -->
+    <div class="office-section">
+      <div>
+        क्षेत्रीय कार्यालय क्र. {{REGIONAL_OFFICE_NO}}
+      </div>
+    </div>
+
+
+    <!-- Receiver -->
+    <div class="receiver-section">
+
+      <div class="office-label">
+        प्रति
+      </div>
+
+      <div>
+        <span class="dotted-line">
+          {{ADVERTISER_NAME}}
+        </span>
+      </div>
+
+    </div>
+
+
+    <!-- Subject -->
+    <div class="subject">
+      विषय - अनधिकृत प्रदर्शित केलेल्या जाहिरात फलकाचे शुल्क भरणा करण्याबाबत
+    </div>
+
+
+    <!-- Notice -->
+    <div class="notice-heading">
+      नोटीस
+    </div>
+
+    <div class="notice-content">
+
+      धुळे महानगरपालिका क्षेत्रात कार्यालयीन कामकाजानिमित्त आज फिरनी करून पाहणी केली असता आपण
+
+      <span class="dynamic">
+        {{ADDRESS}}
+      </span>
+
+      येथे
+
+      <span class="dynamic">
+        {{LATITUDE}}
+      </span>
+
+      ,
+
+      <span class="dynamic">
+        {{LONGITUDE}}
+      </span>
+
+      या ठिकाणी
+
+      <span class="dynamic">
+        {{SIZE}}
+      </span>
+
+      आकाराचा अनधिकृत जाहिरात फलक
+
+      <span class="dynamic">
+        {{FROM_DATE}}
+      </span>
+
+      पासून
+
+      <span class="dynamic">
+        {{TO_DATE}}
+      </span>
+
+      पर्यंत प्रदर्शित केलेला आढळून आला आहे.
+
+      <br><br>
+
+      महानगरपालिकेच्या अनधिकृत जाहिरात फलक शुल्क धोरणानुसार या जाहिरात फलकाचे शुल्क रु.
+
+      <span class="dynamic">
+        {{AMOUNT}}
+      </span>
+
+      इतके होत आहे.
+
+      आपण महानगरपालिकेच्या परवानगीशिवाय हा जाहिरात फलक प्रसिद्ध केला असल्याने आपण हा सूचना मिळाल्यापासून ७ दिवसांच्या आत
+      वरीलप्रमाणे निश्चित शुल्काचा भरणा महानगरपालिकेकडे करावा.
+
+      आपण या शुल्काचा भरणा विहित मुदतीत न केल्यास हि रक्कम मालमत्ता कराची थकबाकी म्हणून आपल्याकडून वसूल करण्यात येतील.
+
+      तसेच आपल्या विरुद्ध महाराष्ट्र मालमत्तेच्या विरुपणास प्रतिबंध करण्याकरिता अधिनियम १९९५ अन्वये गुन्हा दाखल करण्यात
+      येयील याची नोंद घ्यावी.
+
+    </div>
+
+
+    <!-- Footer -->
+    <div class="footer">
+
+      <div class="footer-row">
+        <div class="footer-label">
+          नाव ---
+        </div>
+        <div class="footer-value">
+          {{OFFICER_NAME}}
+        </div>
+      </div>
+
+      <div class="footer-row">
+        <div class="footer-label">
+          पद -----
+        </div>
+        <div class="footer-value">
+          {{OFFICER_DESIGNATION}}
+        </div>
+      </div>
+
+      <div class="footer-row">
+        <div class="footer-label">
+          क्षेत्रीय कार्यालय ---
+        </div>
+        <div class="footer-value">
+          {{REGIONAL_OFFICE}}
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</body>
+
+</html>

@@ -15,6 +15,7 @@ router.get('/ready', (req, res) => {
 router.use('/auth', authRoutes);
 // router.use('/authComplaint', authComplaintRoutes);
 router.use('/advertisement',require('../modules/registerComplaint/registerComplaint.routes'));
+router.use('/notice', require('../modules/notice/notice.routes'));
 // router.use('/authComplaint', require('../modules/authComplaint/authComplaint.routes'));
 // router.use('/report', require('../modules/report/report.routes'));
 // router.use("/dashboard", require("../modules/dashbaord/dashbaord.routes"))

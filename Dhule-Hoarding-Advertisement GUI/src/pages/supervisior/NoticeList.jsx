@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import apiClient from "../../services/apiClient";
 import { useLoader } from "../../context/LoaderContext";
 import ResponseModal from "../../components/ResponseModal";
+import dhuleLogo from "../../../public/assets/images/dhule-logo.png";
 
 const getToday = () => {
   const d = new Date();
@@ -47,8 +48,11 @@ const NoticeList = () => {
 
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedParticipant, setSelectedParticipant] = useState(null);
-const [selectedPanchanamaDetails, setSelectedPanchanamaDetails] = useState(null);
-const [detailsLoading, setDetailsLoading] = useState(false);
+  const [selectedPanchanamaDetails, setSelectedPanchanamaDetails] = useState(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [noticeHtml, setNoticeHtml] = useState("");
+  const [activeModalTab, setActiveModalTab] = useState("notice");
+  const [generatingNoticeId, setGeneratingNoticeId] = useState(null);
   // Response modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState("info");
@@ -149,45 +153,45 @@ const [detailsLoading, setDetailsLoading] = useState(false);
 
 
   const formatDateTime = (dateString, timeString) => {
-  if (!dateString) {
-    return "-";
-  }
+    if (!dateString) {
+      return "-";
+    }
 
-  const date = new Date(dateString);
+    const date = new Date(dateString);
 
-  if (isNaN(date.getTime())) {
-    return "-";
-  }
+    if (isNaN(date.getTime())) {
+      return "-";
+    }
 
-  const formattedDate = date.toLocaleDateString("en-IN", {
-    timeZone: "Asia/Kolkata",
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-
-  let formattedTime = "";
-
-  if (timeString) {
-    const [hours, minutes, seconds] = timeString
-      .split(":")
-      .map(Number);
-
-    const timeDate = new Date();
-    timeDate.setHours(hours, minutes, seconds || 0);
-
-    formattedTime = timeDate.toLocaleTimeString("en-IN", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: true,
+    const formattedDate = date.toLocaleDateString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
     });
-  }
 
-  return formattedTime
-    ? `${formattedDate} - ${formattedTime}`
-    : formattedDate;
-};
+    let formattedTime = "";
+
+    if (timeString) {
+      const [hours, minutes, seconds] = timeString
+        .split(":")
+        .map(Number);
+
+      const timeDate = new Date();
+      timeDate.setHours(hours, minutes, seconds || 0);
+
+      formattedTime = timeDate.toLocaleTimeString("en-IN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      });
+    }
+
+    return formattedTime
+      ? `${formattedDate} - ${formattedTime}`
+      : formattedDate;
+  };
   const handlePageChange = (page) => {
     if (
       page >= 1 &&
@@ -262,18 +266,18 @@ const [detailsLoading, setDetailsLoading] = useState(false);
   // GET PARTICIPANT PHOTOS
   // =========================================================
 
-const getPanchanamaPhotos = (panchanama) => {
-  return [
-    panchanama?.BLOB_NEAR_PHOTO,
-    panchanama?.BLOB_FAR_PHOTO,
-    panchanama?.BLOB_USER_PHOTO,
-  ].filter(
-    (img) =>
-      img &&
-      typeof img === "string" &&
-      img.trim() !== ""
-  );
-};
+  const getPanchanamaPhotos = (panchanama) => {
+    return [
+      panchanama?.BLOB_NEAR_PHOTO,
+      panchanama?.BLOB_FAR_PHOTO,
+      panchanama?.BLOB_USER_PHOTO,
+    ].filter(
+      (img) =>
+        img &&
+        typeof img === "string" &&
+        img.trim() !== ""
+    );
+  };
 
   // =========================================================
   // OPEN IMAGE IN NEW TAB
@@ -323,12 +327,12 @@ const getPanchanamaPhotos = (panchanama) => {
   // =========================================================
 
   const handleImageClick = (panchanama, index) => {
-  const images = getPanchanamaPhotos(panchanama);
+    const images = getPanchanamaPhotos(panchanama);
 
-  setSelectedImages(images);
-  setSelectedImageIndex(index);
-  setShowImageModal(true);
-};
+    setSelectedImages(images);
+    setSelectedImageIndex(index);
+    setShowImageModal(true);
+  };
 
   // =========================================================
   // NEXT IMAGE
@@ -361,116 +365,246 @@ const getPanchanamaPhotos = (panchanama) => {
   // VIEW PARTICIPANT DETAILS
   // =========================================================
 
- const handleViewDetails = async (panchanama) => {
-  const id = panchanama?.NUM_ILLEGALHOARD_ID;
+  const formatDateOnly = (dateStr) => {
+    if (!dateStr) return "-";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return String(dateStr);
+    return d.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
 
-  if (!id) {
-    setModalType("error");
-    setModalTitle("Error");
-    setModalMessage("Panchanama ID not found.");
-    setIsModalOpen(true);
-    return;
-  }
+  const fetchNoticeHtml = async (masterData) => {
+    try {
+      const noticePayload = {
+        corporationId: masterData?.NUM_ILLEGALHOARD_ULBID || masterData?.NUM_ULBID || masterData?.ulbId || 4,
+        corporationName: masterData?.VAR_CORPORATION_NAME || "धुळे महानगरपालिका",
+        corporationLogo: dhuleLogo,
+        REGIONAL_OFFICE_NO: masterData?.VAR_ILLEGALHOARD_WARD || masterData?.NUM_REGIONAL_OFFICE_NO || "-",
+        ADVERTISER_NAME: masterData?.VAR_ADVERTISER_NAME || masterData?.VAR_USER1 || "जाहिरातदार",
+        ADDRESS: masterData?.VAR_ILLEGALHOARD_ADD || "-",
+        LATITUDE: masterData?.LATITUDE || masterData?.NUM_LAT || "-",
+        LONGITUDE: masterData?.LONGITUDE || masterData?.NUM_LONG || "-",
+        SIZE: (masterData?.NUM_SIZE_LENGTH && masterData?.NUM_SIZE_WIDTH)
+          ? `${masterData.NUM_SIZE_LENGTH} x ${masterData.NUM_SIZE_WIDTH}`
+          : (masterData?.VAR_SIZE || masterData?.SIZE || "-"),
+        FROM_DATE: masterData?.DAT_FROM_DT ? formatDateOnly(masterData.DAT_FROM_DT) : (masterData?.DAT_CAP_DT ? formatDateOnly(masterData.DAT_CAP_DT) : "-"),
+        TO_DATE: masterData?.DAT_TO_DT ? formatDateOnly(masterData.DAT_TO_DT) : (masterData?.DAT_CAP_DT ? formatDateOnly(masterData.DAT_CAP_DT) : "-"),
+        AMOUNT: masterData?.NUM_HOARD_AMOUNT || masterData?.NUM_AMOUNT || masterData?.AMOUNT || "0",
+        OFFICER_NAME: masterData?.VAR_USER1 || "-",
+        OFFICER_DESIGNATION: masterData?.VAR_USER1_POST || "-",
+        REGIONAL_OFFICE: masterData?.VAR_ILLEGALHOARD_WARD || "-",
+      };
 
-  try {
-    setDetailsLoading(true);
+      const response = await apiClient.post("/notice/render", noticePayload);
+      if (response?.success && response?.data?.html) {
+        setNoticeHtml(response.data.html);
+      } else {
+        setNoticeHtml("");
+      }
+    } catch (err) {
+      console.error("Error fetching notice HTML:", err);
+      setNoticeHtml("");
+    }
+  };
 
-    // Open modal immediately with loading state
-    setSelectedParticipant(panchanama);
-    setSelectedPanchanamaDetails(null);
-    setShowDetailsModal(true);
+  const handlePrintNotice = () => {
+    if (!noticeHtml) return;
+    const printWin = window.open("", "_blank");
+    if (printWin) {
+      printWin.document.write(noticeHtml);
+      printWin.document.close();
+      printWin.focus();
+      setTimeout(() => {
+        printWin.print();
+      }, 500);
+    }
+  };
 
-    const response = await apiClient.get(
-      `/advertisement/getPanchanamaDetails?id=${id}`
-    );
+  const handleOpenNoticeNewTab = () => {
+    if (!noticeHtml) return;
+    const win = window.open("", "_blank");
+    if (win) {
+      win.document.write(noticeHtml);
+      win.document.close();
+    }
+  };
 
-    console.log("Panchanama Details Response:", response);
-
-    if (response?.success && response?.data) {
-      setSelectedPanchanamaDetails(response.data);
-
-      // Master contains latest complete information + BLOBs
-      setSelectedParticipant(response.data.master);
-    } else {
-      setSelectedPanchanamaDetails(null);
-
+  const handleGenerateNotice = async (panchanama) => {
+    const id = panchanama?.NUM_ILLEGALHOARD_ID;
+    if (!id) {
       setModalType("error");
       setModalTitle("Error");
-      setModalMessage(
-        response?.message || "Unable to fetch Panchanama details."
-      );
+      setModalMessage("Panchanama ID not found.");
       setIsModalOpen(true);
+      return;
     }
-  } catch (err) {
-    console.error(
-      "Error fetching Panchanama details:",
-      err
-    );
 
-    setSelectedPanchanamaDetails(null);
+    try {
+      setGeneratingNoticeId(id);
 
-    setModalType("error");
-    setModalTitle("Error");
-    setModalMessage(
-      err?.message ||
-        "Failed to fetch Panchanama details."
-    );
+      let masterData = panchanama;
+      try {
+        const responseDetails = await apiClient.get(
+          `/advertisement/getPanchanamaDetails?id=${id}`
+        );
+        if (responseDetails?.success && responseDetails?.data?.master) {
+          masterData = responseDetails.data.master;
+        }
+      } catch (err) {
+        console.error("Could not fetch extra panchanama details:", err);
+      }
 
-    setIsModalOpen(true);
-  } finally {
-    setDetailsLoading(false);
-  }
-};
+      const noticePayload = {
+        id: masterData.NUM_ILLEGALHOARD_ID,
+        corporationId: masterData?.NUM_ILLEGALHOARD_ULBID || masterData?.NUM_ULBID || masterData?.ulbId || 4,
+        corporationName: masterData?.VAR_CORPORATION_NAME || "धुळे महानगरपालिका",
+        corporationLogo: dhuleLogo,
+        REGIONAL_OFFICE_NO: masterData.VAR_ILLEGALHOARD_WARD || masterData.NUM_REGIONAL_OFFICE_NO || "-",
+        ADVERTISER_NAME: masterData.VAR_ADVERTISER_NAME || masterData.VAR_USER1 || "जाहिरातदार",
+        ADDRESS: masterData.VAR_ILLEGALHOARD_ADD || "-",
+        LATITUDE: masterData.LATITUDE || masterData.NUM_LAT || "-",
+        LONGITUDE: masterData.LONGITUDE || masterData.NUM_LONG || "-",
+        SIZE: (masterData.NUM_SIZE_LENGTH && masterData.NUM_SIZE_WIDTH)
+          ? `${masterData.NUM_SIZE_LENGTH} x ${masterData.NUM_SIZE_WIDTH}`
+          : (masterData.VAR_SIZE || masterData.SIZE || "-"),
+        FROM_DATE: masterData.DAT_FROM_DT ? formatDateOnly(masterData.DAT_FROM_DT) : (masterData.DAT_CAP_DT ? formatDateOnly(masterData.DAT_CAP_DT) : "-"),
+        TO_DATE: masterData.DAT_TO_DT ? formatDateOnly(masterData.DAT_TO_DT) : (masterData.DAT_CAP_DT ? formatDateOnly(masterData.DAT_CAP_DT) : "-"),
+        AMOUNT: masterData.NUM_HOARD_AMOUNT || masterData.NUM_AMOUNT || masterData.AMOUNT || "0",
+        OFFICER_NAME: masterData.VAR_USER1 || "-",
+        OFFICER_DESIGNATION: masterData.VAR_USER1_POST || "-",
+        REGIONAL_OFFICE: masterData.VAR_ILLEGALHOARD_WARD || "-",
+      };
 
-  // =========================================================
-  // CLOSE DETAILS MODAL
-  // =========================================================
+      const response = await apiClient.post("/notice/generate", noticePayload);
+
+      if (response?.success && response?.data?.html) {
+        const html = response.data.html;
+        setNoticeHtml(html);
+
+        const printWin = window.open("", "_blank");
+        if (printWin) {
+          printWin.document.write(html);
+          printWin.document.close();
+          printWin.focus();
+          setTimeout(() => {
+            printWin.print();
+          }, 500);
+        }
+
+        setModalType("success");
+        setModalTitle("Notice Generated");
+        setModalMessage("Notice procedure executed successfully and Notice PDF prepared for download.");
+        setIsModalOpen(true);
+      } else {
+        setModalType("error");
+        setModalTitle("Error");
+        setModalMessage(response?.message || "Failed to generate notice.");
+        setIsModalOpen(true);
+      }
+    } catch (err) {
+      console.error("Error generating notice:", err);
+      setModalType("error");
+      setModalTitle("Error");
+      setModalMessage(err?.message || "Failed to generate notice.");
+      setIsModalOpen(true);
+    } finally {
+      setGeneratingNoticeId(null);
+    }
+  };
+
+  const handleViewDetails = async (panchanama) => {
+    const id = panchanama?.NUM_ILLEGALHOARD_ID;
+
+    if (!id) {
+      setModalType("error");
+      setModalTitle("Error");
+      setModalMessage("Panchanama ID not found.");
+      setIsModalOpen(true);
+      return;
+    }
+
+    try {
+      setDetailsLoading(true);
+
+      setSelectedParticipant(panchanama);
+      setSelectedPanchanamaDetails(null);
+      setNoticeHtml("");
+      setActiveModalTab("notice");
+      setShowDetailsModal(true);
+
+      const response = await apiClient.get(
+        `/advertisement/getPanchanamaDetails?id=${id}`
+      );
+
+      console.log("Panchanama Details Response:", response);
+
+      if (response?.success && response?.data) {
+        setSelectedPanchanamaDetails(response.data);
+        const masterData = response.data.master || panchanama;
+        setSelectedParticipant(masterData);
+        await fetchNoticeHtml(masterData);
+      } else {
+        setSelectedPanchanamaDetails(null);
+        await fetchNoticeHtml(panchanama);
+      }
+    } catch (err) {
+      console.error("Error fetching Panchanama details:", err);
+      setSelectedPanchanamaDetails(null);
+      await fetchNoticeHtml(panchanama);
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
 
   const handleCloseDetailsModal = () => {
-  setShowDetailsModal(false);
-  setSelectedParticipant(null);
-  setSelectedPanchanamaDetails(null);
-  setDetailsLoading(false);
-};
+    setShowDetailsModal(false);
+    setSelectedParticipant(null);
+    setSelectedPanchanamaDetails(null);
+    setNoticeHtml("");
+    setDetailsLoading(false);
+  };
 
   // =========================================================
   // RENDER PARTICIPANT PHOTOS
   // =========================================================
 
-const renderPanchanamaPhotos = (panchanama) => {
-  const images = getPanchanamaPhotos(panchanama);
+  const renderPanchanamaPhotos = (panchanama) => {
+    const images = getPanchanamaPhotos(panchanama);
 
-  if (images.length === 0) {
+    if (images.length === 0) {
+      return (
+        <span className="text-muted small">
+          No photos
+        </span>
+      );
+    }
+
     return (
-      <span className="text-muted small">
-        No photos
-      </span>
+      <div className="d-flex gap-2 flex-wrap">
+        {images.map((img, idx) => (
+          <img
+            key={idx}
+            src={`data:image/jpeg;base64,${img}`}
+            alt={`Panchanama ${idx + 1}`}
+            style={{
+              width: "65px",
+              height: "65px",
+              objectFit: "cover",
+              borderRadius: "8px",
+              border: "2px solid #dee2e6",
+              cursor: "pointer",
+            }}
+            onClick={() =>
+              handleImageClick(panchanama, idx)
+            }
+          />
+        ))}
+      </div>
     );
-  }
-
-  return (
-    <div className="d-flex gap-2 flex-wrap">
-      {images.map((img, idx) => (
-        <img
-          key={idx}
-          src={`data:image/jpeg;base64,${img}`}
-          alt={`Panchanama ${idx + 1}`}
-          style={{
-            width: "65px",
-            height: "65px",
-            objectFit: "cover",
-            borderRadius: "8px",
-            border: "2px solid #dee2e6",
-            cursor: "pointer",
-          }}
-          onClick={() =>
-            handleImageClick(panchanama, idx)
-          }
-        />
-      ))}
-    </div>
-  );
-};
+  };
 
   // =========================================================
   // DETAILS MODAL VALUE FORMATTER
@@ -516,16 +650,168 @@ const renderPanchanamaPhotos = (panchanama) => {
   // DETAILS MODAL
   // =========================================================
 
- const renderDetailsModal = () => {
-  if (!showDetailsModal) {
-    return null;
-  }
+  const renderDetailsModal = () => {
+    if (!showDetailsModal) {
+      return null;
+    }
 
-  // =========================================================
-  // LOADING
-  // =========================================================
+    // =========================================================
+    // LOADING
+    // =========================================================
 
-  if (detailsLoading) {
+    if (detailsLoading) {
+      return (
+        <div
+          className="modal show d-block"
+          tabIndex="-1"
+          role="dialog"
+          style={{
+            backgroundColor: "rgba(0,0,0,0.6)",
+            zIndex: 2100,
+          }}
+        >
+          <div
+            className="modal-dialog modal-dialog-centered"
+            role="document"
+          >
+            <div className="modal-content">
+
+              <div className="modal-header">
+                <h5 className="modal-title">
+                  <i className="bi bi-file-earmark-text me-2"></i>
+                  Panchanama Details
+                </h5>
+
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={handleCloseDetailsModal}
+                ></button>
+              </div>
+
+              <div className="modal-body text-center py-5">
+
+                <div
+                  className="spinner-border text-primary mb-3"
+                  role="status"
+                >
+                  <span className="visually-hidden">
+                    Loading...
+                  </span>
+                </div>
+
+                <div className="text-muted">
+                  Loading Panchanama details...
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // =========================================================
+    // DATA
+    // =========================================================
+
+    const master =
+      selectedPanchanamaDetails?.master ||
+      selectedParticipant;
+
+    const details =
+      selectedPanchanamaDetails?.details || [];
+
+    const demolitionDetails =
+      selectedPanchanamaDetails?.demolitionDetails || [];
+
+    if (!master) {
+      return null;
+    }
+
+    const photos = getPanchanamaPhotos(master);
+
+    // =========================================================
+    // FORMAT LABEL
+    // =========================================================
+    const fieldLabels = {
+      NUM_ILLEGALHOARD_ID: "Panchanama ID",
+      NUM_ILLEGALHOARD_ULBID: "ULB ID",
+      DAT_CAP_DT: "Capture Date",
+      VAR_CAP_TIME: "Capture Time",
+      VAR_USER1: "User Name",
+      VAR_USER1_POST: "User Post",
+      VAR_ILLEGALHOARD_ADD: "Address",
+      DAT_FROM_DT: "From Date",
+      NUM_SIZE_LENGTH: "Length",
+      NUM_SIZE_WIDTH: "Width",
+      LATITUDE: "Latitude",
+      LONGITUDE: "Longitude",
+      VAR_ILLEGALHOARD_WARD: "Ward",
+      BLOB_NEAR_PHOTO: "Near Photo",
+      BLOB_FAR_PHOTO: "Far Photo",
+      BLOB_USER_PHOTO: "User Photo",
+      VAR_ILLEGALHOARD_PANCHANAMA_NO: "Panchanama No.",
+    };
+
+    const formatLabel = (key) => {
+      return (
+        fieldLabels[key] ||
+        key
+          .replace(/_/g, " ")
+          .toLowerCase()
+          .replace(/\b\w/g, (char) =>
+            char.toUpperCase()
+          )
+      );
+    };
+
+    // =========================================================
+    // FORMAT VALUE
+    // =========================================================
+
+    const formatDetailValue = (key, value) => {
+      if (
+        value === null ||
+        value === undefined ||
+        value === ""
+      ) {
+        return "-";
+      }
+
+      // Don't display BLOB as text
+      if (
+        key.toUpperCase().startsWith("BLOB_")
+      ) {
+        return null;
+      }
+
+      // Date fields
+      if (
+        key.toUpperCase().includes("DAT_") ||
+        key.toUpperCase().includes("DATE")
+      ) {
+        return formatDate(value);
+      }
+
+      if (typeof value === "object") {
+        try {
+          return JSON.stringify(value);
+        } catch {
+          return String(value);
+        }
+      }
+
+      return String(value);
+    };
+
+    // =========================================================
+    // MASTER FIELDS
+    // =========================================================
+
+    const masterEntries = Object.entries(master);
+
     return (
       <div
         className="modal show d-block"
@@ -537,16 +823,32 @@ const renderPanchanamaPhotos = (panchanama) => {
         }}
       >
         <div
-          className="modal-dialog modal-dialog-centered"
+          className="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable"
           role="document"
+          style={{
+            maxWidth: "1000px",
+          }}
         >
           <div className="modal-content">
 
-            <div className="modal-header">
-              <h5 className="modal-title">
-                <i className="bi bi-file-earmark-text me-2"></i>
-                Panchanama Details
-              </h5>
+            {/* ================================================= */}
+            {/* HEADER */}
+            {/* ================================================= */}
+
+            <div className="modal-header d-flex justify-content-between align-items-center">
+              <div>
+                <h5 className="modal-title mb-1">
+                  <i className="bi bi-file-earmark-text me-2"></i>
+                  Notice Preview / नोटीस
+                </h5>
+
+                <small className="text-muted">
+                  Panchanama ID:{" "}
+                  <strong>
+                    {master.NUM_ILLEGALHOARD_ID || "-"}
+                  </strong>
+                </small>
+              </div>
 
               <button
                 type="button"
@@ -555,606 +857,85 @@ const renderPanchanamaPhotos = (panchanama) => {
               ></button>
             </div>
 
-            <div className="modal-body text-center py-5">
-
-              <div
-                className="spinner-border text-primary mb-3"
-                role="status"
-              >
-                <span className="visually-hidden">
-                  Loading...
-                </span>
-              </div>
-
-              <div className="text-muted">
-                Loading Panchanama details...
-              </div>
-
-            </div>
-
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // =========================================================
-  // DATA
-  // =========================================================
-
-  const master =
-    selectedPanchanamaDetails?.master ||
-    selectedParticipant;
-
-  const details =
-    selectedPanchanamaDetails?.details || [];
-
-  const demolitionDetails =
-    selectedPanchanamaDetails?.demolitionDetails || [];
-
-  if (!master) {
-    return null;
-  }
-
-  const photos = getPanchanamaPhotos(master);
-
-  // =========================================================
-  // FORMAT LABEL
-  // =========================================================
-const fieldLabels = {
-  NUM_ILLEGALHOARD_ID: "Panchanama ID",
-  NUM_ILLEGALHOARD_ULBID: "ULB ID",
-  DAT_CAP_DT: "Capture Date",
-  VAR_CAP_TIME: "Capture Time",
-  VAR_USER1: "User Name",
-  VAR_USER1_POST: "User Post",
-  VAR_ILLEGALHOARD_ADD: "Address",
-  DAT_FROM_DT: "From Date",
-  NUM_SIZE_LENGTH: "Length",
-  NUM_SIZE_WIDTH: "Width",
-  LATITUDE: "Latitude",
-  LONGITUDE: "Longitude",
-  VAR_ILLEGALHOARD_WARD: "Ward",
-  BLOB_NEAR_PHOTO: "Near Photo",
-  BLOB_FAR_PHOTO: "Far Photo",
-  BLOB_USER_PHOTO: "User Photo",
-  VAR_ILLEGALHOARD_PANCHANAMA_NO: "Panchanama No.",
-};
-
-  const formatLabel = (key) => {
-    return (
-      fieldLabels[key] ||
-      key
-        .replace(/_/g, " ")
-        .toLowerCase()
-        .replace(/\b\w/g, (char) =>
-          char.toUpperCase()
-        )
-    );
-  };
-
-  // =========================================================
-  // FORMAT VALUE
-  // =========================================================
-
-  const formatDetailValue = (key, value) => {
-    if (
-      value === null ||
-      value === undefined ||
-      value === ""
-    ) {
-      return "-";
-    }
-
-    // Don't display BLOB as text
-    if (
-      key.toUpperCase().startsWith("BLOB_")
-    ) {
-      return null;
-    }
-
-    // Date fields
-    if (
-      key.toUpperCase().includes("DAT_") ||
-      key.toUpperCase().includes("DATE")
-    ) {
-      return formatDate(value);
-    }
-
-    if (typeof value === "object") {
-      try {
-        return JSON.stringify(value);
-      } catch {
-        return String(value);
-      }
-    }
-
-    return String(value);
-  };
-
-  // =========================================================
-  // MASTER FIELDS
-  // =========================================================
-
-  const masterEntries = Object.entries(master);
-
-  return (
-    <div
-      className="modal show d-block"
-      tabIndex="-1"
-      role="dialog"
-      style={{
-        backgroundColor: "rgba(0,0,0,0.6)",
-        zIndex: 2100,
-      }}
-    >
-      <div
-        className="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable"
-        role="document"
-        style={{
-          maxWidth: "1000px",
-        }}
-      >
-        <div className="modal-content">
-
-          {/* ================================================= */}
-          {/* HEADER */}
-          {/* ================================================= */}
-
-          <div className="modal-header">
-
-            <div>
-              <h5 className="modal-title mb-1">
-                <i className="bi bi-file-earmark-text me-2"></i>
-                Panchanama Details
-              </h5>
-
-              <small className="text-muted">
-                Panchanama ID:{" "}
-                <strong>
-                  {master.NUM_ILLEGALHOARD_ID || "-"}
-                </strong>
-              </small>
-
-            </div>
-
-            <button
-              type="button"
-              className="btn-close"
-              onClick={handleCloseDetailsModal}
-            ></button>
-
-          </div>
-
-          {/* ================================================= */}
-          {/* BODY */}
-          {/* ================================================= */}
-
-          <div className="modal-body">
-
             {/* ================================================= */}
-            {/* MASTER INFORMATION */}
+            {/* BODY */}
             {/* ================================================= */}
 
-            <div
-              className="border rounded mb-4"
-              style={{
-                overflow: "hidden",
-              }}
-            >
-
-              <div
-                className="px-3 py-2 border-bottom"
-                style={{
-                  backgroundColor: "#f8f8f8",
-                  fontSize: "16px",
-                  fontWeight: 600,
-                  color: "#333",
-                }}
-              >
-                <i className="bi bi-info-circle me-2"></i>
-                Panchanama Information
-              </div>
-
-              <div
-                style={{
-                  padding: "20px 16px",
-                  display: "grid",
-                  gridTemplateColumns:
-                    "repeat(2, minmax(0, 1fr))",
-                  columnGap: "50px",
-                  rowGap: "24px",
-                }}
-              >
-
-                {masterEntries.map(
-                  ([key, value]) => {
-
-                    if (
-                      key
-                        .toUpperCase()
-                        .startsWith("BLOB_")
-                    ) {
-                      return null;
-                    }
-
-                    const formattedValue =
-                      formatDetailValue(
-                        key,
-                        value
-                      );
-
-                    if (
-                      formattedValue === null
-                    ) {
-                      return null;
-                    }
-
-                    return (
-                      <div
-                        key={key}
-                        style={{
-                          minWidth: 0,
-                        }}
-                      >
-
-                        <div
-                          style={{
-                            fontSize: "13px",
-                            fontWeight: 600,
-                            color: "#737887",
-                            marginBottom: "5px",
-                          }}
-                        >
-                          {formatLabel(key)}
-                        </div>
-
-                        <div
-                          style={{
-                            fontSize: "15px",
-                            color: "#252525",
-                            lineHeight: "1.5",
-                            whiteSpace:
-                              "pre-wrap",
-                            wordBreak:
-                              "break-word",
-                          }}
-                        >
-                          {formattedValue}
-                        </div>
-
-                      </div>
-                    );
-                  }
-                )}
-
-              </div>
-
-            </div>
-
-            {/* ================================================= */}
-            {/* DETAILS ARRAY */}
-            {/* ================================================= */}
-
-            <div
-              className="border rounded mb-4"
-              style={{
-                overflow: "hidden",
-              }}
-            >
-
-              <div
-                className="px-3 py-2 border-bottom"
-                style={{
-                  backgroundColor: "#f8f8f8",
-                  fontSize: "16px",
-                  fontWeight: 600,
-                  color: "#333",
-                }}
-              >
-                <i className="bi bi-list-ul me-2"></i>
-                Panchanama Details
-                <span className="badge bg-primary ms-2">
-                  {details.length}
-                </span>
-              </div>
-
-              <div className="p-3">
-
-                {details.length > 0 ? (
-
-                  <div className="table-responsive">
-
-                    <table className="table table-bordered table-sm align-middle mb-0">
-
-                      <thead className="table-light">
-                        <tr>
-                          <th>Sr. No.</th>
-                          <th>Detail ID</th>
-                          <th>User</th>
-                          <th>User Post</th>
-                        </tr>
-                      </thead>
-
-                      <tbody>
-
-                        {details.map(
-                          (item, index) => (
-                            <tr
-                              key={
-                                item.NUM_ILLEGALHOARDDET_ID ||
-                                index
-                              }
-                            >
-
-                              <td>
-                                {index + 1}
-                              </td>
-
-                              <td>
-                                {item.NUM_ILLEGALHOARDDET_ID ||
-                                  "-"}
-                              </td>
-
-                              <td>
-                                {item.VAR_USER ||
-                                  "-"}
-                              </td>
-
-                              <td>
-                                {item.VAR_USER_POST ||
-                                  "-"}
-                              </td>
-
-                            </tr>
-                          )
-                        )}
-
-                      </tbody>
-
-                    </table>
-
+            <div className="modal-body">
+              <div>
+                <div className="d-flex justify-content-between align-items-center mb-3 bg-light p-2 rounded border">
+                  <span className="fw-semibold text-dark">
+                    <i className="bi bi-eye me-1 text-primary"></i> Notice Preview (नोटीस)
+                  </span>
+                  <div className="d-flex gap-2">
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-primary"
+                      onClick={handlePrintNotice}
+                      disabled={!noticeHtml}
+                    >
+                      <i className="bi bi-printer me-1"></i> Print Notice
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-secondary"
+                      onClick={handleOpenNoticeNewTab}
+                      disabled={!noticeHtml}
+                    >
+                      <i className="bi bi-box-arrow-up-right me-1"></i> Open in New Tab
+                    </button>
                   </div>
+                </div>
 
-                ) : (
-
-                  <div className="text-center text-muted py-3">
-                    <i className="bi bi-inbox me-2"></i>
-                    No Panchanama details available.
-                  </div>
-
-                )}
-
-              </div>
-
-            </div>
-
-            {/* ================================================= */}
-            {/* DEMOLITION DETAILS */}
-            {/* ================================================= */}
-
-            <div
-              className="border rounded mb-4"
-              style={{
-                overflow: "hidden",
-              }}
-            >
-
-              <div
-                className="px-3 py-2 border-bottom"
-                style={{
-                  backgroundColor: "#f8f8f8",
-                  fontSize: "16px",
-                  fontWeight: 600,
-                  color: "#333",
-                }}
-              >
-                <i className="bi bi-tools me-2"></i>
-                Demolition Details
-
-                <span className="badge bg-danger ms-2">
-                  {demolitionDetails.length}
-                </span>
-              </div>
-
-              <div className="p-3">
-
-                {demolitionDetails.length > 0 ? (
-
-                  <div className="table-responsive">
-
-                    <table className="table table-bordered table-sm align-middle mb-0">
-
-                      <thead className="table-light">
-                        <tr>
-                          <th>Sr. No.</th>
-                          <th>Demolition ID</th>
-                          <th>Started By</th>
-                        </tr>
-                      </thead>
-
-                      <tbody>
-
-                        {demolitionDetails.map(
-                          (item, index) => (
-                            <tr
-                              key={
-                                item.NUM_ILLHOARD_DEMON_ID ||
-                                index
-                              }
-                            >
-
-                              <td>
-                                {index + 1}
-                              </td>
-
-                              <td>
-                                {item.NUM_ILLHOARD_DEMON_ID ||
-                                  "-"}
-                              </td>
-
-                              <td>
-                                {item.VAR_DEMONSTARTED_NAME ||
-                                  "-"}
-                              </td>
-
-                            </tr>
-                          )
-                        )}
-
-                      </tbody>
-
-                    </table>
-
-                  </div>
-
-                ) : (
-
-                  <div className="text-center text-muted py-3">
-                    <i className="bi bi-inbox me-2"></i>
-                    No demolition details available.
-                  </div>
-
-                )}
-
-              </div>
-
-            </div>
-
-            {/* ================================================= */}
-            {/* PHOTOS */}
-            {/* ================================================= */}
-
-            <div
-              className="border rounded"
-              style={{
-                overflow: "hidden",
-              }}
-            >
-
-              <div
-                className="px-3 py-2 border-bottom"
-                style={{
-                  backgroundColor: "#f8f8f8",
-                  fontSize: "16px",
-                  fontWeight: 600,
-                  color: "#333",
-                }}
-              >
-                <i className="bi bi-images me-2"></i>
-                Panchanama Photos
-
-                <span className="badge bg-secondary ms-2">
-                  {photos.length}
-                </span>
-              </div>
-
-              <div className="p-3">
-
-                {photos.length > 0 ? (
-
-                  <div className="row g-3">
-
-                    {photos.map(
-                      (img, index) => (
-
-                        <div
-                          className="col-6 col-md-4"
-                          key={index}
-                        >
-
-                          <div className="card h-100 shadow-sm">
-
-                            <img
-                              src={`data:image/jpeg;base64,${img}`}
-                              alt={`Panchanama Photo ${
-                                index + 1
-                              }`}
-                              className="card-img-top"
-                              style={{
-                                height: "200px",
-                                objectFit:
-                                  "cover",
-                                cursor:
-                                  "pointer",
-                              }}
-                              onClick={() =>
-                                handleImageClick(
-                                  master,
-                                  index
-                                )
-                              }
-                            />
-
-                            <div className="card-body p-2 text-center">
-
-                              <small className="text-muted">
-                                {index === 0
-                                  ? "Near Photo"
-                                  : index === 1
-                                  ? "Far Photo"
-                                  : "User Photo"}
-                              </small>
-
-                            </div>
-
-                          </div>
-
-                        </div>
-
-                      )
-                    )}
-
-                  </div>
-
-                ) : (
-
+                {noticeHtml ? (
                   <div
-                    className="text-center text-muted py-4"
+                    className="border rounded bg-white p-2 shadow-sm"
+                    style={{ minHeight: "650px" }}
                   >
-                    <i
-                      className="bi bi-image"
+                    <iframe
+                      title="Notice Preview"
+                      srcDoc={noticeHtml}
                       style={{
-                        fontSize: "2rem",
+                        width: "100%",
+                        height: "700px",
+                        border: "none",
+                        borderRadius: "4px",
                       }}
-                    ></i>
-
-                    <div className="mt-2">
-                      No photos available
-                    </div>
-
+                    />
                   </div>
-
+                ) : (
+                  <div className="text-center py-5 text-muted">
+                    <div className="spinner-border text-primary mb-2" role="status">
+                      <span className="visually-hidden">Loading Notice...</span>
+                    </div>
+                    <div>Loading Notice Preview...</div>
+                  </div>
                 )}
-
               </div>
+            </div>
+
+            {/* ================================================= */}
+            {/* FOOTER */}
+            {/* ================================================= */}
+
+            <div className="modal-footer">
+
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={handleCloseDetailsModal}
+              >
+                <i className="bi bi-x-lg me-1"></i>
+                Close
+              </button>
 
             </div>
 
           </div>
-
-          {/* ================================================= */}
-          {/* FOOTER */}
-          {/* ================================================= */}
-
-          <div className="modal-footer">
-
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={handleCloseDetailsModal}
-            >
-              <i className="bi bi-x-lg me-1"></i>
-              Close
-            </button>
-
-          </div>
-
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
   // =========================================================
   // RENDER
@@ -1279,104 +1060,126 @@ const fieldLabels = {
 
           <table className="table align-middle mb-0">
 
-           <thead>
-  <tr>
-    <th>ID</th>
-    <th>Panchanama No.</th>
-    <th>User Name</th>
-    <th>User Post</th>
-    <th>Capture Date & Time</th>
-    <th>Address</th>
-    <th>Ward</th>
-    <th>Action</th>
-  </tr>
-</thead>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Panchanama No.</th>
+                <th>User Name</th>
+                <th>User Post</th>
+                <th>Capture Date & Time</th>
+                <th>Address</th>
+                <th>Ward</th>
+                <th>Action</th>
+              </tr>
+            </thead>
 
-<tbody>
-  {participants.length > 0 ? (
-    participants.map((panchanama, index) => (
-      <tr
-        key={
-          panchanama.NUM_ILLEGALHOARD_ID || index
-        }
-      >
-        {/* ID */}
-        <td>
-          <strong>
-            {panchanama.NUM_ILLEGALHOARD_ID || "-"}
-          </strong>
-        </td>
+            <tbody>
+              {participants.length > 0 ? (
+                participants.map((panchanama, index) => (
+                  <tr
+                    key={
+                      panchanama.NUM_ILLEGALHOARD_ID || index
+                    }
+                  >
+                    {/* ID */}
+                    <td>
+                      <strong>
+                        {panchanama.NUM_ILLEGALHOARD_ID || "-"}
+                      </strong>
+                    </td>
 
-        {/* PANCHANAMA NO */}
-        <td>
-          {panchanama.VAR_ILLEGALHOARD_PANCHANAMA_NO || "-"}
-        </td>
+                    {/* PANCHANAMA NO */}
+                    <td>
+                      {panchanama.VAR_ILLEGALHOARD_PANCHANAMA_NO || "-"}
+                    </td>
 
-        {/* USER NAME */}
-        <td>
-          <div className="fw-semibold">
-            {panchanama.VAR_USER1 || "-"}
-          </div>
-        </td>
+                    {/* USER NAME */}
+                    <td>
+                      <div className="fw-semibold">
+                        {panchanama.VAR_USER1 || "-"}
+                      </div>
+                    </td>
 
-        {/* USER POST */}
-        <td>
-          {panchanama.VAR_USER1_POST || "-"}
-        </td>
+                    {/* USER POST */}
+                    <td>
+                      {panchanama.VAR_USER1_POST || "-"}
+                    </td>
 
-        {/* CAPTURE DATE + TIME */}
-        <td>
-          {formatDateTime(
-            panchanama.DAT_CAP_DT,
-            panchanama.VAR_CAP_TIME
-          )}
-        </td>
+                    {/* CAPTURE DATE + TIME */}
+                    <td>
+                      {formatDateTime(
+                        panchanama.DAT_CAP_DT,
+                        panchanama.VAR_CAP_TIME
+                      )}
+                    </td>
 
-        {/* ADDRESS */}
-        <td>
-          {panchanama.VAR_ILLEGALHOARD_ADD || "-"}
-        </td>
+                    {/* ADDRESS */}
+                    <td>
+                      {panchanama.VAR_ILLEGALHOARD_ADD || "-"}
+                    </td>
 
-        {/* WARD */}
-        <td>
-          {panchanama.VAR_ILLEGALHOARD_WARD || "-"}
-        </td>
+                    {/* WARD */}
+                    <td>
+                      {panchanama.VAR_ILLEGALHOARD_WARD || "-"}
+                    </td>
 
-        {/* ACTION */}
-        <td>
-          <button
-            type="button"
-            className="btn btn-sm btn-primary"
-            onClick={() =>
-              handleViewDetails(panchanama)
-            }
-          >
-            <i className="bi bi-eye me-1"></i>
-            View
-          </button>
-        </td>
-      </tr>
-    ))
-  ) : (
-    <tr>
-      <td
-        colSpan="8"
-        className="text-center text-muted py-5"
-      >
-        <div>
-          <i
-            className="bi bi-inbox"
-            style={{ fontSize: "2rem" }}
-          ></i>
+                    {/* ACTION */}
+                    <td>
+                      <div className="d-flex gap-1 align-items-center">
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-primary"
+                          onClick={() =>
+                            handleViewDetails(panchanama)
+                          }
+                        >
+                          <i className="bi bi-eye me-1"></i>
+                          View
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-success"
+                          onClick={() =>
+                            handleGenerateNotice(panchanama)
+                          }
+                          disabled={generatingNoticeId === panchanama.NUM_ILLEGALHOARD_ID}
+                        >
+                          {generatingNoticeId === panchanama.NUM_ILLEGALHOARD_ID ? (
+                            <>
+                              <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                              Generating...
+                            </>
+                          ) : (
+                            <>
+                              <i className="bi bi-file-earmark-pdf me-1"></i>
+                              Generate
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan="8"
+                    className="text-center text-muted py-5"
+                  >
+                    <div>
+                      <i
+                        className="bi bi-inbox"
+                        style={{ fontSize: "2rem" }}
+                      ></i>
 
-          <div className="mt-2">
-            No Panchanama records found
-          </div>
-        </div>
-      </td>
-    </tr>
-  )}
-</tbody>
+                      <div className="mt-2">
+                        No Panchanama records found
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
 
           </table>
 
@@ -1396,9 +1199,9 @@ const fieldLabels = {
               {totalRecords === 0
                 ? 0
                 : (currentPage -
-                    1) *
-                    pageSize +
-                  1}
+                  1) *
+                pageSize +
+                1}
             </strong>
 
             {" "}to{" "}
@@ -1406,7 +1209,7 @@ const fieldLabels = {
             <strong>
               {Math.min(
                 currentPage *
-                  pageSize,
+                pageSize,
                 totalRecords
               )}
             </strong>
@@ -1472,11 +1275,10 @@ const fieldLabels = {
               {/* FIRST */}
 
               <li
-                className={`page-item ${
-                  currentPage === 1
-                    ? "disabled"
-                    : ""
-                }`}
+                className={`page-item ${currentPage === 1
+                  ? "disabled"
+                  : ""
+                  }`}
               >
                 <button
                   className="page-link"
@@ -1497,11 +1299,10 @@ const fieldLabels = {
               {/* PREVIOUS */}
 
               <li
-                className={`page-item ${
-                  currentPage === 1
-                    ? "disabled"
-                    : ""
-                }`}
+                className={`page-item ${currentPage === 1
+                  ? "disabled"
+                  : ""
+                  }`}
               >
                 <button
                   className="page-link"
@@ -1525,12 +1326,11 @@ const fieldLabels = {
                 (page) => (
                   <li
                     key={page}
-                    className={`page-item ${
-                      currentPage ===
+                    className={`page-item ${currentPage ===
                       page
-                        ? "active"
-                        : ""
-                    }`}
+                      ? "active"
+                      : ""
+                      }`}
                   >
                     <button
                       className="page-link"
@@ -1549,12 +1349,11 @@ const fieldLabels = {
               {/* NEXT */}
 
               <li
-                className={`page-item ${
-                  currentPage ===
+                className={`page-item ${currentPage ===
                   totalPages
-                    ? "disabled"
-                    : ""
-                }`}
+                  ? "disabled"
+                  : ""
+                  }`}
               >
                 <button
                   className="page-link"
@@ -1575,12 +1374,11 @@ const fieldLabels = {
               {/* LAST */}
 
               <li
-                className={`page-item ${
-                  currentPage ===
+                className={`page-item ${currentPage ===
                   totalPages
-                    ? "disabled"
-                    : ""
-                }`}
+                  ? "disabled"
+                  : ""
+                  }`}
               >
                 <button
                   className="page-link"
@@ -1677,15 +1475,15 @@ const fieldLabels = {
                   }}
                 >
 
-                 <img
-  src={`data:image/jpeg;base64,${selectedImages[selectedImageIndex]}`}
-  alt={`panchanama-full-${selectedImageIndex}`}
-  style={{
-    maxWidth: "85vw",
-    maxHeight: "70vh",
-    objectFit: "contain",
-  }}
-/>
+                  <img
+                    src={`data:image/jpeg;base64,${selectedImages[selectedImageIndex]}`}
+                    alt={`panchanama-full-${selectedImageIndex}`}
+                    style={{
+                      maxWidth: "85vw",
+                      maxHeight: "70vh",
+                      objectFit: "contain",
+                    }}
+                  />
 
                 </div>
 
@@ -1717,7 +1515,7 @@ const fieldLabels = {
                     disabled={
                       selectedImageIndex ===
                       selectedImages.length -
-                        1
+                      1
                     }
                   >
                     Next

@@ -1332,6 +1332,7 @@ const PanchanamaList = () => {
                   Next
                   <i className="bi bi-chevron-right ms-1"></i>
                 </button>
+                
               </div>
             </div>
           </div>

@@ -423,7 +423,7 @@ async function getPanchanamalistRepo(
   // =========================================================
 
   let sql = `
-    SELECT *
+    SELECT num_illegalhoard_id, var_illegalhoard_panchanama_no, var_user1, var_user1_post, dat_cap_dt, var_cap_time, var_illegalhoard_add, var_illegalhoard_ward
     FROM VW_ILLEGALHOARDING a
   `;
 
@@ -460,16 +460,6 @@ async function getPanchanamalistRepo(
   const result = await executeQuery(sql, binds);
 
   const rows = result.rows || [];
-
-  // =========================================================
-  // CONVERT PHOTO BLOBs TO BASE64
-  // =========================================================
-
-  for (const row of rows) {
-    row.BLOB_NEAR_PHOTO = await lobToBase64(row.BLOB_NEAR_PHOTO);
-    row.BLOB_FAR_PHOTO = await lobToBase64(row.BLOB_FAR_PHOTO);
-    row.BLOB_USER_PHOTO = await lobToBase64(row.BLOB_USER_PHOTO);
-  }
 
   // =========================================================
   // COUNT QUERY

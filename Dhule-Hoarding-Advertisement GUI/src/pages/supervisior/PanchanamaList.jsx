@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import apiClient from "../../services/apiClient";
 import { useLoader } from "../../context/LoaderContext";
 import ResponseModal from "../../components/ResponseModal";
+import { generatePDF } from "../../utils/pdfHelper.jsx";
 
 const getToday = () => {
   const d = new Date();
@@ -47,8 +48,9 @@ const PanchanamaList = () => {
 
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedParticipant, setSelectedParticipant] = useState(null);
-const [selectedPanchanamaDetails, setSelectedPanchanamaDetails] = useState(null);
-const [detailsLoading, setDetailsLoading] = useState(false);
+  const [selectedPanchanamaDetails, setSelectedPanchanamaDetails] =
+    useState(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
   // Response modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState("info");
@@ -98,11 +100,7 @@ const [detailsLoading, setDetailsLoading] = useState(false);
         url += `&toDate=${encodeURIComponent(filters.toDate)}`;
       }
 
-      console.log("Participant API:", url);
-
       const response = await apiClient.get(url);
-
-      console.log("Participant API Response:", response);
 
       if (response?.success && response?.data) {
         const participantData = response.data.data || [];
@@ -135,92 +133,64 @@ const [detailsLoading, setDetailsLoading] = useState(false);
     }
   };
 
-  // =========================================================
-  // INITIAL API / FILTER CHANGE
-  // =========================================================
-
   useEffect(() => {
     fetchPanchanamalist(1);
   }, [filters, pageSize]);
 
-  // =========================================================
-  // PAGINATION
-  // =========================================================
-
-
   const formatDateTime = (dateString, timeString) => {
-  if (!dateString) {
-    return "-";
-  }
+    if (!dateString) {
+      return "-";
+    }
 
-  const date = new Date(dateString);
+    const date = new Date(dateString);
 
-  if (isNaN(date.getTime())) {
-    return "-";
-  }
+    if (isNaN(date.getTime())) {
+      return "-";
+    }
 
-  const formattedDate = date.toLocaleDateString("en-IN", {
-    timeZone: "Asia/Kolkata",
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-
-  let formattedTime = "";
-
-  if (timeString) {
-    const [hours, minutes, seconds] = timeString
-      .split(":")
-      .map(Number);
-
-    const timeDate = new Date();
-    timeDate.setHours(hours, minutes, seconds || 0);
-
-    formattedTime = timeDate.toLocaleTimeString("en-IN", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: true,
+    const formattedDate = date.toLocaleDateString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
     });
-  }
 
-  return formattedTime
-    ? `${formattedDate} - ${formattedTime}`
-    : formattedDate;
-};
+    let formattedTime = "";
+
+    if (timeString) {
+      const [hours, minutes, seconds] = timeString.split(":").map(Number);
+
+      const timeDate = new Date();
+      timeDate.setHours(hours, minutes, seconds || 0);
+
+      formattedTime = timeDate.toLocaleTimeString("en-IN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      });
+    }
+
+    return formattedTime
+      ? `${formattedDate} - ${formattedTime}`
+      : formattedDate;
+  };
   const handlePageChange = (page) => {
-    if (
-      page >= 1 &&
-      page <= totalPages &&
-      page !== currentPage
-    ) {
+    if (page >= 1 && page <= totalPages && page !== currentPage) {
       fetchPanchanamalist(page);
     }
   };
-
-  // =========================================================
-  // PAGINATION PAGE NUMBERS
-  // =========================================================
 
   const getPaginationPages = () => {
     const pages = [];
     const maxPagesToShow = 5;
 
-    let startPage = Math.max(
-      1,
-      currentPage - Math.floor(maxPagesToShow / 2)
-    );
+    let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
 
-    let endPage = Math.min(
-      totalPages,
-      startPage + maxPagesToShow - 1
-    );
+    let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
 
     if (endPage - startPage + 1 < maxPagesToShow) {
-      startPage = Math.max(
-        1,
-        endPage - maxPagesToShow + 1
-      );
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
     }
 
     for (let i = startPage; i <= endPage; i++) {
@@ -229,10 +199,6 @@ const [detailsLoading, setDetailsLoading] = useState(false);
 
     return pages;
   };
-
-  // =========================================================
-  // FORMAT DATE
-  // =========================================================
 
   const formatDate = (dateString) => {
     if (!dateString) {
@@ -258,26 +224,13 @@ const [detailsLoading, setDetailsLoading] = useState(false);
       .replace(",", " - ");
   };
 
-  // =========================================================
-  // GET PARTICIPANT PHOTOS
-  // =========================================================
-
-const getPanchanamaPhotos = (panchanama) => {
-  return [
-    panchanama?.BLOB_NEAR_PHOTO,
-    panchanama?.BLOB_FAR_PHOTO,
-    panchanama?.BLOB_USER_PHOTO,
-  ].filter(
-    (img) =>
-      img &&
-      typeof img === "string" &&
-      img.trim() !== ""
-  );
-};
-
-  // =========================================================
-  // OPEN IMAGE IN NEW TAB
-  // =========================================================
+  const getPanchanamaPhotos = (panchanama) => {
+    return [
+      panchanama?.BLOB_NEAR_PHOTO,
+      panchanama?.BLOB_FAR_PHOTO,
+      panchanama?.BLOB_USER_PHOTO,
+    ].filter((img) => img && typeof img === "string" && img.trim() !== "");
+  };
 
   const openImageInNewTab = (img) => {
     try {
@@ -287,15 +240,9 @@ const getPanchanamaPhotos = (panchanama) => {
 
       const binaryString = atob(img);
 
-      const bytes = new Uint8Array(
-        binaryString.length
-      );
+      const bytes = new Uint8Array(binaryString.length);
 
-      for (
-        let i = 0;
-        i < binaryString.length;
-        i++
-      ) {
+      for (let i = 0; i < binaryString.length; i++) {
         bytes[i] = binaryString.charCodeAt(i);
       }
 
@@ -311,37 +258,26 @@ const getPanchanamaPhotos = (panchanama) => {
 
       setModalType("error");
       setModalTitle("Error");
-      setModalMessage(
-        "Unable to open image. Please try again."
-      );
+      setModalMessage("Unable to open image. Please try again.");
       setIsModalOpen(true);
     }
   };
 
-  // =========================================================
-  // OPEN IMAGE MODAL
-  // =========================================================
-
   const handleImageClick = (panchanama, index) => {
-  const images = getPanchanamaPhotos(panchanama);
+    const images = getPanchanamaPhotos(panchanama);
 
-  setSelectedImages(images);
-  setSelectedImageIndex(index);
-  setShowImageModal(true);
-};
+    setSelectedImages(images);
+    setSelectedImageIndex(index);
+    setShowImageModal(true);
+  };
 
   // =========================================================
   // NEXT IMAGE
   // =========================================================
 
   const nextImage = () => {
-    if (
-      selectedImageIndex <
-      selectedImages.length - 1
-    ) {
-      setSelectedImageIndex(
-        selectedImageIndex + 1
-      );
+    if (selectedImageIndex < selectedImages.length - 1) {
+      setSelectedImageIndex(selectedImageIndex + 1);
     }
   };
 
@@ -351,9 +287,7 @@ const getPanchanamaPhotos = (panchanama) => {
 
   const prevImage = () => {
     if (selectedImageIndex > 0) {
-      setSelectedImageIndex(
-        selectedImageIndex - 1
-      );
+      setSelectedImageIndex(selectedImageIndex - 1);
     }
   };
 
@@ -361,142 +295,150 @@ const getPanchanamaPhotos = (panchanama) => {
   // VIEW PARTICIPANT DETAILS
   // =========================================================
 
- const handleViewDetails = async (panchanama) => {
-  const id = panchanama?.NUM_ILLEGALHOARD_ID;
+  const handleViewDetails = async (panchanama) => {
+    const id = panchanama?.NUM_ILLEGALHOARD_ID;
 
-  if (!id) {
-    setModalType("error");
-    setModalTitle("Error");
-    setModalMessage("Panchanama ID not found.");
-    setIsModalOpen(true);
-    return;
-  }
+    if (!id) {
+      setModalType("error");
+      setModalTitle("Error");
+      setModalMessage("Panchanama ID not found.");
+      setIsModalOpen(true);
+      return;
+    }
 
-  try {
-    setDetailsLoading(true);
+    try {
+      setDetailsLoading(true);
 
-    // Open modal immediately with loading state
-    setSelectedParticipant(panchanama);
-    setSelectedPanchanamaDetails(null);
-    setShowDetailsModal(true);
+      // Open modal immediately with loading state
+      setSelectedParticipant(panchanama);
+      setSelectedPanchanamaDetails(null);
+      setShowDetailsModal(true);
 
-    const response = await apiClient.get(
-      `/advertisement/getPanchanamaDetails?id=${id}`
-    );
+      const response = await apiClient.get(
+        `/advertisement/getPanchanamaDetails?id=${id}`,
+      );
 
-    console.log("Panchanama Details Response:", response);
+      console.log("Panchanama Details Response:", response);
 
-    if (response?.success && response?.data) {
-      setSelectedPanchanamaDetails(response.data);
+      if (response?.success && response?.data) {
+        setSelectedPanchanamaDetails(response.data);
 
-      // Master contains latest complete information + BLOBs
-      setSelectedParticipant(response.data.master);
-    } else {
+        // Master contains latest complete information + BLOBs
+        setSelectedParticipant(response.data.master);
+      } else {
+        setSelectedPanchanamaDetails(null);
+
+        setModalType("error");
+        setModalTitle("Error");
+        setModalMessage(
+          response?.message || "Unable to fetch Panchanama details.",
+        );
+        setIsModalOpen(true);
+      }
+    } catch (err) {
+      console.error("Error fetching Panchanama details:", err);
+
       setSelectedPanchanamaDetails(null);
 
       setModalType("error");
       setModalTitle("Error");
-      setModalMessage(
-        response?.message || "Unable to fetch Panchanama details."
-      );
+      setModalMessage(err?.message || "Failed to fetch Panchanama details.");
+
       setIsModalOpen(true);
+    } finally {
+      setDetailsLoading(false);
     }
-  } catch (err) {
-    console.error(
-      "Error fetching Panchanama details:",
-      err
-    );
+  };
 
-    setSelectedPanchanamaDetails(null);
+  const handlePrintFromRow = async (id) => {
+    try {
+      setLoader(true);
+      const response = await apiClient.get(
+        `/advertisement/getPanchanamaDetails?id=${id}`,
+      );
+      if (response?.success && response?.data) {
+        const master = response.data.master;
+        const details = response.data.details || [];
+        const demolitionDetails = response.data.demolitionDetails || [];
+        const photos = [
+          master?.BLOB_NEAR_PHOTO,
+          master?.BLOB_FAR_PHOTO,
+          master?.BLOB_USER_PHOTO,
+        ].filter((img) => img && typeof img === "string" && img.trim() !== "");
 
-    setModalType("error");
-    setModalTitle("Error");
-    setModalMessage(
-      err?.message ||
-        "Failed to fetch Panchanama details."
-    );
-
-    setIsModalOpen(true);
-  } finally {
-    setDetailsLoading(false);
-  }
-};
+        const data = { master, details, demolitionDetails, photos };
+        await generatePDF(data);
+      } else {
+        showError("Unable to fetch details for PDF.");
+      }
+    } catch (err) {
+      console.error(err);
+      showError("Failed to generate PDF.");
+    } finally {
+      setLoader(false);
+    }
+  };
 
   // =========================================================
   // CLOSE DETAILS MODAL
   // =========================================================
 
   const handleCloseDetailsModal = () => {
-  setShowDetailsModal(false);
-  setSelectedParticipant(null);
-  setSelectedPanchanamaDetails(null);
-  setDetailsLoading(false);
-};
+    setShowDetailsModal(false);
+    setSelectedParticipant(null);
+    setSelectedPanchanamaDetails(null);
+    setDetailsLoading(false);
+  };
 
   // =========================================================
   // RENDER PARTICIPANT PHOTOS
   // =========================================================
 
-const renderPanchanamaPhotos = (panchanama) => {
-  const images = getPanchanamaPhotos(panchanama);
+  const renderPanchanamaPhotos = (panchanama) => {
+    const images = getPanchanamaPhotos(panchanama);
 
-  if (images.length === 0) {
+    if (images.length === 0) {
+      return <span className="text-muted small">No photos</span>;
+    }
+
     return (
-      <span className="text-muted small">
-        No photos
-      </span>
+      <div className="d-flex gap-2 flex-wrap">
+        {images.map((img, idx) => (
+          <img
+            key={idx}
+            src={`data:image/jpeg;base64,${img}`}
+            alt={`Panchanama ${idx + 1}`}
+            style={{
+              width: "65px",
+              height: "65px",
+              objectFit: "cover",
+              borderRadius: "8px",
+              border: "2px solid #dee2e6",
+              cursor: "pointer",
+            }}
+            onClick={() => handleImageClick(panchanama, idx)}
+          />
+        ))}
+      </div>
     );
-  }
-
-  return (
-    <div className="d-flex gap-2 flex-wrap">
-      {images.map((img, idx) => (
-        <img
-          key={idx}
-          src={`data:image/jpeg;base64,${img}`}
-          alt={`Panchanama ${idx + 1}`}
-          style={{
-            width: "65px",
-            height: "65px",
-            objectFit: "cover",
-            borderRadius: "8px",
-            border: "2px solid #dee2e6",
-            cursor: "pointer",
-          }}
-          onClick={() =>
-            handleImageClick(panchanama, idx)
-          }
-        />
-      ))}
-    </div>
-  );
-};
+  };
 
   // =========================================================
   // DETAILS MODAL VALUE FORMATTER
   // =========================================================
 
   const formatDetailValue = (key, value) => {
-    if (
-      value === null ||
-      value === undefined ||
-      value === ""
-    ) {
+    if (value === null || value === undefined || value === "") {
       return "-";
     }
 
     // Date fields
-    if (
-      key === "APPLICATION_DATE" ||
-      key.toLowerCase().includes("date")
-    ) {
+    if (key === "APPLICATION_DATE" || key.toLowerCase().includes("date")) {
       return formatDate(value);
     }
 
     // Don't display huge Base64 strings as text
-    if (
-      key.toUpperCase().startsWith("PHOTO_")
-    ) {
+    if (key.toUpperCase().startsWith("PHOTO_")) {
       return null;
     }
 
@@ -516,16 +458,143 @@ const renderPanchanamaPhotos = (panchanama) => {
   // DETAILS MODAL
   // =========================================================
 
- const renderDetailsModal = () => {
-  if (!showDetailsModal) {
-    return null;
-  }
+  const renderDetailsModal = () => {
+    if (!showDetailsModal) {
+      return null;
+    }
 
-  // =========================================================
-  // LOADING
-  // =========================================================
+    // =========================================================
+    // LOADING
+    // =========================================================
 
-  if (detailsLoading) {
+    if (detailsLoading) {
+      return (
+        <div
+          className="modal show d-block"
+          tabIndex="-1"
+          role="dialog"
+          style={{
+            backgroundColor: "rgba(0,0,0,0.6)",
+            zIndex: 2100,
+          }}
+        >
+          <div className="modal-dialog modal-dialog-centered" role="document">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">
+                  <i className="bi bi-file-earmark-text me-2"></i>
+                  Panchanama Details
+                </h5>
+
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={handleCloseDetailsModal}
+                ></button>
+              </div>
+
+              <div className="modal-body text-center py-5">
+                <div className="spinner-border text-primary mb-3" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+
+                <div className="text-muted">Loading Panchanama details...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // =========================================================
+    // DATA
+    // =========================================================
+
+    const master = selectedPanchanamaDetails?.master || selectedParticipant;
+
+    const details = selectedPanchanamaDetails?.details || [];
+
+    const demolitionDetails =
+      selectedPanchanamaDetails?.demolitionDetails || [];
+
+    if (!master) {
+      return null;
+    }
+
+    const photos = getPanchanamaPhotos(master);
+
+    // =========================================================
+    // FORMAT LABEL
+    // =========================================================
+    const fieldLabels = {
+      NUM_ILLEGALHOARD_ID: "Panchanama ID",
+      NUM_ILLEGALHOARD_ULBID: "ULB ID",
+      DAT_CAP_DT: "Capture Date",
+      VAR_CAP_TIME: "Capture Time",
+      VAR_USER1: "User Name",
+      VAR_USER1_POST: "User Post",
+      VAR_ILLEGALHOARD_ADD: "Address",
+      DAT_FROM_DT: "From Date",
+      NUM_SIZE_LENGTH: "Length",
+      NUM_SIZE_WIDTH: "Width",
+      LATITUDE: "Latitude",
+      LONGITUDE: "Longitude",
+      VAR_ILLEGALHOARD_WARD: "Ward",
+      BLOB_NEAR_PHOTO: "Near Photo",
+      BLOB_FAR_PHOTO: "Far Photo",
+      BLOB_USER_PHOTO: "User Photo",
+      VAR_ILLEGALHOARD_PANCHANAMA_NO: "Panchanama No.",
+    };
+
+    const formatLabel = (key) => {
+      return (
+        fieldLabels[key] ||
+        key
+          .replace(/_/g, " ")
+          .toLowerCase()
+          .replace(/\b\w/g, (char) => char.toUpperCase())
+      );
+    };
+
+    // =========================================================
+    // FORMAT VALUE
+    // =========================================================
+
+    const formatDetailValue = (key, value) => {
+      if (value === null || value === undefined || value === "") {
+        return "-";
+      }
+
+      // Don't display BLOB as text
+      if (key.toUpperCase().startsWith("BLOB_")) {
+        return null;
+      }
+
+      // Date fields
+      if (
+        key.toUpperCase().includes("DAT_") ||
+        key.toUpperCase().includes("DATE")
+      ) {
+        return formatDate(value);
+      }
+
+      if (typeof value === "object") {
+        try {
+          return JSON.stringify(value);
+        } catch {
+          return String(value);
+        }
+      }
+
+      return String(value);
+    };
+
+    // =========================================================
+    // MASTER FIELDS
+    // =========================================================
+
+    const masterEntries = Object.entries(master);
+
     return (
       <div
         className="modal show d-block"
@@ -537,16 +606,29 @@ const renderPanchanamaPhotos = (panchanama) => {
         }}
       >
         <div
-          className="modal-dialog modal-dialog-centered"
+          className="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable"
           role="document"
+          style={{
+            maxWidth: "1000px",
+          }}
         >
           <div className="modal-content">
+            {/* ================================================= */}
+            {/* HEADER */}
+            {/* ================================================= */}
 
             <div className="modal-header">
-              <h5 className="modal-title">
-                <i className="bi bi-file-earmark-text me-2"></i>
-                Panchanama Details
-              </h5>
+              <div>
+                <h5 className="modal-title mb-1">
+                  <i className="bi bi-file-earmark-text me-2"></i>
+                  Panchanama Details
+                </h5>
+
+                <small className="text-muted">
+                  Panchanama ID:{" "}
+                  <strong>{master.NUM_ILLEGALHOARD_ID || "-"}</strong>
+                </small>
+              </div>
 
               <button
                 type="button"
@@ -555,238 +637,51 @@ const renderPanchanamaPhotos = (panchanama) => {
               ></button>
             </div>
 
-            <div className="modal-body text-center py-5">
-
-              <div
-                className="spinner-border text-primary mb-3"
-                role="status"
-              >
-                <span className="visually-hidden">
-                  Loading...
-                </span>
-              </div>
-
-              <div className="text-muted">
-                Loading Panchanama details...
-              </div>
-
-            </div>
-
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // =========================================================
-  // DATA
-  // =========================================================
-
-  const master =
-    selectedPanchanamaDetails?.master ||
-    selectedParticipant;
-
-  const details =
-    selectedPanchanamaDetails?.details || [];
-
-  const demolitionDetails =
-    selectedPanchanamaDetails?.demolitionDetails || [];
-
-  if (!master) {
-    return null;
-  }
-
-  const photos = getPanchanamaPhotos(master);
-
-  // =========================================================
-  // FORMAT LABEL
-  // =========================================================
-const fieldLabels = {
-  NUM_ILLEGALHOARD_ID: "Panchanama ID",
-  NUM_ILLEGALHOARD_ULBID: "ULB ID",
-  DAT_CAP_DT: "Capture Date",
-  VAR_CAP_TIME: "Capture Time",
-  VAR_USER1: "User Name",
-  VAR_USER1_POST: "User Post",
-  VAR_ILLEGALHOARD_ADD: "Address",
-  DAT_FROM_DT: "From Date",
-  NUM_SIZE_LENGTH: "Length",
-  NUM_SIZE_WIDTH: "Width",
-  LATITUDE: "Latitude",
-  LONGITUDE: "Longitude",
-  VAR_ILLEGALHOARD_WARD: "Ward",
-  BLOB_NEAR_PHOTO: "Near Photo",
-  BLOB_FAR_PHOTO: "Far Photo",
-  BLOB_USER_PHOTO: "User Photo",
-  VAR_ILLEGALHOARD_PANCHANAMA_NO: "Panchanama No.",
-};
-
-  const formatLabel = (key) => {
-    return (
-      fieldLabels[key] ||
-      key
-        .replace(/_/g, " ")
-        .toLowerCase()
-        .replace(/\b\w/g, (char) =>
-          char.toUpperCase()
-        )
-    );
-  };
-
-  // =========================================================
-  // FORMAT VALUE
-  // =========================================================
-
-  const formatDetailValue = (key, value) => {
-    if (
-      value === null ||
-      value === undefined ||
-      value === ""
-    ) {
-      return "-";
-    }
-
-    // Don't display BLOB as text
-    if (
-      key.toUpperCase().startsWith("BLOB_")
-    ) {
-      return null;
-    }
-
-    // Date fields
-    if (
-      key.toUpperCase().includes("DAT_") ||
-      key.toUpperCase().includes("DATE")
-    ) {
-      return formatDate(value);
-    }
-
-    if (typeof value === "object") {
-      try {
-        return JSON.stringify(value);
-      } catch {
-        return String(value);
-      }
-    }
-
-    return String(value);
-  };
-
-  // =========================================================
-  // MASTER FIELDS
-  // =========================================================
-
-  const masterEntries = Object.entries(master);
-
-  return (
-    <div
-      className="modal show d-block"
-      tabIndex="-1"
-      role="dialog"
-      style={{
-        backgroundColor: "rgba(0,0,0,0.6)",
-        zIndex: 2100,
-      }}
-    >
-      <div
-        className="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable"
-        role="document"
-        style={{
-          maxWidth: "1000px",
-        }}
-      >
-        <div className="modal-content">
-
-          {/* ================================================= */}
-          {/* HEADER */}
-          {/* ================================================= */}
-
-          <div className="modal-header">
-
-            <div>
-              <h5 className="modal-title mb-1">
-                <i className="bi bi-file-earmark-text me-2"></i>
-                Panchanama Details
-              </h5>
-
-              <small className="text-muted">
-                Panchanama ID:{" "}
-                <strong>
-                  {master.NUM_ILLEGALHOARD_ID || "-"}
-                </strong>
-              </small>
-
-            </div>
-
-            <button
-              type="button"
-              className="btn-close"
-              onClick={handleCloseDetailsModal}
-            ></button>
-
-          </div>
-
-          {/* ================================================= */}
-          {/* BODY */}
-          {/* ================================================= */}
-
-          <div className="modal-body">
-
             {/* ================================================= */}
-            {/* MASTER INFORMATION */}
+            {/* BODY */}
             {/* ================================================= */}
 
-            <div
-              className="border rounded mb-4"
-              style={{
-                overflow: "hidden",
-              }}
-            >
+            <div className="modal-body">
+              {/* ================================================= */}
+              {/* MASTER INFORMATION */}
+              {/* ================================================= */}
 
               <div
-                className="px-3 py-2 border-bottom"
+                className="border rounded mb-4"
                 style={{
-                  backgroundColor: "#f8f8f8",
-                  fontSize: "16px",
-                  fontWeight: 600,
-                  color: "#333",
+                  overflow: "hidden",
                 }}
               >
-                <i className="bi bi-info-circle me-2"></i>
-                Panchanama Information
-              </div>
+                <div
+                  className="px-3 py-2 border-bottom"
+                  style={{
+                    backgroundColor: "#f8f8f8",
+                    fontSize: "16px",
+                    fontWeight: 600,
+                    color: "#333",
+                  }}
+                >
+                  <i className="bi bi-info-circle me-2"></i>
+                  Panchanama Information
+                </div>
 
-              <div
-                style={{
-                  padding: "20px 16px",
-                  display: "grid",
-                  gridTemplateColumns:
-                    "repeat(2, minmax(0, 1fr))",
-                  columnGap: "50px",
-                  rowGap: "24px",
-                }}
-              >
-
-                {masterEntries.map(
-                  ([key, value]) => {
-
-                    if (
-                      key
-                        .toUpperCase()
-                        .startsWith("BLOB_")
-                    ) {
+                <div
+                  style={{
+                    padding: "20px 16px",
+                    display: "grid",
+                    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                    columnGap: "50px",
+                    rowGap: "24px",
+                  }}
+                >
+                  {masterEntries.map(([key, value]) => {
+                    if (key.toUpperCase().startsWith("BLOB_")) {
                       return null;
                     }
 
-                    const formattedValue =
-                      formatDetailValue(
-                        key,
-                        value
-                      );
+                    const formattedValue = formatDetailValue(key, value);
 
-                    if (
-                      formattedValue === null
-                    ) {
+                    if (formattedValue === null) {
                       return null;
                     }
 
@@ -797,7 +692,6 @@ const fieldLabels = {
                           minWidth: 0,
                         }}
                       >
-
                         <div
                           style={{
                             fontSize: "13px",
@@ -814,347 +708,233 @@ const fieldLabels = {
                             fontSize: "15px",
                             color: "#252525",
                             lineHeight: "1.5",
-                            whiteSpace:
-                              "pre-wrap",
-                            wordBreak:
-                              "break-word",
+                            whiteSpace: "pre-wrap",
+                            wordBreak: "break-word",
                           }}
                         >
                           {formattedValue}
                         </div>
-
                       </div>
                     );
-                  }
-                )}
-
+                  })}
+                </div>
               </div>
 
-            </div>
-
-            {/* ================================================= */}
-            {/* DETAILS ARRAY */}
-            {/* ================================================= */}
-
-            <div
-              className="border rounded mb-4"
-              style={{
-                overflow: "hidden",
-              }}
-            >
+              {/* ================================================= */}
+              {/* DETAILS ARRAY */}
+              {/* ================================================= */}
 
               <div
-                className="px-3 py-2 border-bottom"
+                className="border rounded mb-4"
                 style={{
-                  backgroundColor: "#f8f8f8",
-                  fontSize: "16px",
-                  fontWeight: 600,
-                  color: "#333",
+                  overflow: "hidden",
                 }}
               >
-                <i className="bi bi-list-ul me-2"></i>
-                Panchanama Details
-                <span className="badge bg-primary ms-2">
-                  {details.length}
-                </span>
-              </div>
+                <div
+                  className="px-3 py-2 border-bottom"
+                  style={{
+                    backgroundColor: "#f8f8f8",
+                    fontSize: "16px",
+                    fontWeight: 600,
+                    color: "#333",
+                  }}
+                >
+                  <i className="bi bi-list-ul me-2"></i>
+                  Panchanama Details
+                  <span className="badge bg-primary ms-2">
+                    {details.length}
+                  </span>
+                </div>
 
-              <div className="p-3">
+                <div className="p-3">
+                  {details.length > 0 ? (
+                    <div className="table-responsive">
+                      <table className="table table-bordered table-sm align-middle mb-0">
+                        <thead className="table-light">
+                          <tr>
+                            <th>Sr. No.</th>
+                            <th>Detail ID</th>
+                            <th>User</th>
+                            <th>User Post</th>
+                          </tr>
+                        </thead>
 
-                {details.length > 0 ? (
+                        <tbody>
+                          {details.map((item, index) => (
+                            <tr key={item.NUM_ILLEGALHOARDDET_ID || index}>
+                              <td>{index + 1}</td>
 
-                  <div className="table-responsive">
+                              <td>{item.NUM_ILLEGALHOARDDET_ID || "-"}</td>
 
-                    <table className="table table-bordered table-sm align-middle mb-0">
+                              <td>{item.VAR_USER || "-"}</td>
 
-                      <thead className="table-light">
-                        <tr>
-                          <th>Sr. No.</th>
-                          <th>Detail ID</th>
-                          <th>User</th>
-                          <th>User Post</th>
-                        </tr>
-                      </thead>
-
-                      <tbody>
-
-                        {details.map(
-                          (item, index) => (
-                            <tr
-                              key={
-                                item.NUM_ILLEGALHOARDDET_ID ||
-                                index
-                              }
-                            >
-
-                              <td>
-                                {index + 1}
-                              </td>
-
-                              <td>
-                                {item.NUM_ILLEGALHOARDDET_ID ||
-                                  "-"}
-                              </td>
-
-                              <td>
-                                {item.VAR_USER ||
-                                  "-"}
-                              </td>
-
-                              <td>
-                                {item.VAR_USER_POST ||
-                                  "-"}
-                              </td>
-
+                              <td>{item.VAR_USER_POST || "-"}</td>
                             </tr>
-                          )
-                        )}
-
-                      </tbody>
-
-                    </table>
-
-                  </div>
-
-                ) : (
-
-                  <div className="text-center text-muted py-3">
-                    <i className="bi bi-inbox me-2"></i>
-                    No Panchanama details available.
-                  </div>
-
-                )}
-
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="text-center text-muted py-3">
+                      <i className="bi bi-inbox me-2"></i>
+                      No Panchanama details available.
+                    </div>
+                  )}
+                </div>
               </div>
 
-            </div>
-
-            {/* ================================================= */}
-            {/* DEMOLITION DETAILS */}
-            {/* ================================================= */}
-
-            <div
-              className="border rounded mb-4"
-              style={{
-                overflow: "hidden",
-              }}
-            >
+              {/* ================================================= */}
+              {/* DEMOLITION DETAILS */}
+              {/* ================================================= */}
 
               <div
-                className="px-3 py-2 border-bottom"
+                className="border rounded mb-4"
                 style={{
-                  backgroundColor: "#f8f8f8",
-                  fontSize: "16px",
-                  fontWeight: 600,
-                  color: "#333",
+                  overflow: "hidden",
                 }}
               >
-                <i className="bi bi-tools me-2"></i>
-                Demolition Details
+                <div
+                  className="px-3 py-2 border-bottom"
+                  style={{
+                    backgroundColor: "#f8f8f8",
+                    fontSize: "16px",
+                    fontWeight: 600,
+                    color: "#333",
+                  }}
+                >
+                  <i className="bi bi-tools me-2"></i>
+                  Demolition Details
+                  <span className="badge bg-danger ms-2">
+                    {demolitionDetails.length}
+                  </span>
+                </div>
 
-                <span className="badge bg-danger ms-2">
-                  {demolitionDetails.length}
-                </span>
-              </div>
+                <div className="p-3">
+                  {demolitionDetails.length > 0 ? (
+                    <div className="table-responsive">
+                      <table className="table table-bordered table-sm align-middle mb-0">
+                        <thead className="table-light">
+                          <tr>
+                            <th>Sr. No.</th>
+                            <th>Demolition ID</th>
+                            <th>Started By</th>
+                          </tr>
+                        </thead>
 
-              <div className="p-3">
+                        <tbody>
+                          {demolitionDetails.map((item, index) => (
+                            <tr key={item.NUM_ILLHOARD_DEMON_ID || index}>
+                              <td>{index + 1}</td>
 
-                {demolitionDetails.length > 0 ? (
+                              <td>{item.NUM_ILLHOARD_DEMON_ID || "-"}</td>
 
-                  <div className="table-responsive">
-
-                    <table className="table table-bordered table-sm align-middle mb-0">
-
-                      <thead className="table-light">
-                        <tr>
-                          <th>Sr. No.</th>
-                          <th>Demolition ID</th>
-                          <th>Started By</th>
-                        </tr>
-                      </thead>
-
-                      <tbody>
-
-                        {demolitionDetails.map(
-                          (item, index) => (
-                            <tr
-                              key={
-                                item.NUM_ILLHOARD_DEMON_ID ||
-                                index
-                              }
-                            >
-
-                              <td>
-                                {index + 1}
-                              </td>
-
-                              <td>
-                                {item.NUM_ILLHOARD_DEMON_ID ||
-                                  "-"}
-                              </td>
-
-                              <td>
-                                {item.VAR_DEMONSTARTED_NAME ||
-                                  "-"}
-                              </td>
-
+                              <td>{item.VAR_DEMONSTARTED_NAME || "-"}</td>
                             </tr>
-                          )
-                        )}
-
-                      </tbody>
-
-                    </table>
-
-                  </div>
-
-                ) : (
-
-                  <div className="text-center text-muted py-3">
-                    <i className="bi bi-inbox me-2"></i>
-                    No demolition details available.
-                  </div>
-
-                )}
-
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="text-center text-muted py-3">
+                      <i className="bi bi-inbox me-2"></i>
+                      No demolition details available.
+                    </div>
+                  )}
+                </div>
               </div>
 
-            </div>
-
-            {/* ================================================= */}
-            {/* PHOTOS */}
-            {/* ================================================= */}
-
-            <div
-              className="border rounded"
-              style={{
-                overflow: "hidden",
-              }}
-            >
+              {/* ================================================= */}
+              {/* PHOTOS */}
+              {/* ================================================= */}
 
               <div
-                className="px-3 py-2 border-bottom"
+                className="border rounded"
                 style={{
-                  backgroundColor: "#f8f8f8",
-                  fontSize: "16px",
-                  fontWeight: 600,
-                  color: "#333",
+                  overflow: "hidden",
                 }}
               >
-                <i className="bi bi-images me-2"></i>
-                Panchanama Photos
+                <div
+                  className="px-3 py-2 border-bottom"
+                  style={{
+                    backgroundColor: "#f8f8f8",
+                    fontSize: "16px",
+                    fontWeight: 600,
+                    color: "#333",
+                  }}
+                >
+                  <i className="bi bi-images me-2"></i>
+                  Panchanama Photos
+                  <span className="badge bg-secondary ms-2">
+                    {photos.length}
+                  </span>
+                </div>
 
-                <span className="badge bg-secondary ms-2">
-                  {photos.length}
-                </span>
-              </div>
-
-              <div className="p-3">
-
-                {photos.length > 0 ? (
-
-                  <div className="row g-3">
-
-                    {photos.map(
-                      (img, index) => (
-
-                        <div
-                          className="col-6 col-md-4"
-                          key={index}
-                        >
-
+                <div className="p-3">
+                  {photos.length > 0 ? (
+                    <div className="row g-3">
+                      {photos.map((img, index) => (
+                        <div className="col-6 col-md-4" key={index}>
                           <div className="card h-100 shadow-sm">
-
                             <img
                               src={`data:image/jpeg;base64,${img}`}
-                              alt={`Panchanama Photo ${
-                                index + 1
-                              }`}
+                              alt={`Panchanama Photo ${index + 1}`}
                               className="card-img-top"
                               style={{
                                 height: "200px",
-                                objectFit:
-                                  "cover",
-                                cursor:
-                                  "pointer",
+                                objectFit: "cover",
+                                cursor: "pointer",
                               }}
-                              onClick={() =>
-                                handleImageClick(
-                                  master,
-                                  index
-                                )
-                              }
+                              onClick={() => handleImageClick(master, index)}
                             />
 
                             <div className="card-body p-2 text-center">
-
                               <small className="text-muted">
                                 {index === 0
                                   ? "Near Photo"
                                   : index === 1
-                                  ? "Far Photo"
-                                  : "User Photo"}
+                                    ? "Far Photo"
+                                    : "User Photo"}
                               </small>
-
                             </div>
-
                           </div>
-
                         </div>
-
-                      )
-                    )}
-
-                  </div>
-
-                ) : (
-
-                  <div
-                    className="text-center text-muted py-4"
-                  >
-                    <i
-                      className="bi bi-image"
-                      style={{
-                        fontSize: "2rem",
-                      }}
-                    ></i>
-
-                    <div className="mt-2">
-                      No photos available
+                      ))}
                     </div>
+                  ) : (
+                    <div className="text-center text-muted py-4">
+                      <i
+                        className="bi bi-image"
+                        style={{
+                          fontSize: "2rem",
+                        }}
+                      ></i>
 
-                  </div>
-
-                )}
-
+                      <div className="mt-2">No photos available</div>
+                    </div>
+                  )}
+                </div>
               </div>
-
             </div>
 
+            {/* ================================================= */}
+            {/* FOOTER */}
+            {/* ================================================= */}
+
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={handleCloseDetailsModal}
+              >
+                <i className="bi bi-x-lg me-1"></i>
+                Close
+              </button>
+            </div>
           </div>
-
-          {/* ================================================= */}
-          {/* FOOTER */}
-          {/* ================================================= */}
-
-          <div className="modal-footer">
-
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={handleCloseDetailsModal}
-            >
-              <i className="bi bi-x-lg me-1"></i>
-              Close
-            </button>
-
-          </div>
-
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
   // =========================================================
   // RENDER
@@ -1163,39 +943,27 @@ const fieldLabels = {
   return (
     <Layout>
       <div className="panel">
-
         {/* HEADER */}
 
         <div className="panel-header d-flex justify-content-between align-items-center">
-
           <div>
             <h2 className="h5 mb-1 section-title">
-              <i
-                className="bi bi-people me-2"
-                aria-hidden="true"
-              ></i>
+              <i className="bi bi-people me-2" aria-hidden="true"></i>
 
-              <span>
-                All Panchanama ({totalRecords})
-              </span>
+              <span>All Panchanama ({totalRecords})</span>
             </h2>
 
-            <p className="text-muted mb-0">
-              View all Panchanama records.
-            </p>
+            <p className="text-muted mb-0">View all Panchanama records.</p>
           </div>
 
           {/* FILTERS */}
 
           <div>
             <div className="filter-bar">
-
               {/* FROM DATE */}
 
               <div className="filter-group">
-                <label htmlFor="fromDate">
-                  From Date
-                </label>
+                <label htmlFor="fromDate">From Date</label>
 
                 <input
                   type="date"
@@ -1205,21 +973,15 @@ const fieldLabels = {
                   style={{
                     width: "150px",
                   }}
-                  value={
-                    filters.fromDate
-                  }
-                  onChange={
-                    handleDateChangeFilter
-                  }
+                  value={filters.fromDate}
+                  onChange={handleDateChangeFilter}
                 />
               </div>
 
               {/* TO DATE */}
 
               <div className="filter-group">
-                <label htmlFor="toDate">
-                  To Date
-                </label>
+                <label htmlFor="toDate">To Date</label>
 
                 <input
                   type="date"
@@ -1229,12 +991,8 @@ const fieldLabels = {
                   style={{
                     width: "150px",
                   }}
-                  value={
-                    filters.toDate
-                  }
-                  onChange={
-                    handleDateChangeFilter
-                  }
+                  value={filters.toDate}
+                  onChange={handleDateChangeFilter}
                 />
               </div>
 
@@ -1243,25 +1001,20 @@ const fieldLabels = {
               <div
                 className="filter-group"
                 style={{
-                  justifyContent:
-                    "flex-end",
+                  justifyContent: "flex-end",
                 }}
               >
                 <button
                   type="button"
                   className="btn-clear-filters"
-                  onClick={
-                    handleClearFilters
-                  }
+                  onClick={handleClearFilters}
                 >
                   <i className="bi bi-x-lg me-1"></i>
                   Clear
                 </button>
               </div>
-
             </div>
           </div>
-
         </div>
 
         {/* ERROR */}
@@ -1276,158 +1029,117 @@ const fieldLabels = {
         {/* TABLE */}
 
         <div className="table-responsive">
-
           <table className="table align-middle mb-0">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Panchanama No.</th>
+                <th>User Name</th>
+                <th>User Post</th>
+                <th>Capture Date & Time</th>
+                <th>Address</th>
+                <th>Ward</th>
+                <th>Action</th>
+              </tr>
+            </thead>
 
-           <thead>
-  <tr>
-    <th>ID</th>
-    <th>Panchanama No.</th>
-    <th>User Name</th>
-    <th>User Post</th>
-    <th>Capture Date & Time</th>
-    <th>Address</th>
-    <th>Ward</th>
-    <th>Action</th>
-  </tr>
-</thead>
+            <tbody>
+              {participants.length > 0 ? (
+                participants.map((panchanama, index) => (
+                  <tr key={panchanama.NUM_ILLEGALHOARD_ID || index}>
+                    {/* ID */}
+                    <td>
+                      <strong>{panchanama.NUM_ILLEGALHOARD_ID || "-"}</strong>
+                    </td>
 
-<tbody>
-  {participants.length > 0 ? (
-    participants.map((panchanama, index) => (
-      <tr
-        key={
-          panchanama.NUM_ILLEGALHOARD_ID || index
-        }
-      >
-        {/* ID */}
-        <td>
-          <strong>
-            {panchanama.NUM_ILLEGALHOARD_ID || "-"}
-          </strong>
-        </td>
+                    {/* PANCHANAMA NO */}
+                    <td>{panchanama.VAR_ILLEGALHOARD_PANCHANAMA_NO || "-"}</td>
 
-        {/* PANCHANAMA NO */}
-        <td>
-          {panchanama.VAR_ILLEGALHOARD_PANCHANAMA_NO || "-"}
-        </td>
+                    {/* USER NAME */}
+                    <td>
+                      <div className="fw-semibold">
+                        {panchanama.VAR_USER1 || "-"}
+                      </div>
+                    </td>
 
-        {/* USER NAME */}
-        <td>
-          <div className="fw-semibold">
-            {panchanama.VAR_USER1 || "-"}
-          </div>
-        </td>
+                    {/* USER POST */}
+                    <td>{panchanama.VAR_USER1_POST || "-"}</td>
 
-        {/* USER POST */}
-        <td>
-          {panchanama.VAR_USER1_POST || "-"}
-        </td>
+                    {/* CAPTURE DATE + TIME */}
+                    <td>
+                      {formatDateTime(
+                        panchanama.DAT_CAP_DT,
+                        panchanama.VAR_CAP_TIME,
+                      )}
+                    </td>
 
-        {/* CAPTURE DATE + TIME */}
-        <td>
-          {formatDateTime(
-            panchanama.DAT_CAP_DT,
-            panchanama.VAR_CAP_TIME
-          )}
-        </td>
+                    {/* ADDRESS */}
+                    <td>{panchanama.VAR_ILLEGALHOARD_ADD || "-"}</td>
 
-        {/* ADDRESS */}
-        <td>
-          {panchanama.VAR_ILLEGALHOARD_ADD || "-"}
-        </td>
+                    {/* WARD */}
+                    <td>{panchanama.VAR_ILLEGALHOARD_WARD || "-"}</td>
 
-        {/* WARD */}
-        <td>
-          {panchanama.VAR_ILLEGALHOARD_WARD || "-"}
-        </td>
+                    {/* ACTION */}
+                    <td>
+                      <div className="d-flex" style={{ gap: "5px" }}>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-primary"
+                          onClick={() => handleViewDetails(panchanama)}
+                        >
+                          <i className="bi bi-eye me-1"></i>
+                          View
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-primary"
+                          onClick={() =>
+                            handlePrintFromRow(panchanama?.NUM_ILLEGALHOARD_ID)
+                          }
+                        >
+                          <i className="bi bi-printer me-1"></i>
+                          Print
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="8" className="text-center text-muted py-5">
+                    <div>
+                      <i
+                        className="bi bi-inbox"
+                        style={{ fontSize: "2rem" }}
+                      ></i>
 
-        {/* ACTION */}
-        <td>
-          <button
-            type="button"
-            className="btn btn-sm btn-primary"
-            onClick={() =>
-              handleViewDetails(panchanama)
-            }
-          >
-            <i className="bi bi-eye me-1"></i>
-            View
-          </button>
-        </td>
-      </tr>
-    ))
-  ) : (
-    <tr>
-      <td
-        colSpan="8"
-        className="text-center text-muted py-5"
-      >
-        <div>
-          <i
-            className="bi bi-inbox"
-            style={{ fontSize: "2rem" }}
-          ></i>
-
-          <div className="mt-2">
-            No Panchanama records found
-          </div>
-        </div>
-      </td>
-    </tr>
-  )}
-</tbody>
-
+                      <div className="mt-2">No Panchanama records found</div>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
           </table>
-
         </div>
 
         {/* PAGINATION */}
 
         <div className="d-flex align-items-center justify-content-between mt-4 px-3 pb-3">
-
           {/* RECORD COUNT */}
 
           <div className="text-muted small">
-
             Showing{" "}
-
             <strong>
-              {totalRecords === 0
-                ? 0
-                : (currentPage -
-                    1) *
-                    pageSize +
-                  1}
-            </strong>
-
-            {" "}to{" "}
-
-            <strong>
-              {Math.min(
-                currentPage *
-                  pageSize,
-                totalRecords
-              )}
-            </strong>
-
-            {" "}of{" "}
-
-            <strong>
-              {totalRecords}
-            </strong>
-
-            {" "}participants
-
+              {totalRecords === 0 ? 0 : (currentPage - 1) * pageSize + 1}
+            </strong>{" "}
+            to <strong>{Math.min(currentPage * pageSize, totalRecords)}</strong>{" "}
+            of <strong>{totalRecords}</strong> participants
           </div>
 
           {/* PAGE SIZE */}
 
           <div className="d-flex align-items-center gap-2">
-
-            <span className="text-muted small">
-              Show
-            </span>
+            <span className="text-muted small">Show</span>
 
             <select
               className="form-select form-select-sm"
@@ -1436,59 +1148,33 @@ const fieldLabels = {
               }}
               value={pageSize}
               onChange={(e) => {
-                setPageSize(
-                  Number(
-                    e.target.value
-                  )
-                );
+                setPageSize(Number(e.target.value));
                 setCurrentPage(1);
               }}
             >
-              <option value={5}>
-                5
-              </option>
+              <option value={5}>5</option>
 
-              <option value={10}>
-                10
-              </option>
+              <option value={10}>10</option>
 
-              <option value={20}>
-                20
-              </option>
+              <option value={20}>20</option>
 
-              <option value={50}>
-                50
-              </option>
+              <option value={50}>50</option>
             </select>
-
           </div>
 
           {/* PAGINATION */}
 
           <nav aria-label="Page navigation">
-
             <ul className="pagination mb-0">
-
               {/* FIRST */}
 
               <li
-                className={`page-item ${
-                  currentPage === 1
-                    ? "disabled"
-                    : ""
-                }`}
+                className={`page-item ${currentPage === 1 ? "disabled" : ""}`}
               >
                 <button
                   className="page-link"
-                  onClick={() =>
-                    handlePageChange(
-                      1
-                    )
-                  }
-                  disabled={
-                    currentPage ===
-                    1
-                  }
+                  onClick={() => handlePageChange(1)}
+                  disabled={currentPage === 1}
                 >
                   <i className="bi bi-chevron-double-left"></i>
                 </button>
@@ -1497,23 +1183,12 @@ const fieldLabels = {
               {/* PREVIOUS */}
 
               <li
-                className={`page-item ${
-                  currentPage === 1
-                    ? "disabled"
-                    : ""
-                }`}
+                className={`page-item ${currentPage === 1 ? "disabled" : ""}`}
               >
                 <button
                   className="page-link"
-                  onClick={() =>
-                    handlePageChange(
-                      currentPage - 1
-                    )
-                  }
-                  disabled={
-                    currentPage ===
-                    1
-                  }
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
                 >
                   <i className="bi bi-chevron-left"></i>
                 </button>
@@ -1521,52 +1196,33 @@ const fieldLabels = {
 
               {/* PAGE NUMBERS */}
 
-              {getPaginationPages().map(
-                (page) => (
-                  <li
-                    key={page}
-                    className={`page-item ${
-                      currentPage ===
-                      page
-                        ? "active"
-                        : ""
-                    }`}
+              {getPaginationPages().map((page) => (
+                <li
+                  key={page}
+                  className={`page-item ${
+                    currentPage === page ? "active" : ""
+                  }`}
+                >
+                  <button
+                    className="page-link"
+                    onClick={() => handlePageChange(page)}
                   >
-                    <button
-                      className="page-link"
-                      onClick={() =>
-                        handlePageChange(
-                          page
-                        )
-                      }
-                    >
-                      {page}
-                    </button>
-                  </li>
-                )
-              )}
+                    {page}
+                  </button>
+                </li>
+              ))}
 
               {/* NEXT */}
 
               <li
                 className={`page-item ${
-                  currentPage ===
-                  totalPages
-                    ? "disabled"
-                    : ""
+                  currentPage === totalPages ? "disabled" : ""
                 }`}
               >
                 <button
                   className="page-link"
-                  onClick={() =>
-                    handlePageChange(
-                      currentPage + 1
-                    )
-                  }
-                  disabled={
-                    currentPage ===
-                    totalPages
-                  }
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
                 >
                   <i className="bi bi-chevron-right"></i>
                 </button>
@@ -1576,169 +1232,117 @@ const fieldLabels = {
 
               <li
                 className={`page-item ${
-                  currentPage ===
-                  totalPages
-                    ? "disabled"
-                    : ""
+                  currentPage === totalPages ? "disabled" : ""
                 }`}
               >
                 <button
                   className="page-link"
-                  onClick={() =>
-                    handlePageChange(
-                      totalPages
-                    )
-                  }
-                  disabled={
-                    currentPage ===
-                    totalPages
-                  }
+                  onClick={() => handlePageChange(totalPages)}
+                  disabled={currentPage === totalPages}
                 >
                   <i className="bi bi-chevron-double-right"></i>
                 </button>
               </li>
-
             </ul>
-
           </nav>
-
         </div>
-
       </div>
 
       {/* ================================================= */}
       {/* FULL IMAGE MODAL */}
       {/* ================================================= */}
 
-      {showImageModal &&
-        selectedImages.length > 0 && (
+      {showImageModal && selectedImages.length > 0 && (
+        <div
+          className="modal show d-block"
+          tabIndex="-1"
+          role="dialog"
+          style={{
+            backgroundColor: "rgba(0,0,0,0.8)",
+            zIndex: 2200,
+          }}
+        >
           <div
-            className="modal show d-block"
-            tabIndex="-1"
-            role="dialog"
+            className="modal-dialog"
             style={{
-              backgroundColor:
-                "rgba(0,0,0,0.8)",
-              zIndex: 2200,
+              maxWidth: "90vw",
+              height: "90vh",
+              display: "flex",
+              alignItems: "center",
             }}
           >
-
             <div
-              className="modal-dialog"
+              className="modal-content bg-dark"
               style={{
-                maxWidth: "90vw",
-                height: "90vh",
-                display: "flex",
-                alignItems:
-                  "center",
+                border: "none",
               }}
             >
+              {/* HEADER */}
 
-              <div
-                className="modal-content bg-dark"
-                style={{
-                  border: "none",
-                }}
-              >
+              <div className="modal-header bg-dark border-secondary">
+                <h5 className="modal-title text-white">
+                  Photo {selectedImageIndex + 1} of {selectedImages.length}
+                </h5>
 
-                {/* HEADER */}
-
-                <div className="modal-header bg-dark border-secondary">
-
-                  <h5 className="modal-title text-white">
-                    Photo{" "}
-                    {selectedImageIndex +
-                      1}{" "}
-                    of{" "}
-                    {
-                      selectedImages.length
-                    }
-                  </h5>
-
-                  <button
-                    type="button"
-                    className="btn-close btn-close-white"
-                    onClick={() =>
-                      setShowImageModal(
-                        false
-                      )
-                    }
-                  ></button>
-
-                </div>
-
-                {/* IMAGE */}
-
-                <div
-                  className="modal-body p-0 d-flex align-items-center justify-content-center"
-                  style={{
-                    minHeight:
-                      "60vh",
-                  }}
-                >
-
-                 <img
-  src={`data:image/jpeg;base64,${selectedImages[selectedImageIndex]}`}
-  alt={`panchanama-full-${selectedImageIndex}`}
-  style={{
-    maxWidth: "85vw",
-    maxHeight: "70vh",
-    objectFit: "contain",
-  }}
-/>
-
-                </div>
-
-                {/* FOOTER */}
-
-                <div className="modal-footer bg-dark border-secondary justify-content-between">
-
-                  <button
-                    type="button"
-                    className="btn btn-outline-light"
-                    onClick={
-                      prevImage
-                    }
-                    disabled={
-                      selectedImageIndex ===
-                      0
-                    }
-                  >
-                    <i className="bi bi-chevron-left me-1"></i>
-                    Previous
-                  </button>
-
-                  <button
-                    type="button"
-                    className="btn btn-outline-light"
-                    onClick={
-                      nextImage
-                    }
-                    disabled={
-                      selectedImageIndex ===
-                      selectedImages.length -
-                        1
-                    }
-                  >
-                    Next
-                    <i className="bi bi-chevron-right ms-1"></i>
-                  </button>
-
-                </div>
-
+                <button
+                  type="button"
+                  className="btn-close btn-close-white"
+                  onClick={() => setShowImageModal(false)}
+                ></button>
               </div>
 
-            </div>
+              {/* IMAGE */}
 
+              <div
+                className="modal-body p-0 d-flex align-items-center justify-content-center"
+                style={{
+                  minHeight: "60vh",
+                }}
+              >
+                <img
+                  src={`data:image/jpeg;base64,${selectedImages[selectedImageIndex]}`}
+                  alt={`panchanama-full-${selectedImageIndex}`}
+                  style={{
+                    maxWidth: "85vw",
+                    maxHeight: "70vh",
+                    objectFit: "contain",
+                  }}
+                />
+              </div>
+
+              {/* FOOTER */}
+
+              <div className="modal-footer bg-dark border-secondary justify-content-between">
+                <button
+                  type="button"
+                  className="btn btn-outline-light"
+                  onClick={prevImage}
+                  disabled={selectedImageIndex === 0}
+                >
+                  <i className="bi bi-chevron-left me-1"></i>
+                  Previous
+                </button>
+
+                <button
+                  type="button"
+                  className="btn btn-outline-light"
+                  onClick={nextImage}
+                  disabled={selectedImageIndex === selectedImages.length - 1}
+                >
+                  Next
+                  <i className="bi bi-chevron-right ms-1"></i>
+                </button>
+              </div>
+            </div>
           </div>
-        )}
+        </div>
+      )}
 
       {/* ================================================= */}
       {/* PARTICIPANT DETAILS MODAL */}
       {/* ================================================= */}
 
-      {showDetailsModal &&
-        renderDetailsModal()}
+      {showDetailsModal && renderDetailsModal()}
 
       {/* ================================================= */}
       {/* RESPONSE MODAL */}
@@ -1749,11 +1353,8 @@ const fieldLabels = {
         type={modalType}
         title={modalTitle}
         message={modalMessage}
-        onClose={() =>
-          setIsModalOpen(false)
-        }
+        onClose={() => setIsModalOpen(false)}
       />
-
     </Layout>
   );
 };

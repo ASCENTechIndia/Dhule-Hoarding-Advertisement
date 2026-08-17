@@ -1,0 +1,274 @@
+/* FrmCitizen.css - extracted from the HTML template */
+body {
+  margin: 0;
+  padding: 0;
+  background: #edf4fb;
+  font-family: "Poppins", sans-serif;
+}
+
+.main-wrapper {
+  width: 60%;
+  margin: auto;
+  min-height: 100vh;
+  background: #edf4fb;
+  position: relative;
+}
+
+.top-header {
+  background: linear-gradient(135deg, #2f88c5, #58abe2);
+  color: #fff;
+  padding: 25px 22px 50px;
+  border-bottom-left-radius: 35px;
+  border-bottom-right-radius: 35px;
+  position: relative;
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-section img {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  background: #fff;
+  padding: 5px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+}
+
+.logo-text h4 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.logo-text p {
+  margin: 0;
+  font-size: 13px;
+}
+
+.page-title {
+  margin-top: 16px;
+  font-size: 30px;
+  font-weight: 600;
+}
+
+.page-subtitle {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.form-container {
+  margin-top: -55px;
+  padding: 0 20px 120px;
+  position: relative;
+  z-index: 5;
+}
+
+.form-card {
+  background: #fff;
+  border-radius: 30px;
+  padding: 25px;
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.1),
+    0 8px 18px rgba(0, 0, 0, 0.05);
+}
+
+.field-box {
+  display: flex;
+  align-items: center;
+  background: #f5f8fc;
+  border: 1px solid #edf1f5;
+  border-radius: 18px;
+  padding: 12px 15px;
+  margin-bottom: 16px;
+  transition: 0.3s;
+}
+
+.field-box:focus-within {
+  background: #fff;
+  border-color: #58abe2;
+  box-shadow: 0 0 0 4px rgba(88, 171, 226, 0.12);
+}
+
+.field-box i {
+  font-size: 18px;
+  color: #2f88c5;
+  margin-right: 12px;
+  min-width: 20px;
+}
+
+.field-box input,
+.field-box select,
+.field-box textarea {
+  width: 100%;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+  color: #333;
+}
+
+.upload-box {
+  border: 2px dashed #b9d7ea;
+  background: #f8fbff;
+  border-radius: 22px;
+  padding: 22px;
+  text-align: center;
+  margin-bottom: 18px;
+}
+
+.upload-box i {
+  font-size: 40px;
+  color: #2f88c5;
+}
+
+.upload-box h6 {
+  margin-top: 10px;
+  font-weight: 600;
+  color: #2f88c5;
+}
+
+.upload-box p {
+  font-size: 13px;
+  color: #777;
+}
+
+.upload-box input {
+  display: none;
+}
+
+.upload-btn {
+  background: linear-gradient(135deg, #2f88c5, #58abe2);
+  color: #fff;
+  padding: 11px 18px;
+  border-radius: 14px;
+  cursor: pointer;
+  display: inline-block;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+.preview-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 15px;
+  justify-content: center;
+}
+
+.preview-images img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 14px;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+}
+
+.submit-btn {
+  width: 100%;
+  border: none;
+  border-radius: 18px;
+  padding: 15px;
+  background: linear-gradient(135deg, #2f88c5, #58abe2);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  box-shadow: 0 10px 25px rgba(47, 136, 197, 0.25);
+  transition: 0.3s;
+}
+
+.submit-btn:hover {
+  transform: translateY(-2px);
+}
+
+@media (max-width: 992px) {
+  .main-wrapper {
+    width: 90%;
+  }
+}
+
+.filter-bar {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  flex-wrap: wrap;  
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-group label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #5b6e8c;
+}
+
+.filter-input,
+.filter-select {
+  padding: 0.6rem 0.9rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  font-size: 0.9rem;
+  background-color: #fff;
+  transition: all 0.2s ease;
+  outline: none;
+  font-family: inherit;
+}
+
+.filter-input:focus,
+.filter-select:focus {
+  border-color: #2f88c5;
+  box-shadow: 0 0 0 3px rgba(47, 136, 197, 0.1);
+}
+
+.filter-input:hover,
+.filter-select:hover {
+  border-color: #b9d7ea;
+}
+
+/* Optional: style the status select arrow */
+.filter-select {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235b6e8c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.9rem center;
+  appearance: none;
+}
+
+.btn-clear-filters {
+  background-color: transparent;
+  border: 1px solid #e2e8f0;
+  padding: 0.7rem .6rem;
+  border-radius: 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #5b6e8c;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.btn-clear-filters:hover {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+  color: #1e293b;
+}
+
+.btn-clear-filters i {
+  font-size: 0.85rem;
+}

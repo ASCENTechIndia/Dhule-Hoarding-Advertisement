@@ -1,0 +1,7 @@
+const config = {
+  source: "RW",
+  macAddress: "00:11:22:33:44:55",
+  hostName: "defe" 
+};
+
+export default config; 

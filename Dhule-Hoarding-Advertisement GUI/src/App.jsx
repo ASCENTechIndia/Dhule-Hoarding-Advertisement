@@ -36,6 +36,7 @@ import NotFound from './pages/NotFound';
 import ServerError from './pages/ServerError';
 import ResolvedComplaintList from './pages/supervisior/ResolvedComplaintList';
 import PanchanamaList from './pages/supervisior/PanchanamaList';
+import NoticeList from './pages/supervisior/NoticeList';
 import AssignComplaint from './pages/SI/AssignComplaint';
 import ResolvedComplaint from './pages/SI/ResolvedComplaint';
 import HomeRedirect from './pages/HomeRedirect';
@@ -146,6 +147,15 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <PanchanamaList />
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/notice-list"
+                  element={
+                    <ProtectedRoute>
+                      <NoticeList />
                     </ProtectedRoute>
                   }
                 />

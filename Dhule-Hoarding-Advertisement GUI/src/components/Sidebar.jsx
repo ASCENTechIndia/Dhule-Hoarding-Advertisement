@@ -8,9 +8,14 @@ export default function Sidebar() {
 
   const navLinks = [
     {
-      path: "/panchnama-list",
+      path: "/panchanama-list",
       icon: "bi-people",
       label: "Panchanama List",
+    },
+    {
+      path: "/notice-list",
+      icon: "bi-people",
+      label: "Notice List",
     },
   ];
 

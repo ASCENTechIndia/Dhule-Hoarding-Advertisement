@@ -27,37 +27,144 @@ async function repoGetNoticeById(id) {
   }
 }
 
-async function repoSaveNotice(payload) {
+async function repoGenerateNotice(payload) {
   const statement = `
     BEGIN
-      aorts.aorts_notice_ins(
-        :in_IllegalHoardId,
-        :in_UserId,
-        :in_Amount,
-        :OUT_ERRORCODE,
-        :OUT_ERRORMSG
+      AOAD_ILLEGALHOARD_NOTGEN_INS(
+        :in_userid,
+        :in_panchanamano,
+        :in_ulbid,
+        :out_refcursor,
+        :out_errcode,
+        :out_errmsg
       );
     END;
   `;
+
   const binds = {
-    in_IllegalHoardId: Number(payload.id || payload.NUM_ILLEGALHOARD_ID || 0),
-    in_UserId: String(payload.userId || payload.user_id || 'system'),
-    in_Amount: Number(payload.AMOUNT || payload.amount || 0),
-    OUT_ERRORCODE: { dir: oracledb.BIND_OUT, type: oracledb.STRING },
-    OUT_ERRORMSG: { dir: oracledb.BIND_OUT, type: oracledb.STRING }
+    in_userid: String(
+      payload.userId ||
+      payload.user_id ||
+      "system"
+    ),
+
+    in_panchanamano: String(
+      payload.PANCHANAMA_NO ||
+      payload.panchanamaNo ||
+      payload.VAR_ILLEGALHOARD_PANCHANAMA_NO ||
+      ""
+    ),
+
+    in_ulbid: Number(
+      payload.ULBID ||
+      payload.ulbId ||
+      payload.corporationId ||
+      0
+    ),
+
+    out_refcursor: {
+      dir: oracledb.BIND_OUT,
+      type: oracledb.CLOB,
+    },
+
+    out_errcode: {
+      dir: oracledb.BIND_OUT,
+      type: oracledb.NUMBER,
+    },
+
+    out_errmsg: {
+      dir: oracledb.BIND_OUT,
+      type: oracledb.STRING,
+      maxSize: 4000,
+    },
   };
+
   try {
-    const result = await executeProcedure({ statement, binds });
+    const result = await executeProcedure({
+      statement,
+      binds,
+    });
+
+    console.log(
+      "AOAD_ILLEGALHOARD_NOTGEN_INS OUT:",
+      result.outBinds
+    );
+
+    let clobData = result.outBinds?.out_refcursor;
+
+    // ---------------------------------------------------------
+    // Read CLOB
+    // ---------------------------------------------------------
+
+    if (clobData) {
+      if (
+        typeof clobData !== "string" &&
+        typeof clobData.getData === "function"
+      ) {
+        clobData = await clobData.getData();
+      }
+    }
+
+    // ---------------------------------------------------------
+    // Convert CLOB to string
+    // ---------------------------------------------------------
+
+    clobData = clobData
+      ? String(clobData)
+      : "";
+
+    // ---------------------------------------------------------
+    // Parse $ separated response
+    // ---------------------------------------------------------
+
+    const values = clobData.split("$");
+
+    const noticeData = {
+      id: values[0] || null,
+
+      address: values[1] || "",
+
+      ward: values[2] || "",
+
+      name: values[3] || "",
+
+      amount: values[4] || "0",
+
+      latitude: values[5] || "",
+
+      longitude: values[6] || "",
+
+      length: values[7] || "",
+
+      width: values[8] || "",
+
+      panchanamaNo: values[9] || "",
+
+      noticeNo: values[10] || "",
+
+      fromDate: values[11] || "",
+
+      toDate: values[12] || "",
+    };
+
     return {
-      errorCode: result.outBinds?.OUT_ERRORCODE || '9999',
-      message: result.outBinds?.OUT_ERRORMSG || 'Notice procedure executed successfully'
+      errorCode:
+        result.outBinds?.out_errcode ?? null,
+
+      errorMessage:
+        result.outBinds?.out_errmsg || "",
+
+      rawData: clobData,
+
+      noticeData,
     };
   } catch (error) {
-    console.error('Notice procedure execution info:', error.message);
-    return {
-      errorCode: '9999',
-      message: 'Notice generated successfully'
-    };
+    console.error(
+      "AOAD_ILLEGALHOARD_NOTGEN_INS Error:",
+      error
+    );
+
+    throw error;
   }
 }
 
@@ -124,6 +231,6 @@ async function repoGetCorporationInfo(corpId) {
 
 module.exports = {
   repoGetNoticeById,
-  repoSaveNotice,
+  repoGenerateNotice,
   repoGetCorporationInfo,
 };

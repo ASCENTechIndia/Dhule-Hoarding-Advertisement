@@ -224,13 +224,27 @@ const PanchanamaList = () => {
       .replace(",", " - ");
   };
 
-  const getPanchanamaPhotos = (panchanama) => {
+const getPanchanamaPhotos = (panchanama) => {
     return [
-      panchanama?.BLOB_NEAR_PHOTO,
-      panchanama?.BLOB_FAR_PHOTO,
-      panchanama?.BLOB_USER_PHOTO,
-    ].filter((img) => img && typeof img === "string" && img.trim() !== "");
-  };
+        {
+            label: "जवळून फोटो",
+            image: panchanama?.BLOB_NEAR_PHOTO,
+        },
+        {
+            label: "दुरून फोटो",
+            image: panchanama?.BLOB_FAR_PHOTO,
+        },
+        {
+            label: "पंचनामा करणाऱ्यासोबत फोटो",
+            image: panchanama?.BLOB_USER_PHOTO,
+        },
+    ].filter(
+        (photo) =>
+            photo.image &&
+            typeof photo.image === "string" &&
+            photo.image.trim() !== ""
+    );
+};
 
   const openImageInNewTab = (img) => {
     try {
@@ -483,7 +497,7 @@ const PanchanamaList = () => {
               <div className="modal-header">
                 <h5 className="modal-title">
                   <i className="bi bi-file-earmark-text me-2"></i>
-                  Panchanama Details
+                  पंचनामा माहिती
                 </h5>
 
                 <button
@@ -527,25 +541,22 @@ const PanchanamaList = () => {
     // FORMAT LABEL
     // =========================================================
     const fieldLabels = {
-      NUM_ILLEGALHOARD_ID: "Panchanama ID",
-      NUM_ILLEGALHOARD_ULBID: "ULB ID",
-      DAT_CAP_DT: "Capture Date",
-      VAR_CAP_TIME: "Capture Time",
-      VAR_USER1: "User Name",
-      VAR_USER1_POST: "User Post",
-      VAR_ILLEGALHOARD_ADD: "Address",
-      DAT_FROM_DT: "From Date",
-      NUM_SIZE_LENGTH: "Length",
-      NUM_SIZE_WIDTH: "Width",
-      LATITUDE: "Latitude",
-      LONGITUDE: "Longitude",
-      VAR_ILLEGALHOARD_WARD: "Ward",
-      BLOB_NEAR_PHOTO: "Near Photo",
-      BLOB_FAR_PHOTO: "Far Photo",
-      BLOB_USER_PHOTO: "User Photo",
-      VAR_ILLEGALHOARD_PANCHANAMA_NO: "Panchanama No.",
+      VAR_ILLEGALHOARD_PANCHANAMA_NO: "पंचनामा क्रमांक",
+      DAT_CAP_DT: "वेळ",
+      VAR_CAP_TIME: "दिनांक",
+      VAR_USER1: "पंचनामा करणाऱ्याचे नाव",
+      VAR_USER1_POST: "पंचनामा करणाऱ्याचे पद",
+      VAR_ILLEGALHOARD_ADD: "अनधिकृत जाहिरात लावलेल्या ठिकाणाचा संपूर्ण पत्ता",
+      DAT_FROM_DT: "जाहिरात फलक केव्हापासून अनधिकृतपणे प्रदर्शित केला आहे ?",
+      NUM_SIZE_LENGTH: "लांबी",
+      NUM_SIZE_WIDTH: "रुंदी ",
+      VAR_ILLEGALHOARD_WARD: "प्रभाग क्रमांक",
+      BLOB_NEAR_PHOTO: "जवळून फोटो",
+      BLOB_FAR_PHOTO: "दुरून फोटो",
+      BLOB_USER_PHOTO: "पंचनामा करणाऱ्यासोबत फोटो",
     };
 
+    
     const formatLabel = (key) => {
       return (
         fieldLabels[key] ||
@@ -621,13 +632,8 @@ const PanchanamaList = () => {
               <div>
                 <h5 className="modal-title mb-1">
                   <i className="bi bi-file-earmark-text me-2"></i>
-                  Panchanama Details
+                  पंचनामा माहिती 
                 </h5>
-
-                <small className="text-muted">
-                  Panchanama ID:{" "}
-                  <strong>{master.NUM_ILLEGALHOARD_ID || "-"}</strong>
-                </small>
               </div>
 
               <button
@@ -662,7 +668,7 @@ const PanchanamaList = () => {
                   }}
                 >
                   <i className="bi bi-info-circle me-2"></i>
-                  Panchanama Information
+                  पंचनामा माहिती 
                 </div>
 
                 <div
@@ -675,48 +681,56 @@ const PanchanamaList = () => {
                   }}
                 >
                   {masterEntries.map(([key, value]) => {
-                    if (key.toUpperCase().startsWith("BLOB_")) {
-                      return null;
-                    }
 
-                    const formattedValue = formatDetailValue(key, value);
+    const upperKey = key.toUpperCase();
 
-                    if (formattedValue === null) {
-                      return null;
-                    }
+    const skipFields = [
+        "NUM_ILLEGALHOARD_ID",
+        "NUM_ILLEGALHOARD_ULBID",
+        "LATITUDE",
+        "LONGITUDE",
+    ];
 
-                    return (
-                      <div
-                        key={key}
-                        style={{
-                          minWidth: 0,
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: "13px",
-                            fontWeight: 600,
-                            color: "#737887",
-                            marginBottom: "5px",
-                          }}
-                        >
-                          {formatLabel(key)}
-                        </div>
+    if (
+        upperKey.startsWith("BLOB_") ||
+        skipFields.includes(upperKey)
+    ) {
+        return null;
+    }
 
-                        <div
-                          style={{
-                            fontSize: "15px",
-                            color: "#252525",
-                            lineHeight: "1.5",
-                            whiteSpace: "pre-wrap",
-                            wordBreak: "break-word",
-                          }}
-                        >
-                          {formattedValue}
-                        </div>
-                      </div>
-                    );
-                  })}
+    const formattedValue = formatDetailValue(key, value);
+
+    if (formattedValue === null) {
+        return null;
+    }
+
+    return (
+        <div key={key} style={{ minWidth: 0 }}>
+            <div
+                style={{
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    color: "#737887",
+                    marginBottom: "5px",
+                }}
+            >
+                {formatLabel(key)}
+            </div>
+
+            <div
+                style={{
+                    fontSize: "15px",
+                    color: "#252525",
+                    lineHeight: "1.5",
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-word",
+                }}
+            >
+                {formattedValue}
+            </div>
+        </div>
+    );
+})}
                 </div>
               </div>
 
@@ -740,10 +754,7 @@ const PanchanamaList = () => {
                   }}
                 >
                   <i className="bi bi-list-ul me-2"></i>
-                  Panchanama Details
-                  <span className="badge bg-primary ms-2">
-                    {details.length}
-                  </span>
+                  सोबत उपस्थित कर्मचाऱ्यांचे नाव
                 </div>
 
                 <div className="p-3">
@@ -752,10 +763,9 @@ const PanchanamaList = () => {
                       <table className="table table-bordered table-sm align-middle mb-0">
                         <thead className="table-light">
                           <tr>
-                            <th>Sr. No.</th>
-                            <th>Detail ID</th>
-                            <th>User</th>
-                            <th>User Post</th>
+                            <th>अनुक्रमांक </th>
+                            <th>कर्मचाऱ्याचे नाव</th>
+                            <th>कर्मचाऱ्याचे पद</th>
                           </tr>
                         </thead>
 
@@ -763,9 +773,6 @@ const PanchanamaList = () => {
                           {details.map((item, index) => (
                             <tr key={item.NUM_ILLEGALHOARDDET_ID || index}>
                               <td>{index + 1}</td>
-
-                              <td>{item.NUM_ILLEGALHOARDDET_ID || "-"}</td>
-
                               <td>{item.VAR_USER || "-"}</td>
 
                               <td>{item.VAR_USER_POST || "-"}</td>
@@ -803,9 +810,8 @@ const PanchanamaList = () => {
                   }}
                 >
                   <i className="bi bi-tools me-2"></i>
-                  Demolition Details
+                  जाहिरात फलक प्रदर्शित करणाऱ्याचे नाव
                   <span className="badge bg-danger ms-2">
-                    {demolitionDetails.length}
                   </span>
                 </div>
 
@@ -815,9 +821,8 @@ const PanchanamaList = () => {
                       <table className="table table-bordered table-sm align-middle mb-0">
                         <thead className="table-light">
                           <tr>
-                            <th>Sr. No.</th>
-                            <th>Demolition ID</th>
-                            <th>Started By</th>
+                            <th>अनुक्रमांक</th>
+                            <th>नाव</th>
                           </tr>
                         </thead>
 
@@ -825,9 +830,6 @@ const PanchanamaList = () => {
                           {demolitionDetails.map((item, index) => (
                             <tr key={item.NUM_ILLHOARD_DEMON_ID || index}>
                               <td>{index + 1}</td>
-
-                              <td>{item.NUM_ILLHOARD_DEMON_ID || "-"}</td>
-
                               <td>{item.VAR_DEMONSTARTED_NAME || "-"}</td>
                             </tr>
                           ))}
@@ -863,56 +865,63 @@ const PanchanamaList = () => {
                   }}
                 >
                   <i className="bi bi-images me-2"></i>
-                  Panchanama Photos
-                  <span className="badge bg-secondary ms-2">
-                    {photos.length}
-                  </span>
+                  पंचनाम्याचे फोटो 
                 </div>
 
-                <div className="p-3">
-                  {photos.length > 0 ? (
-                    <div className="row g-3">
-                      {photos.map((img, index) => (
-                        <div className="col-6 col-md-4" key={index}>
-                          <div className="card h-100 shadow-sm">
-                            <img
-                              src={`data:image/jpeg;base64,${img}`}
-                              alt={`Panchanama Photo ${index + 1}`}
-                              className="card-img-top"
-                              style={{
+              <div className="p-3">
+    {photos.length > 0 ? (
+        <div className="row g-3">
+            {photos.map((photo, index) => (
+                <div
+                    className="col-6 col-md-4"
+                    key={index}
+                >
+                    <div className="card h-100 shadow-sm">
+
+                        <img
+                            src={`data:image/jpeg;base64,${photo.image}`}
+                            alt={photo.label}
+                            className="card-img-top"
+                            style={{
                                 height: "200px",
                                 objectFit: "cover",
                                 cursor: "pointer",
-                              }}
-                              onClick={() => handleImageClick(master, index)}
-                            />
+                            }}
+                            onClick={() =>
+                                handleImageClick(
+                                    master,
+                                    index
+                                )
+                            }
+                        />
 
-                            <div className="card-body p-2 text-center">
-                              <small className="text-muted">
-                                {index === 0
-                                  ? "Near Photo"
-                                  : index === 1
-                                    ? "Far Photo"
-                                    : "User Photo"}
-                              </small>
-                            </div>
-                          </div>
+                        <div className="card-body p-2 text-center">
+                            <small className="text-muted">
+                                {photo.label}
+                            </small>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center text-muted py-4">
-                      <i
-                        className="bi bi-image"
-                        style={{
-                          fontSize: "2rem",
-                        }}
-                      ></i>
 
-                      <div className="mt-2">No photos available</div>
                     </div>
-                  )}
                 </div>
+            ))}
+        </div>
+    ) : (
+        <div className="text-center text-muted py-4">
+
+            <i
+                className="bi bi-image"
+                style={{
+                    fontSize: "2rem",
+                }}
+            ></i>
+
+            <div className="mt-2">
+                No photos available
+            </div>
+
+        </div>
+    )}
+</div>
               </div>
             </div>
 

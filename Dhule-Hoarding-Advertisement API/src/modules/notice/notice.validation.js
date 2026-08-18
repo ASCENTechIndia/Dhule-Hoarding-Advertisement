@@ -15,6 +15,15 @@ const noticeSchema = z.object({
   OFFICER_NAME: z.string().trim().optional().default(''),
   OFFICER_DESIGNATION: z.string().trim().optional().default(''),
   REGIONAL_OFFICE: z.string().trim().optional().default(''),
+  PANCHANAMA_NO: z.string()
+    .trim()
+    .optional()
+    .default(""),
+
+  ULB_ID: z.union([z.string(), z.number()])
+    .transform(String)
+    .optional()
+    .default(""),
 });
 
 const getNoticeSchema = z.object({

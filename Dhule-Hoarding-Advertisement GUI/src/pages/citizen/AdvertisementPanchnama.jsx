@@ -4,6 +4,7 @@ import "../../assets/css/form-validation.css";
 import apiClient from "../../services/apiClient";
 import ResponseModal from "../../components/ResponseModal";
 import Layout from "../../components/Layout";
+import { useNavigate } from "react-router-dom";
 
 
 function AdvertisementPanchnama() {
@@ -12,6 +13,10 @@ function AdvertisementPanchnama() {
     const [modalType, setModalType] = useState("info");
     const [modalTitle, setModalTitle] = useState("");
     const [modalMessage, setModalMessage] = useState("");
+    const loggedInUser = JSON.parse(
+    localStorage.getItem("user") || "null"
+);
+const navigate = useNavigate();
 
       const showModal = (type, title, message) => {
         setModalType(type);
@@ -68,9 +73,8 @@ const {
 
         panchnamaTime: getCurrentTime(),
 
-        officerName: "",
-
-        officerDesignation: "",
+        officerName: loggedInUser?.firstName || "",
+officerDesignation: "सहाय्यक आयुक्त",
 
         wardNo: "",
 
@@ -1303,6 +1307,10 @@ const clearForm = () => {
             // Clear form AFTER successful response
             clearForm();
 
+            setTimeout(() => {
+        navigate("/panchanama-list");
+    }, 1500);
+
         } else {
 
             // =================================================
@@ -1482,6 +1490,13 @@ const clearForm = () => {
 
                         {/* USER */}
 
+
+
+
+{/* DESIGNATION */}
+
+
+
                     <div className="row g-3 mb-3">
 
     {/* Officer Name */}
@@ -1492,20 +1507,18 @@ const clearForm = () => {
             <span className="required">*</span>
         </label>
 
-        <input
-            type="text"
-            className={`form-control ${
-                errors.officerName ? "is-invalid" : ""
-            }`}
-            placeholder="पंचनामा करणाऱ्याचे नाव"
-            {...register("officerName", {
-                required:
-                    "पंचनामा करणाऱ्याचे नाव आवश्यक आहे",
-                validate: (value) =>
-                    value.trim() !== "" ||
-                    "पंचनामा करणाऱ्याचे नाव आवश्यक आहे",
-            })}
-        />
+       <input
+    type="text"
+    readOnly
+    className={`form-control readonly-field ${
+        errors.officerName ? "is-invalid" : ""
+    }`}
+    placeholder="पंचनामा करणाऱ्याचे नाव"
+    {...register("officerName", {
+        required:
+            "पंचनामा करणाऱ्याचे नाव आवश्यक आहे",
+    })}
+/>
 
         {errors.officerName && (
             <div className="field-error">
@@ -1515,46 +1528,7 @@ const clearForm = () => {
 
     </div>
 
-
-    {/* Ward No */}
-    <div className="col-md-6">
-
-        <label className="form-label">
-            प्रभाग क्रमांक
-            <span className="required">*</span>
-        </label>
-
-        <input
-            type="text"
-            className={`form-control ${
-                errors.wardNo ? "is-invalid" : ""
-            }`}
-            placeholder="प्रभाग क्र."
-            {...register("wardNo", {
-                required:
-                    "प्रभाग क्रमांक आवश्यक आहे",
-                validate: (value) =>
-                    value.trim() !== "" ||
-                    "प्रभाग क्रमांक आवश्यक आहे",
-            })}
-        />
-
-        {errors.wardNo && (
-            <div className="field-error">
-                {errors.wardNo.message}
-            </div>
-        )}
-
-    </div>
-
-</div>
-
-
-{/* DESIGNATION */}
-
-<div className="row g-3 mb-4">
-
-    <div className="col-md-6">
+ <div className="col-md-6">
 
         <label className="form-label">
             पंचनामा करणाऱ्याचे पद
@@ -1562,21 +1536,19 @@ const clearForm = () => {
         </label>
 
         <input
-            type="text"
-            className={`form-control ${
-                errors.officerDesignation
-                    ? "is-invalid"
-                    : ""
-            }`}
-            placeholder="पंचनामा करणाऱ्याचे पद"
-            {...register("officerDesignation", {
-                required:
-                    "पंचनामा करणाऱ्याचे पद आवश्यक आहे",
-                validate: (value) =>
-                    value.trim() !== "" ||
-                    "पंचनामा करणाऱ्याचे पद आवश्यक आहे",
-            })}
-        />
+    type="text"
+    readOnly
+    className={`form-control readonly-field ${
+        errors.officerDesignation
+            ? "is-invalid"
+            : ""
+    }`}
+    value="सहाय्यक आयुक्त"
+    {...register("officerDesignation", {
+        required:
+            "पंचनामा करणाऱ्याचे पद आवश्यक आहे",
+    })}
+/>
 
         {errors.officerDesignation && (
             <div className="field-error">
@@ -1585,6 +1557,7 @@ const clearForm = () => {
         )}
 
     </div>
+    
 
 </div>
 
@@ -1596,7 +1569,7 @@ const clearForm = () => {
                             <div className="col-md-6">
 
                                 <label className="form-label">
-                                    अनधिकृत जाहिरात लावलेले
+                                    अनधिकृत जाहिरात लावलेल्या
                                     ठिकाणाचा संपूर्ण पत्ता
 
                                     <span className="required">
@@ -1639,6 +1612,48 @@ const clearForm = () => {
                             </div>
 
                         </div>
+
+                        <div className="row g-3 mb-4">
+
+    {/* Ward No */}
+    <div className="col-md-6">
+
+        <label className="form-label">
+            प्रभाग क्रमांक
+            <span className="required">*</span>
+        </label>
+
+        <select
+            className={`form-select ${
+                errors.wardNo ? "is-invalid" : ""
+            }`}
+            {...register("wardNo", {
+                required: "प्रभाग क्रमांक आवश्यक आहे",
+            })}
+        >
+            <option value="">
+                -- प्रभाग क्रमांक निवडा --
+            </option>
+
+            {loggedInUser?.wards?.map((ward) => (
+                <option
+                    key={ward}
+                    value={ward}
+                >
+                    {ward}
+                </option>
+            ))}
+        </select>
+
+        {errors.wardNo && (
+            <div className="field-error">
+                {errors.wardNo.message}
+            </div>
+        )}
+
+    </div>
+
+</div>
 
 
                         {/* =====================================

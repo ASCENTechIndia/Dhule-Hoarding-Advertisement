@@ -376,39 +376,130 @@ const NoticeList = () => {
     });
   };
 
-  const fetchNoticeHtml = async (masterData) => {
-    try {
-      const noticePayload = {
-        corporationId: masterData?.NUM_ILLEGALHOARD_ULBID || masterData?.NUM_ULBID || masterData?.ulbId || 4,
-        corporationName: masterData?.VAR_CORPORATION_NAME || "धुळे महानगरपालिका",
-        corporationLogo: dhuleLogo,
-        REGIONAL_OFFICE_NO: masterData?.VAR_ILLEGALHOARD_WARD || masterData?.NUM_REGIONAL_OFFICE_NO || "-",
-        ADVERTISER_NAME: masterData?.VAR_ADVERTISER_NAME || masterData?.VAR_USER1 || "जाहिरातदार",
-        ADDRESS: masterData?.VAR_ILLEGALHOARD_ADD || "-",
-        LATITUDE: masterData?.LATITUDE || masterData?.NUM_LAT || "-",
-        LONGITUDE: masterData?.LONGITUDE || masterData?.NUM_LONG || "-",
-        SIZE: (masterData?.NUM_SIZE_LENGTH && masterData?.NUM_SIZE_WIDTH)
-          ? `${masterData.NUM_SIZE_LENGTH} x ${masterData.NUM_SIZE_WIDTH}`
-          : (masterData?.VAR_SIZE || masterData?.SIZE || "-"),
-        FROM_DATE: masterData?.DAT_FROM_DT ? formatDateOnly(masterData.DAT_FROM_DT) : (masterData?.DAT_CAP_DT ? formatDateOnly(masterData.DAT_CAP_DT) : "-"),
-        TO_DATE: masterData?.DAT_TO_DT ? formatDateOnly(masterData.DAT_TO_DT) : (masterData?.DAT_CAP_DT ? formatDateOnly(masterData.DAT_CAP_DT) : "-"),
-        AMOUNT: masterData?.NUM_HOARD_AMOUNT || masterData?.NUM_AMOUNT || masterData?.AMOUNT || "0",
-        OFFICER_NAME: masterData?.VAR_USER1 || "-",
-        OFFICER_DESIGNATION: masterData?.VAR_USER1_POST || "-",
-        REGIONAL_OFFICE: masterData?.VAR_ILLEGALHOARD_WARD || "-",
-      };
+  const fetchNoticeHtml = async (masterData, demolitionDetails) => {
+  try {
+    // =====================================================
+    // GET ADVERTISER NAMES FROM DEMOLITION DETAILS
+    // =====================================================
 
-      const response = await apiClient.post("/notice/render", noticePayload);
-      if (response?.success && response?.data?.html) {
-        setNoticeHtml(response.data.html);
-      } else {
-        setNoticeHtml("");
-      }
-    } catch (err) {
-      console.error("Error fetching notice HTML:", err);
+    const advertiserNames =
+      demolitionDetails
+        ?.map((item) => item?.VAR_DEMONSTARTED_NAME)
+        .filter(
+          (name) =>
+            name !== null &&
+            name !== undefined &&
+            String(name).trim() !== ""
+        )
+        .join(", ") || "जाहिरातदार";
+
+
+    // =====================================================
+    // NOTICE PAYLOAD
+    // =====================================================
+
+    const noticePayload = {
+      corporationId:
+        masterData?.NUM_ILLEGALHOARD_ULBID ||
+        masterData?.NUM_ULBID ||
+        masterData?.ulbId ||
+        4,
+
+      corporationName:
+        masterData?.VAR_CORPORATION_NAME ||
+        "धुळे महानगरपालिका",
+
+      corporationLogo: dhuleLogo,
+
+      REGIONAL_OFFICE_NO:
+        masterData?.VAR_ILLEGALHOARD_WARD ||
+        masterData?.NUM_REGIONAL_OFFICE_NO ||
+        "-",
+
+      // 👇 From demolitionDetails
+      ADVERTISER_NAME: advertiserNames,
+
+      ADDRESS:
+        masterData?.VAR_ILLEGALHOARD_ADD || "-",
+
+      LATITUDE:
+        masterData?.LATITUDE ||
+        masterData?.NUM_LAT ||
+        "-",
+
+      LONGITUDE:
+        masterData?.LONGITUDE ||
+        masterData?.NUM_LONG ||
+        "-",
+
+      SIZE:
+        masterData?.NUM_SIZE_LENGTH &&
+        masterData?.NUM_SIZE_WIDTH
+          ? `${masterData.NUM_SIZE_LENGTH} x ${masterData.NUM_SIZE_WIDTH}`
+          : masterData?.VAR_SIZE ||
+            masterData?.SIZE ||
+            "-",
+
+      FROM_DATE:
+        masterData?.DAT_FROM_DT
+          ? formatDateOnly(masterData.DAT_FROM_DT)
+          : masterData?.DAT_CAP_DT
+            ? formatDateOnly(masterData.DAT_CAP_DT)
+            : "-",
+
+      TO_DATE:
+        masterData?.DAT_TO_DT
+          ? formatDateOnly(masterData.DAT_TO_DT)
+          : masterData?.DAT_CAP_DT
+            ? formatDateOnly(masterData.DAT_CAP_DT)
+            : "-",
+
+      AMOUNT:
+        masterData?.NUM_HOARD_AMOUNT ||
+        masterData?.NUM_AMOUNT ||
+        masterData?.AMOUNT ||
+        "0",
+
+      OFFICER_NAME:
+        masterData?.VAR_USER1 || "-",
+
+      OFFICER_DESIGNATION:
+        masterData?.VAR_USER1_POST || "-",
+
+      REGIONAL_OFFICE:
+        masterData?.VAR_ILLEGALHOARD_WARD || "-",
+    };
+
+
+    // =====================================================
+    // API CALL
+    // =====================================================
+
+    const response = await apiClient.post(
+      "/notice/render",
+      noticePayload
+    );
+
+
+    // =====================================================
+    // RESPONSE
+    // =====================================================
+
+    if (response?.success && response?.data?.html) {
+      setNoticeHtml(response.data.html);
+    } else {
       setNoticeHtml("");
     }
-  };
+
+  } catch (err) {
+    console.error(
+      "Error fetching notice HTML:",
+      err
+    );
+
+    setNoticeHtml("");
+  }
+};
 
   const handlePrintNotice = () => {
     if (!noticeHtml) return;
@@ -446,16 +537,24 @@ const NoticeList = () => {
       setGeneratingNoticeId(id);
 
       let masterData = panchanama;
+      let demolitionDetails = panchanama;
       try {
         const responseDetails = await apiClient.get(
           `/advertisement/getPanchanamaDetails?id=${id}`
         );
         if (responseDetails?.success && responseDetails?.data?.master) {
           masterData = responseDetails.data.master;
+          demolitionDetails = responseDetails.data.demolitionDetails;
         }
       } catch (err) {
         console.error("Could not fetch extra panchanama details:", err);
       }
+
+      const advertiserNames =
+  demolitionDetails
+    ?.map((item) => item?.VAR_DEMONSTARTED_NAME)
+    .filter((name) => name && String(name).trim() !== "")
+    .join(", ") || "जाहिरातदार";
 
       const noticePayload = {
         id: masterData.NUM_ILLEGALHOARD_ID,
@@ -463,8 +562,9 @@ const NoticeList = () => {
         corporationName: masterData?.VAR_CORPORATION_NAME || "धुळे महानगरपालिका",
         corporationLogo: dhuleLogo,
         REGIONAL_OFFICE_NO: masterData.VAR_ILLEGALHOARD_WARD || masterData.NUM_REGIONAL_OFFICE_NO || "-",
-        ADVERTISER_NAME: masterData.VAR_ADVERTISER_NAME || masterData.VAR_USER1 || "जाहिरातदार",
-        ADDRESS: masterData.VAR_ILLEGALHOARD_ADD || "-",
+       // Use demolition names here
+  ADVERTISER_NAME: advertiserNames,
+  ADDRESS: masterData.VAR_ILLEGALHOARD_ADD || "-",
         LATITUDE: masterData.LATITUDE || masterData.NUM_LAT || "-",
         LONGITUDE: masterData.LONGITUDE || masterData.NUM_LONG || "-",
         SIZE: (masterData.NUM_SIZE_LENGTH && masterData.NUM_SIZE_WIDTH)
@@ -476,23 +576,32 @@ const NoticeList = () => {
         OFFICER_NAME: masterData.VAR_USER1 || "-",
         OFFICER_DESIGNATION: masterData.VAR_USER1_POST || "-",
         REGIONAL_OFFICE: masterData.VAR_ILLEGALHOARD_WARD || "-",
+        PANCHANAMA_NO: masterData.VAR_ILLEGALHOARD_PANCHANAMA_NO || "-",
+        ULB_ID: import.meta.env.VITE_ULBID
       };
 
       const response = await apiClient.post("/notice/generate", noticePayload);
 
-      if (response?.success && response?.data?.html) {
-        const html = response.data.html;
-        setNoticeHtml(html);
+if (response?.success && response?.data?.html) {
+  const html = response.data.html;
 
-        const printWin = window.open("", "_blank");
-        if (printWin) {
-          printWin.document.write(html);
-          printWin.document.close();
-          printWin.focus();
-          setTimeout(() => {
-            printWin.print();
-          }, 500);
-        }
+  setNoticeHtml(html);
+
+  const printWin = window.open("", "_blank");
+
+  if (printWin) {
+    printWin.document.open();
+    printWin.document.write(html);
+    printWin.document.close();
+
+    printWin.onload = () => {
+      setTimeout(() => {
+        printWin.focus();
+        printWin.print();
+      }, 500);
+    };
+  }
+
 
         setModalType("success");
         setModalTitle("Notice Generated");
@@ -544,8 +653,9 @@ const NoticeList = () => {
       if (response?.success && response?.data) {
         setSelectedPanchanamaDetails(response.data);
         const masterData = response.data.master || panchanama;
+        const demolitionDetails = response.data.demolitionDetails || panchanama;
         setSelectedParticipant(masterData);
-        await fetchNoticeHtml(masterData);
+        await fetchNoticeHtml(masterData,demolitionDetails);
       } else {
         setSelectedPanchanamaDetails(null);
         await fetchNoticeHtml(panchanama);

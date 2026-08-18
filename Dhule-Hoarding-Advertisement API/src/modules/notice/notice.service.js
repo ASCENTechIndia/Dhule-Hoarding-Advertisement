@@ -1,6 +1,6 @@
 const path = require('path');
 const fs = require('fs').promises;
-const { repoGetNoticeById, repoSaveNotice, repoGetCorporationInfo } = require('./notice.repo');
+const { repoGetNoticeById, repoGenerateNotice, repoGetCorporationInfo } = require('./notice.repo');
 
 const TEMPLATE_PATH = path.join(__dirname, 'notice.template.html');
 
@@ -57,8 +57,9 @@ async function renderNoticeHtmlService(data = {}) {
     TO_DATE: data.TO_DATE || data.to_date || data.toDate || data.DAT_TO_DT || data.dat_to_dt || '',
     AMOUNT: data.AMOUNT || data.amount || data.NUM_HOARD_AMOUNT || data.num_hoard_amount || '',
     OFFICER_NAME: data.OFFICER_NAME || data.officer_name || data.officerName || data.VAR_USER1 || data.var_user1 || '',
-    OFFICER_DESIGNATION: data.OFFICER_DESIGNATION || data.officer_designation || data.officerDesignation || data.VAR_USER1_POST || data.var_user1_post || '',
+    OFFICER_DESIGNATION: 'सहाय्यक आयुक्त',
     REGIONAL_OFFICE: data.REGIONAL_OFFICE || data.regional_office || data.regionalOffice || data.VAR_ILLEGALHOARD_WARD || data.var_illegalhoard_ward || '',
+    NOTICE_NO: data.NOTICE_NO || ''
   };
 
   Object.entries(replacements).forEach(([key, val]) => {
@@ -77,16 +78,185 @@ async function getNoticeByIdService(id) {
 }
 
 async function generateNoticeService(payload) {
-  let dbData = null;
-  const noticeId = payload.id || payload.NUM_ILLEGALHOARD_ID || payload.num_illegalhoard_id;
-  if (noticeId) {
-    dbData = await repoGetNoticeById(noticeId);
-  }
-  const mergedData = { ...(dbData || {}), ...payload };
 
-  const procResult = await repoSaveNotice(mergedData);
-  const html = await renderNoticeHtmlService(mergedData);
-  return { procResult, payload: mergedData, html };
+  // =========================================================
+  // BASIC VALIDATION
+  // =========================================================
+
+  if (!payload) {
+    throw new Error("Request payload is required");
+  }
+
+  const userId =
+    payload.userId ||
+    payload.user_id ||
+    "system";
+
+  const ulbId =
+    payload.ULB_ID ||
+    payload.ulbId ||
+    payload.corporationId;
+
+  const panchanamaNo =
+    payload.PANCHANAMA_NO ||
+    payload.panchanamaNo ||
+    payload.VAR_ILLEGALHOARD_PANCHANAMA_NO;
+
+  if (!panchanamaNo) {
+    throw new Error(
+      "Panchanama number is required"
+    );
+  }
+
+  if (!ulbId) {
+    throw new Error(
+      "ULB ID is required"
+    );
+  }
+
+  // =========================================================
+  // CALL ORACLE PROCEDURE
+  // =========================================================
+
+  const procResult = await repoGenerateNotice({
+    userId,
+    ulbId,
+    PANCHANAMA_NO: panchanamaNo,
+  });
+
+  // =========================================================
+  // CHECK PROCEDURE ERROR
+  // =========================================================
+
+  const errorCode = procResult.errorCode;
+
+  /*
+   * Change this according to your Oracle procedure's
+   * success/error code convention.
+   *
+   * Usually 0 means success.
+   */
+
+  if (
+    errorCode !== null &&
+    errorCode !== undefined &&
+    Number(errorCode) !== 9999
+  ) {
+    throw new Error(
+      procResult.errorMessage ||
+      "Notice generation procedure failed"
+    );
+  }
+
+  // =========================================================
+  // PROCEDURE DATA
+  // =========================================================
+
+  const noticeData =
+    procResult.noticeData || {};
+
+  // =========================================================
+  // MERGE WITH FRONTEND PAYLOAD
+  // =========================================================
+
+  const mergedData = {
+
+    ...payload,
+
+    // -------------------------------------------------------
+    // Values returned from procedure
+    // -------------------------------------------------------
+
+    id:
+      noticeData.id ||
+      payload.id ||
+      null,
+
+    ADDRESS:
+      noticeData.address ||
+      payload.ADDRESS ||
+      "-",
+
+    REGIONAL_OFFICE_NO:
+      noticeData.ward ||
+      payload.REGIONAL_OFFICE_NO ||
+      "-",
+
+    ADVERTISER_NAME:  payload.ADVERTISER_NAME ||
+      "-",
+
+    AMOUNT:
+      noticeData.amount ||
+      payload.AMOUNT ||
+      "0",
+
+    LATITUDE:
+      noticeData.latitude ||
+      payload.LATITUDE ||
+      "-",
+
+    LONGITUDE:
+      noticeData.longitude ||
+      payload.LONGITUDE ||
+      "-",
+
+    SIZE:
+      noticeData.length &&
+      noticeData.width
+        ? `${noticeData.length} x ${noticeData.width}`
+        : payload.SIZE || "-",
+
+    PANCHANAMA_NO:
+      noticeData.panchanamaNo ||
+      panchanamaNo,
+
+    NOTICE_NO:
+      noticeData.noticeNo ||
+      "-",
+
+    FROM_DATE:
+      noticeData.fromDate ||
+      payload.FROM_DATE ||
+      "-",
+
+    TO_DATE:
+      noticeData.toDate ||
+      payload.TO_DATE ||
+      "-",
+
+    REGIONAL_OFFICE:
+      noticeData.ward ||
+      payload.REGIONAL_OFFICE ||
+      "-",
+  };
+
+  // =========================================================
+  // GENERATE HTML
+  // =========================================================
+
+  const html =
+    await renderNoticeHtmlService(
+      mergedData
+    );
+
+  // =========================================================
+  // RESPONSE
+  // =========================================================
+
+  return {
+    procResult: {
+      errorCode,
+      message:
+        procResult.errorMessage ||
+        "Notice generated successfully",
+    },
+
+    noticeData,
+
+    payload: mergedData,
+
+    html,
+  };
 }
 
 module.exports = {

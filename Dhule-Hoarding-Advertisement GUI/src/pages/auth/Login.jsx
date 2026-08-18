@@ -16,6 +16,33 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+  const dummyUsers = [
+  {
+    firstName: "श्री. किशोर शिंदे",
+    contact: "8668513587",
+    userId: "DMCPCL57",
+    wards: ["1", "2", "4", "5", "6", "7"]
+  },
+  {
+    firstName: "श्री. सागर जकातदार",
+    contact: "9822491201",
+    userId: "DMCPCL56",
+    wards: ["3", "11", "12", "15"]
+  },
+  {
+    firstName: "श्री. राजेंद्र माईनकर",
+    contact: "9422786402",
+    userId: "DMCND01",
+    wards: ["13", "14", "16", "18", "19"]
+  },
+  {
+    firstName: "श्री. किशोर वाघ",
+    contact: "9422333719",
+    userId: "DMCBD03",
+    wards: ["8", "9", "10", "17"]
+  }
+];
+
   const {
     register,
     handleSubmit,
@@ -28,52 +55,100 @@ export default function Login() {
     },
   });
 
+
+  // dummy login
   const onSubmit = async (values) => {
-    // console.log(values);
-    // e.preventDefault();
-    setError('');
-    setIsLoading(true);
+  setError("");
+  setIsLoading(true);
 
-    try {
-      // Validate inputs
-      if (!values.userId || !values.password) {
-        setError('User ID and password are required.');
-        setIsLoading(false);
-        return;
-      }
-
-      // if (values.password.length < 8) {
-      //   setError('Password must be at least 8 characters.');
-      //   setIsLoading(false);
-      //   return;
-      // }
-      const ipAddress = await GetIPAddress();
-      const payload = {
-        "userId": values.userId,
-        "password": values.password,
-        "macaddr": config.macAddress,
-        "ipaddr": ipAddress,
-        "hostname": config.hostName,
-        "source": config.source
-      };
-
-      // Simulate API call (replace with actual API)
-      const response = await apiClient.post(`/auth/login`, payload);
-
-      if (response.success) {
-        const userData = response?.data?.user;
-        login(userData);
-        reset();
-        userData.designation === "Supervisor" ? navigate("/advertisementPanchnama-form") : navigate("/advertisementPanchnama-form");
-      } else {
-        setError('Login failed. Please try again.');
-      }
-    } catch (err) {
-      setError(err.message || 'Login failed. Please try again.');
-    } finally {
+  try {
+    if (!values.userId) {
+      setError("User ID is required.");
       setIsLoading(false);
+      return;
     }
-  };
+
+    const user = dummyUsers.find(
+      (item) =>
+        item.userId.toLowerCase() === values.userId.trim().toLowerCase()
+    );
+
+    if (!user) {
+      setError("Invalid User ID.");
+      setIsLoading(false);
+      return;
+    }
+
+    // This is your matched user
+    console.log("Logged in user:", user);
+
+    // Example:
+    // {
+    //   firstName: "श्री. किशोर शिंदे",
+    //   contact: "8668513587",
+    //   userId: "DMCPCL57",
+    //   wards: ["१", "२", "४", "५", "६", "७"]
+    // }
+
+    login(user);
+
+    reset();
+
+    navigate("/advertisementPanchnama-form");
+
+  } catch (err) {
+    setError(err.message || "Login failed. Please try again.");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+  // const onSubmit = async (values) => {
+  //   // console.log(values);
+  //   // e.preventDefault();
+  //   setError('');
+  //   setIsLoading(true);
+
+  //   try {
+  //     // Validate inputs
+  //     if (!values.userId || !values.password) {
+  //       setError('User ID and password are required.');
+  //       setIsLoading(false);
+  //       return;
+  //     }
+
+  //     // if (values.password.length < 8) {
+  //     //   setError('Password must be at least 8 characters.');
+  //     //   setIsLoading(false);
+  //     //   return;
+  //     // }
+  //     const ipAddress = await GetIPAddress();
+  //     const payload = {
+  //       "userId": values.userId,
+  //       "password": values.password,
+  //       "macaddr": config.macAddress,
+  //       "ipaddr": ipAddress,
+  //       "hostname": config.hostName,
+  //       "source": config.source
+  //     };
+
+  //     // Simulate API call (replace with actual API)
+  //     const response = await apiClient.post(`/auth/login`, payload);
+
+  //     if (response.success) {
+  //       const userData = response?.data?.user;
+  //       login(userData);
+  //       reset();
+  //       userData.designation === "Supervisor" ? navigate("/advertisementPanchnama-form") : navigate("/advertisementPanchnama-form");
+  //     } else {
+  //       setError('Login failed. Please try again.');
+  //     }
+  //   } catch (err) {
+  //     setError(err.message || 'Login failed. Please try again.');
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
   //  without sso
   // const loginUser = async (userid, password) => {

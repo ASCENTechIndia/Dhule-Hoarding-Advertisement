@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="mr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Panchanama</title>
+    <style>
+      /* ----- Reset & Page ----- */
+      @page {
+        size: A4;
+        margin: 10mm 12mm;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: "Noto Sans Devanagari", "Segoe UI", Arial, sans-serif;
+        font-size: 11px;
+        line-height: 1.5;
+        color: #222;
+        background: #fff;
+        padding: 0;
+      }
+
+      .container {
+        max-width: 100%;
+        padding: 5px 10px;
+      }
+
+      /* ----- Headings ----- */
+      .page-title {
+        font-size: 20px;
+        font-weight: bold;
+        border-bottom: 2px solid #333;
+        padding-bottom: 8px;
+        margin-bottom: 16px;
+        text-align: left;
+      }
+
+      .section-title {
+        font-size: 14px;
+        font-weight: bold;
+        background-color: #f0f0f0;
+        padding: 6px 10px;
+        margin: 18px 0 10px 0;
+        border-radius: 2px;
+      }
+
+      .footer-title {
+        font-size: 14px;
+        font-weight: bold;
+        margin-top: 7px;
+      }
+
+      /* ----- Grid (Master Info) ----- */
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px 30px;
+        margin-bottom: 10px;
+      }
+
+      .grid-item {
+        display: flex;
+        flex-direction: column;
+        padding: 2px 0;
+      }
+
+      .grid-label {
+        font-size: 9.5px;
+        color: #737887;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+
+      .grid-value {
+        font-size: 12px;
+        color: #252525;
+        margin-top: 2px;
+        word-break: break-word;
+      }
+
+      /* ----- Tables ----- */
+      .table-wrap {
+        overflow-x: auto;
+        margin: 8px 0 16px 0;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 10px;
+      }
+
+      table th {
+        background-color: #f8f8f8;
+        font-weight: bold;
+        text-align: left;
+        padding: 6px 8px;
+        border-bottom: 1px solid #ddd;
+      }
+
+      table td {
+        padding: 5px 8px;
+        border-bottom: 1px solid #eee;
+      }
+
+      table tr:last-child td {
+        border-bottom: none;
+      }
+
+      .no-data {
+        color: #999;
+        font-style: italic;
+        padding: 8px 10px;
+        display: block;
+      }
+
+      /* ----- Photos Grid ----- */
+      .photo-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 8px;
+      }
+
+      .photo-item {
+        width: 100px;
+        text-align: center;
+      }
+
+      .photo-item img {
+        width: 100%;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+        background: #fafafa;
+      }
+
+      .photo-label {
+        font-size: 8px;
+        color: #666;
+        margin-top: 4px;
+        display: block;
+      }
+
+      /* ----- Responsive tweaks ----- */
+      @media print {
+        body {
+          background: #fff;
+        }
+      }
+
+      /* fallback for very small screens */
+      @media (max-width: 600px) {
+        .grid {
+          grid-template-columns: 1fr;
+          gap: 8px;
+        }
+        .photo-item {
+          width: 80px;
+        }
+        .photo-item img {
+          height: 80px;
+        }
+      }
+
+      .date-field {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 1px solid black;
+        padding-bottom: 5px;
+      }
+
+      .outer-container {
+        border: 2px solid black;
+        margin: 5px 0;
+        padding: 0 5mm;
+        min-height: 100vh;
+        box-sizing: border-box;
+      }
+
+      .corp-heading {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-bottom: 2px solid black;
+        padding: 15px 5px;
+        position: relative;
+      }
+
+      .corp-logo-img {
+        position: absolute;
+        left: 20%;
+      }
+
+      .footer-two-fields {
+        display: flex;
+        align-items: end;
+        flex-direction: column;
+      }
+
+      .top-date-field {
+        font-size: 14px;
+        font-weight: bold;
+      }
+
+      @page {
+        margin: 0;
+        size: A4;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="outer-container">
+      <div class="corp-heading">
+        <img src={{CORPORATION_LOGO}} alt="logo" class="corp-logo-img" />
+        <h1>धुळे महानगरपालिका</h1>
+      </div>
+      <div class="container">
+        <!-- ===== PAGE TITLE ===== -->
+        <div class="date-field">
+          <h2 class="top-date-field">
+            पंचनामा क्रमांक: {{VAR_ILLEGALHOARD_PANCHANAMA_NO}}
+          </h2>
+          <h2 class="top-date-field" style="margin-right: 130px">
+            दिनांक: {{CAPTURE_DATE_TIME}}
+          </h2>
+        </div>
+
+        <!-- ===== MASTER INFORMATION ===== -->
+        <h2 class="section-title">पंचनामा माहिती</h2>
+
+        <div class="grid">
+          <div class="grid-item">
+            <span class="grid-label">पंचनामा क्रमांक</span>
+            <span class="grid-value">{{VAR_ILLEGALHOARD_PANCHANAMA_NO}}</span>
+          </div>
+          <div class="grid-item">
+            <span class="grid-label">दिनांक</span>
+            <span class="grid-value">{{CAPTURE_DATE_TIME}}</span>
+          </div>
+          <div class="grid-item">
+            <span class="grid-label">पंचनामा करणाऱ्याचे नाव</span>
+            <span class="grid-value">{{VAR_USER1}}</span>
+          </div>
+          <div class="grid-item">
+            <span class="grid-label">पंचनामा करणाऱ्याचे पद</span>
+            <span class="grid-value">{{VAR_USER1_POST}}</span>
+          </div>
+          <div class="grid-item">
+            <span class="grid-label"
+              >अनधिकृत जाहिरात लावलेल्या ठिकाणाचा पत्ता</span
+            >
+            <span class="grid-value">{{VAR_ILLEGALHOARD_ADD}}</span>
+          </div>
+          <div class="grid-item">
+            <span class="grid-label">प्रभाग क्रमांक</span>
+            <span class="grid-value">{{VAR_ILLEGALHOARD_WARD}}</span>
+          </div>
+          <div class="grid-item">
+            <span class="grid-label">लांबी</span>
+            <span class="grid-value">{{NUM_SIZE_LENGTH}}</span>
+          </div>
+          <div class="grid-item">
+            <span class="grid-label">रुंदी</span>
+            <span class="grid-value">{{NUM_SIZE_WIDTH}}</span>
+          </div>
+          <div class="grid-item">
+            <span class="grid-label"
+              >जाहिरात फलक केव्हापासून अनधिकृतपणे प्रदर्शित?</span
+            >
+            <span class="grid-value">{{DAT_FROM_DT}}</span>
+          </div>
+          <div class="grid-item">
+            <span class="grid-label">वेळ</span>
+            <span class="grid-value">{{CAPTURE_DATE_TIME}}</span>
+          </div>
+        </div>
+
+        <!-- ===== DETAILS TABLE ===== -->
+        <h2 class="section-title">सोबत उपस्थित कर्मचाऱ्यांचे नाव</h2>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>अनुक्रमांक</th>
+                <th>कर्मचाऱ्याचे नाव</th>
+                <th>कर्मचाऱ्याचे पद</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{DETAILS_ROWS}}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ===== DEMOLITION DETAILS TABLE ===== -->
+        <h2 class="section-title">जाहिरात फलक प्रदर्शित करणाऱ्याचे नाव</h2>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>अनुक्रमांक</th>
+                <th>नाव</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{DEMOLITION_ROWS}}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ===== PHOTOS ===== -->
+        <h2 class="section-title">पंचनाम्याचे फोटो</h2>
+
+        <div class="photo-grid">{{PHOTO_GRID}}</div>
+
+        <div class="footer-fields" style="margin-top: 10px">
+          <p class="footer-title">ठिकाण:</p>
+          <p class="footer-title">दिनांक:</p>
+        </div>
+        <div class="footer-two-fields">
+          <div>
+            <p style="text-align: center" class="footer-title">DSC</p>
+            <p class="footer-title">नाव : {{OFFICER_NAME}}</p>
+            <p class="footer-title">पद : {{OFFICER_POST}}</p>
+            <p class="footer-title">क्षेत्रीय कार्यालय : {{REGIONAL_OFFICE}}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

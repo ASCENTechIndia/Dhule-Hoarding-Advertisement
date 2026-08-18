@@ -1,5 +1,5 @@
 const {serviceWardList,serviceToiletList,serviceComplaintTypeList,regComplaintService, assignComplaintService, compListService,
-  serviceSupervisorList,serviceVendorList,regParticipantService,getPanchanamalistService,illegalHoardService,getPanchanamaDetailsService
+  serviceSupervisorList,serviceVendorList,regParticipantService,getPanchanamalistService,illegalHoardService,getPanchanamaDetailsService, generatePanchnamaPdfService
 } = require('./registerComplaint.service');
 const { auditLog } = require('../../utils/audit-log');
 const { logApiSuccess, logApiError } = require('../../utils/log');
@@ -396,6 +396,18 @@ async function getPanchanamaDetails(req, res, next) {
   }
 }
 
+async function generatePanchnamaPdf(req, res, next){
+  try {
+    const {id} = req.body
+    const result = await generatePanchnamaPdfService(id)
+    logApiSuccess(req, 200, 'Notice generated successfully');
+    return res.ok(result, 'Notice generated successfully');
+  } catch (error) {
+    logApiError(req, 500, error.message, "Panchanama pdf generate error")
+    return next(error)
+  }
+}
+
 module.exports = { getWardList, getToiletList, getComplaintTypeList, registerComplaint, assignComplaint, getComplaintList ,
-  getSupervisorList,getVendorList,registerParticipant,getPanchanamalist,registerIllegalHoard,getPanchanamaDetails
+  getSupervisorList,getVendorList,registerParticipant,getPanchanamalist,registerIllegalHoard,getPanchanamaDetails,generatePanchnamaPdf
 };

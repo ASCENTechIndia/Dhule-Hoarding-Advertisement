@@ -25,6 +25,7 @@ const PanchanamaList = () => {
 
   const [participants, setParticipants] = useState([]);
   const [error, setError] = useState(null);
+  const [noticeHtml, setNoticeHtml] = useState("");
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -393,21 +394,32 @@ const PanchanamaList = () => {
   const handlePrintFromRow = async (id) => {
     try {
       setLoader(true);
-      const response = await apiClient.get(
-        `/advertisement/getPanchanamaDetails?id=${id}`,
+      const response = await apiClient.post(
+        `/advertisement/generatePanchnamaPdf`,
+        { id },
       );
-      if (response?.success && response?.data) {
-        const master = response.data.master;
-        const details = response.data.details || [];
-        const demolitionDetails = response.data.demolitionDetails || [];
-        const photos = [
-          master?.BLOB_NEAR_PHOTO,
-          master?.BLOB_FAR_PHOTO,
-          master?.BLOB_USER_PHOTO,
-        ].filter((img) => img && typeof img === "string" && img.trim() !== "");
 
-        const data = { master, details, demolitionDetails, photos };
-        await generatePDF(data);
+      if (response?.success && response?.data?.html) {
+        const html = response.data.html;
+
+        // Open a new blank window
+        const printWin = window.open("", "_blank", "width=800,height=600");
+
+        if (!printWin) {
+          // Popup blocked – fallback: use an iframe
+          showError("Please allow pop-ups to print the document.");
+          return;
+        }
+
+        // Write the HTML content
+        printWin.document.write(html);
+        printWin.document.close();
+
+        // Wait for the window to render, then print
+        setTimeout(() => {
+          printWin.focus();
+          printWin.print();
+        }, 1000); 
       } else {
         showError("Unable to fetch details for PDF.");
       }

@@ -41,15 +41,71 @@ async function getNotice(req, res, next) {
   }
 }
 
-async function generateNotice(req, res, next) {
-  try {
-    const payload = req.body;
-    const result = await generateNoticeService(payload);
+async function generateNotice(
+  req,
+  res,
+  next
+) {
 
-    logApiSuccess(req, 200, 'Notice generated successfully');
-    return res.ok(result, 'Notice generated successfully');
+  try {
+
+    const payload =
+      req.body;
+
+
+    const result =
+      await generateNoticeService(
+        payload
+      );
+
+
+    if (
+      !result?.pdf ||
+      !Buffer.isBuffer(
+        result.pdf
+      )
+    ) {
+
+      throw new Error(
+        "Signed PDF was not generated"
+      );
+    }
+
+
+    res.setHeader(
+      "Content-Type",
+      "application/pdf"
+    );
+
+
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="notice-${
+        result.noticeData?.noticeNo ||
+        "document"
+      }.pdf"`
+    );
+
+
+    res.setHeader(
+      "Content-Length",
+      result.pdf.length
+    );
+
+
+    return res.send(
+      result.pdf
+    );
+
   } catch (error) {
-    logApiError(req, 500, error.message, 'Generate Notice error');
+
+    logApiError(
+      req,
+      500,
+      error.message,
+      "Generate Notice error"
+    );
+
     return next(error);
   }
 }

@@ -485,128 +485,436 @@ const NoticeList = () => {
     }
   };
 
-  const handleGenerateNotice = async (panchanama) => {
-    const id = panchanama?.NUM_ILLEGALHOARD_ID;
-    if (!id) {
-      setModalType("error");
-      setModalTitle("Error");
-      setModalMessage("Panchanama ID not found.");
-      setIsModalOpen(true);
-      return;
-    }
+ const handleGenerateNotice = async (
+  panchanama
+) => {
+
+  const id =
+    panchanama?.NUM_ILLEGALHOARD_ID;
+
+
+  if (!id) {
+
+    setModalType("error");
+    setModalTitle("Error");
+    setModalMessage(
+      "Panchanama ID not found."
+    );
+    setIsModalOpen(true);
+
+    return;
+  }
+
+
+  try {
+
+    setGeneratingNoticeId(id);
+
+
+    // ===================================================
+    // MASTER DATA
+    // ===================================================
+
+    let masterData =
+      panchanama;
+
+    let demolitionDetails =
+      panchanama;
+
 
     try {
-      setGeneratingNoticeId(id);
 
-      let masterData = panchanama;
-      let demolitionDetails = panchanama;
-      try {
-        const responseDetails = await apiClient.get(
-          `/advertisement/getPanchanamaDetails?id=${id}`,
+      const responseDetails =
+        await apiClient.get(
+          `/advertisement/getPanchanamaDetails?id=${id}`
         );
-        if (responseDetails?.success && responseDetails?.data?.master) {
-          masterData = responseDetails.data.master;
-          demolitionDetails = responseDetails.data.demolitionDetails;
-        }
-      } catch (err) {
-        console.error("Could not fetch extra panchanama details:", err);
+
+
+      if (
+        responseDetails?.success &&
+        responseDetails?.data?.master
+      ) {
+
+        masterData =
+          responseDetails.data.master;
+
+        demolitionDetails =
+          responseDetails.data.demolitionDetails;
       }
 
-      const advertiserNames =
-        demolitionDetails
-          ?.map((item) => item?.VAR_DEMONSTARTED_NAME)
-          .filter((name) => name && String(name).trim() !== "")
-          .join(", ") || "जाहिरातदार";
-
-      const noticePayload = {
-        id: masterData.NUM_ILLEGALHOARD_ID,
-        corporationId:
-          masterData?.NUM_ILLEGALHOARD_ULBID ||
-          masterData?.NUM_ULBID ||
-          masterData?.ulbId ||
-          4,
-        corporationName:
-          masterData?.VAR_CORPORATION_NAME || "धुळे महानगरपालिका",
-        corporationLogo: dhuleLogo,
-        REGIONAL_OFFICE_NO:
-          masterData.VAR_ILLEGALHOARD_WARD ||
-          masterData.NUM_REGIONAL_OFFICE_NO ||
-          "-",
-        // Use demolition names here
-        ADVERTISER_NAME: advertiserNames,
-        ADDRESS: masterData.VAR_ILLEGALHOARD_ADD || "-",
-        LATITUDE: masterData.LATITUDE || masterData.NUM_LAT || "-",
-        LONGITUDE: masterData.LONGITUDE || masterData.NUM_LONG || "-",
-        SIZE:
-          masterData.NUM_SIZE_LENGTH && masterData.NUM_SIZE_WIDTH
-            ? `${masterData.NUM_SIZE_LENGTH} x ${masterData.NUM_SIZE_WIDTH}`
-            : masterData.VAR_SIZE || masterData.SIZE || "-",
-        FROM_DATE: masterData.DAT_FROM_DT
-          ? formatDateOnly(masterData.DAT_FROM_DT)
-          : masterData.DAT_CAP_DT
-            ? formatDateOnly(masterData.DAT_CAP_DT)
-            : "-",
-        TO_DATE: masterData.DAT_TO_DT
-          ? formatDateOnly(masterData.DAT_TO_DT)
-          : masterData.DAT_CAP_DT
-            ? formatDateOnly(masterData.DAT_CAP_DT)
-            : "-",
-        AMOUNT:
-          masterData.NUM_HOARD_AMOUNT ||
-          masterData.NUM_AMOUNT ||
-          masterData.AMOUNT ||
-          "0",
-        OFFICER_NAME: masterData.VAR_USER1 || "-",
-        OFFICER_DESIGNATION: masterData.VAR_USER1_POST || "-",
-        REGIONAL_OFFICE: masterData.VAR_ILLEGALHOARD_WARD || "-",
-        PANCHANAMA_NO: masterData.VAR_ILLEGALHOARD_PANCHANAMA_NO || "-",
-        ULB_ID: import.meta.env.VITE_ULBID,
-      };
-
-      const response = await apiClient.post("/notice/generate", noticePayload);
-
-      if (response?.success && response?.data?.html) {
-        const html = response.data.html;
-
-        setNoticeHtml(html);
-
-        const printWin = window.open("", "_blank");
-
-        if (printWin) {
-          printWin.document.open();
-          printWin.document.write(html);
-          printWin.document.close();
-
-          printWin.onload = () => {
-            setTimeout(() => {
-              printWin.focus();
-              printWin.print();
-            }, 500);
-          };
-        }
-
-        setModalType("success");
-        setModalTitle("Notice Generated");
-        setModalMessage(
-          "Notice procedure executed successfully and Notice PDF prepared for download.",
-        );
-        setIsModalOpen(true);
-      } else {
-        setModalType("error");
-        setModalTitle("Error");
-        setModalMessage(response?.message || "Failed to generate notice.");
-        setIsModalOpen(true);
-      }
     } catch (err) {
-      console.error("Error generating notice:", err);
-      setModalType("error");
-      setModalTitle("Error");
-      setModalMessage(err?.message || "Failed to generate notice.");
-      setIsModalOpen(true);
-    } finally {
-      setGeneratingNoticeId(null);
+
+      console.error(
+        "Could not fetch extra panchanama details:",
+        err
+      );
     }
-  };
+
+
+    // ===================================================
+    // ADVERTISER NAMES
+    // ===================================================
+
+    const advertiserNames =
+      demolitionDetails
+        ?.map(
+          (item) =>
+            item?.VAR_DEMONSTARTED_NAME
+        )
+        .filter(
+          (name) =>
+            name &&
+            String(name).trim() !== ""
+        )
+        .join(", ") ||
+      "जाहिरातदार";
+
+
+    // ===================================================
+    // LOGGED-IN USER
+    // ===================================================
+
+    const storedUser =
+      JSON.parse(
+        localStorage.getItem(
+          "user"
+        ) || "{}"
+      );
+
+
+    const userId =
+      storedUser?.userId ||
+      storedUser?.USER_ID ||
+      storedUser?.NUM_USER_ID ||
+      storedUser?.id ||
+      null;
+
+
+    console.log(
+      "Logged-in user:",
+      storedUser
+    );
+
+
+    console.log(
+      "User ID:",
+      userId
+    );
+
+
+    if (!userId) {
+
+      throw new Error(
+        "Logged-in user ID not found. Please login again."
+      );
+    }
+
+
+    // ===================================================
+    // NOTICE PAYLOAD
+    // ===================================================
+
+    const noticePayload = {
+
+      id:
+        masterData.NUM_ILLEGALHOARD_ID,
+
+
+      userId:
+        userId,
+
+
+      corporationId:
+        masterData?.NUM_ILLEGALHOARD_ULBID ||
+        masterData?.NUM_ULBID ||
+        masterData?.ulbId ||
+        4,
+
+
+      corporationName:
+        masterData?.VAR_CORPORATION_NAME ||
+        "धुळे महानगरपालिका",
+
+
+      corporationLogo:
+        dhuleLogo,
+
+
+      REGIONAL_OFFICE_NO:
+        masterData.VAR_ILLEGALHOARD_WARD ||
+        masterData.NUM_REGIONAL_OFFICE_NO ||
+        "-",
+
+
+      ADVERTISER_NAME:
+        advertiserNames,
+
+
+      ADDRESS:
+        masterData.VAR_ILLEGALHOARD_ADD ||
+        "-",
+
+
+      LATITUDE:
+        masterData.LATITUDE ||
+        masterData.NUM_LAT ||
+        "-",
+
+
+      LONGITUDE:
+        masterData.LONGITUDE ||
+        masterData.NUM_LONG ||
+        "-",
+
+
+      SIZE:
+        masterData.NUM_SIZE_LENGTH &&
+        masterData.NUM_SIZE_WIDTH
+          ? `${masterData.NUM_SIZE_LENGTH} x ${masterData.NUM_SIZE_WIDTH}`
+          : masterData.VAR_SIZE ||
+            masterData.SIZE ||
+            "-",
+
+
+      FROM_DATE:
+        masterData.DAT_FROM_DT
+          ? formatDateOnly(
+              masterData.DAT_FROM_DT
+            )
+          : masterData.DAT_CAP_DT
+            ? formatDateOnly(
+                masterData.DAT_CAP_DT
+              )
+            : "-",
+
+
+      TO_DATE:
+        masterData.DAT_TO_DT
+          ? formatDateOnly(
+              masterData.DAT_TO_DT
+            )
+          : masterData.DAT_CAP_DT
+            ? formatDateOnly(
+                masterData.DAT_CAP_DT
+              )
+            : "-",
+
+
+      AMOUNT:
+        masterData.NUM_HOARD_AMOUNT ||
+        masterData.NUM_AMOUNT ||
+        masterData.AMOUNT ||
+        "0",
+
+
+      OFFICER_NAME:
+        masterData.VAR_USER1 ||
+        "-",
+
+
+      OFFICER_DESIGNATION:
+        masterData.VAR_USER1_POST ||
+        "-",
+
+
+      REGIONAL_OFFICE:
+        masterData.VAR_ILLEGALHOARD_WARD ||
+        "-",
+
+
+      PANCHANAMA_NO:
+        masterData.VAR_ILLEGALHOARD_PANCHANAMA_NO ||
+        "-",
+
+
+      ULB_ID:
+        import.meta.env.VITE_ULBID,
+    };
+
+
+    console.log(
+      "Notice payload:",
+      noticePayload
+    );
+
+
+    // ===================================================
+    // GENERATE + SIGN PDF
+    // ===================================================
+
+    const response =
+      await apiClient.post(
+        "/notice/generate",
+        noticePayload,
+        {
+          responseType: "blob",
+          timeout: 300000,
+        }
+      );
+
+
+    // ===================================================
+    // CHECK RESPONSE
+    // ===================================================
+
+    console.log(
+      "API response:",
+      response
+    );
+
+
+    console.log(
+      "Response type:",
+      typeof response
+    );
+
+
+    console.log(
+      "Is Blob:",
+      response instanceof Blob
+    );
+
+
+    if (
+      !(response instanceof Blob)
+    ) {
+
+      throw new Error(
+        "Invalid PDF response from server."
+      );
+    }
+
+
+    // ===================================================
+    // PDF BLOB
+    // ===================================================
+
+    const pdfBlob =
+      new Blob(
+        [response],
+        {
+          type:
+            "application/pdf",
+        }
+      );
+
+
+    console.log(
+      "PDF size:",
+      pdfBlob.size
+    );
+
+
+    // ===================================================
+    // CREATE PDF URL
+    // ===================================================
+
+    const pdfUrl =
+      window.URL.createObjectURL(
+        pdfBlob
+      );
+
+
+    // ===================================================
+    // OPEN PDF
+    // ===================================================
+
+    const pdfWindow =
+      window.open(
+        pdfUrl,
+        "_blank"
+      );
+
+
+    if (!pdfWindow) {
+
+      // Browser blocked popup
+      // Provide download instead
+
+      const link =
+        document.createElement(
+          "a"
+        );
+
+      link.href =
+        pdfUrl;
+
+      link.download =
+        `notice-${
+          masterData.VAR_ILLEGALHOARD_PANCHANAMA_NO ||
+          id
+        }.pdf`;
+
+      document.body.appendChild(
+        link
+      );
+
+      link.click();
+
+      document.body.removeChild(
+        link
+      );
+    }
+
+
+    // ===================================================
+    // SUCCESS
+    // ===================================================
+
+    setModalType("success");
+
+    setModalTitle(
+      "Notice Generated"
+    );
+
+    setModalMessage(
+      "Notice generated and digitally signed successfully."
+    );
+
+    setIsModalOpen(true);
+
+
+    // ===================================================
+    // CLEAN URL
+    // ===================================================
+
+    setTimeout(() => {
+
+      window.URL.revokeObjectURL(
+        pdfUrl
+      );
+
+    }, 60000);
+
+
+  } catch (err) {
+
+    console.error(
+      "Error generating notice:",
+      err
+    );
+
+
+    setModalType("error");
+
+    setModalTitle(
+      "Error"
+    );
+
+    setModalMessage(
+      err?.message ||
+      "Failed to generate notice."
+    );
+
+    setIsModalOpen(true);
+
+  } finally {
+
+    setGeneratingNoticeId(
+      null
+    );
+  }
+};
 
   const handleViewDetails = async (panchanama) => {
     const id = panchanama?.NUM_ILLEGALHOARD_ID;

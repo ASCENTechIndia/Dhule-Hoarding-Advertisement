@@ -1,23 +1,41 @@
 const path = require('path');
 const fs = require('fs').promises;
 const { repoGetNoticeById, repoGenerateNotice, repoGetCorporationInfo } = require('./notice.repo');
+const {
+  signPdfWithPfx,
+} = require("../../services/pdfSignerService");
+
+const {
+  generatePdfFromHtml,
+} = require("../../services/pdfGeneratorService");
 
 const TEMPLATE_PATH = path.join(__dirname, 'notice.template.html');
 
 async function getSidebarLogoBase64() {
-  const logoPaths = [
-    path.join(__dirname, 'dhule-logo.png'),
-    path.join(__dirname, '..', '..', '..', '..', 'Dhule-Hoarding-Advertisement GUI', 'public', 'assets', 'images', 'dhule-logo.png'),
-  ];
-  for (const p of logoPaths) {
-    try {
-      const buf = await fs.readFile(p);
-      if (buf && buf.length > 0) {
-        return `data:image/png;base64,${buf.toString('base64')}`;
-      }
-    } catch (e) {}
+  const logoPath = path.join(
+    __dirname,
+    "dhule-logo.png"
+  );
+
+  try {
+    const buf = await fs.readFile(logoPath);
+
+    if (!buf || buf.length === 0) {
+      return "";
+    }
+
+    console.log("Dhule logo loaded:", logoPath);
+
+    return `data:image/png;base64,${buf.toString("base64")}`;
+
+  } catch (error) {
+    console.error(
+      "Failed to load Dhule logo:",
+      error.message
+    );
+
+    return "";
   }
-  return '';
 }
 
 async function renderNoticeHtmlService(data = {}) {
@@ -35,7 +53,7 @@ async function renderNoticeHtmlService(data = {}) {
 
   const sidebarLogoBase64 = await getSidebarLogoBase64();
 
-  const logoValue = data.corporationLogo || data.logo || corpInfo?.corporationLogo || sidebarLogoBase64;
+  const logoValue = sidebarLogoBase64;
   const corpNameValue = data.corporationName || data.corporation_name || corpInfo?.corporationName || 'धुळे महानगरपालिका';
 
   const sizeValue = data.SIZE || data.size || (
@@ -59,7 +77,9 @@ async function renderNoticeHtmlService(data = {}) {
     OFFICER_NAME: data.OFFICER_NAME || data.officer_name || data.officerName || data.VAR_USER1 || data.var_user1 || '',
     OFFICER_DESIGNATION: 'सहाय्यक आयुक्त',
     REGIONAL_OFFICE: data.REGIONAL_OFFICE || data.regional_office || data.regionalOffice || data.VAR_ILLEGALHOARD_WARD || data.var_illegalhoard_ward || '',
-    NOTICE_NO: data.NOTICE_NO || ''
+    NOTICE_NO: data.NOTICE_NO || '',
+    NOTICE_DATE: data.NOTICE_DATE,
+    ZONAL_NAME: data.ZONAL_NAME
   };
 
   Object.entries(replacements).forEach(([key, val]) => {
@@ -88,9 +108,7 @@ async function generateNoticeService(payload) {
   }
 
   const userId =
-    payload.userId ||
-    payload.user_id ||
-    "system";
+    payload.userId
 
   const ulbId =
     payload.ULB_ID ||
@@ -228,6 +246,10 @@ async function generateNoticeService(payload) {
       noticeData.ward ||
       payload.REGIONAL_OFFICE ||
       "-",
+
+     NOTICE_DATE: noticeData.noticeDate || noticeDate, 
+
+     ZONAL_NAME: noticeData.zonalName
   };
 
   // =========================================================
@@ -239,24 +261,69 @@ async function generateNoticeService(payload) {
       mergedData
     );
 
-  // =========================================================
-  // RESPONSE
-  // =========================================================
+    const pdfBuffer =
+  await generatePdfFromHtml(
+    html
+  );
 
-  return {
-    procResult: {
-      errorCode,
-      message:
-        procResult.errorMessage ||
-        "Notice generated successfully",
-    },
+console.log(
+  "Generated PDF:",
+  {
+    isBuffer:
+      Buffer.isBuffer(pdfBuffer),
 
-    noticeData,
+    length:
+      pdfBuffer.length,
+  }
+);
 
-    payload: mergedData,
 
-    html,
-  };
+// =========================================================
+// DIGITALLY SIGN PDF
+// =========================================================
+
+const signedPdfBuffer =
+  await signPdfWithPfx(
+    pdfBuffer,
+    {
+      name:
+        mergedData.OFFICER_NAME ||
+        "Authorized Officer",
+
+      reason:
+        "Notice digitally signed",
+
+      location:
+        "Dhule Municipal Corporation",
+
+      contactInfo:
+        "",
+    }
+  );
+
+
+console.log(
+  "Signed PDF:",
+  signedPdfBuffer.length
+);
+
+
+return {
+  procResult: {
+    errorCode,
+    message:
+      procResult.errorMessage ||
+      "Notice generated successfully",
+  },
+
+  noticeData,
+
+  payload:
+    mergedData,
+
+  pdf:
+    signedPdfBuffer,
+};
 }
 
 module.exports = {

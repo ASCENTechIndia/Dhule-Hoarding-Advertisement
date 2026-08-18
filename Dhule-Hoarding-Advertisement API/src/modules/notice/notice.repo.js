@@ -119,6 +119,12 @@ async function repoGenerateNotice(payload) {
 
     const values = clobData.split("$");
 
+    const today = new Date();
+
+const noticeDate = `${String(today.getDate()).padStart(2, "0")}-${String(
+  today.getMonth() + 1
+).padStart(2, "0")}-${today.getFullYear()}`;
+
     const noticeData = {
       id: values[0] || null,
 
@@ -145,6 +151,11 @@ async function repoGenerateNotice(payload) {
       fromDate: values[11] || "",
 
       toDate: values[12] || "",
+
+      noticeDate: noticeDate,
+
+      zonalName: values[15] || ""
+
     };
 
     return {

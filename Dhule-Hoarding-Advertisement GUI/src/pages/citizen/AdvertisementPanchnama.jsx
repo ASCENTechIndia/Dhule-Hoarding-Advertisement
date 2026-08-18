@@ -1417,13 +1417,13 @@ function AdvertisementPanchnama() {
                     className={`form-control ${
                       errors.width ? "is-invalid" : ""
                     }`}
-                    placeholder="रुंदी"
+                    placeholder="फलकाची रुंदी"
                     {...register("width", {
-                      required: "रुंदी आवश्यक आहे",
+                      required: "फलकाची रुंदी आवश्यक आहे",
                       valueAsNumber: true,
                       min: {
                         value: 0.01,
-                        message: "रुंदी 0 पेक्षा जास्त असावी",
+                        message: "फलकाची रुंदी 0 पेक्षा जास्त असावी",
                       },
                     })}
                   />
@@ -1446,13 +1446,13 @@ function AdvertisementPanchnama() {
                     className={`form-control ${
                       errors.height ? "is-invalid" : ""
                     }`}
-                    placeholder="उंची"
+                    placeholder="फलकाची लांबी"
                     {...register("height", {
-                      required: "उंची आवश्यक आहे",
+                      required: "फलकाची लांबी आवश्यक आहे",
                       valueAsNumber: true,
                       min: {
                         value: 0.01,
-                        message: "उंची 0 पेक्षा जास्त असावी",
+                        message: "फलकाची लांबी 0 पेक्षा जास्त असावी",
                       },
                     })}
                   />

@@ -143,29 +143,68 @@ async function renderPanchanamaHtml(data = {}){
   const logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
 
   // Prepare replacement map
-  const replacements = {
-    // Master fields
-    'VAR_ILLEGALHOARD_PANCHANAMA_NO': master.VAR_ILLEGALHOARD_PANCHANAMA_NO || '-',
-    'CAPTURE_DATE_TIME': captureDateTime,
-    'VAR_USER1': master.VAR_USER1 || '-',
-    'VAR_USER1_POST': master.VAR_USER1_POST || '-',
-    'VAR_ILLEGALHOARD_ADD': master.VAR_ILLEGALHOARD_ADD || '-',
-    'VAR_ILLEGALHOARD_WARD': master.VAR_ILLEGALHOARD_WARD || '-',
-    'NUM_SIZE_LENGTH': master.NUM_SIZE_LENGTH || '-',
-    'NUM_SIZE_WIDTH': master.NUM_SIZE_WIDTH || '-',
-    'DAT_FROM_DT': master.DAT_FROM_DT ? new Date(master.DAT_FROM_DT).toLocaleDateString('en-IN') : '-',
+ const currentDate = new Date()
+  .toLocaleDateString('en-GB')
+  .replace(/\//g, '-');
 
-    // Table rows
-    'DETAILS_ROWS': detailsRows,
-    'DEMOLITION_ROWS': demolitionRows,
-    'PHOTO_GRID': photoGrid,
+const replacements = {
+  // Master fields
+  'VAR_ILLEGALHOARD_PANCHANAMA_NO':
+    master.VAR_ILLEGALHOARD_PANCHANAMA_NO || '-',
 
-    // Footer (use master data or custom values)
-    'OFFICER_NAME': master.VAR_USER1 || '-',
-    'OFFICER_POST': master.VAR_USER1_POST || '-',
-    'REGIONAL_OFFICE': master.VAR_ILLEGALHOARD_WARD || '-',
-    'CORPORATION_LOGO': logoBase64 || ''
-  };
+  'CAPTURE_DATE_TIME':
+    captureDateTime,
+
+  'VAR_USER1':
+    master.VAR_USER1 || '-',
+
+  'VAR_USER1_POST':
+    master.VAR_USER1_POST || '-',
+
+  'VAR_ILLEGALHOARD_ADD':
+    master.VAR_ILLEGALHOARD_ADD || '-',
+
+  'VAR_ILLEGALHOARD_WARD':
+    master.VAR_ILLEGALHOARD_WARD || '-',
+
+  'NUM_SIZE_LENGTH':
+    master.NUM_SIZE_LENGTH || '-',
+
+  'NUM_SIZE_WIDTH':
+    master.NUM_SIZE_WIDTH || '-',
+
+  'DAT_FROM_DT':
+    master.DAT_FROM_DT
+      ? new Date(master.DAT_FROM_DT).toLocaleDateString('en-IN')
+      : '-',
+
+  // Table rows
+  'DETAILS_ROWS':
+    detailsRows,
+
+  'DEMOLITION_ROWS':
+    demolitionRows,
+
+  'PHOTO_GRID':
+    photoGrid,
+
+  // Footer
+  'OFFICER_NAME':
+    master.VAR_USER1 || '-',
+
+  'OFFICER_POST':
+    master.VAR_USER1_POST || '-',
+
+  'REGIONAL_OFFICE':
+    master.VAR_ILLEGALHOARD_WARD || '-',
+
+  'CORPORATION_LOGO':
+    logoBase64 || '',
+
+  // Today's date
+  'CURRENT_DATE':
+    currentDate
+};
 
   // Replace all placeholders
   Object.entries(replacements).forEach(([key, value]) => {

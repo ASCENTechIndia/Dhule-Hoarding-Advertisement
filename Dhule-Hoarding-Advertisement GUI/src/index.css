@@ -190,6 +190,24 @@ body {
   transform: translateY(-2px);
 }
 
+
+.normal-btn {
+  background: linear-gradient(135deg, #2f88c5, #58abe2);
+  outline: none;
+  color: white;
+  border-radius: 5px;
+  padding: 7px 15px;
+  border: none;
+  font-size: 16px;
+  font-weight: 600;
+  box-shadow: 0 10px 25px rgba(47, 136, 197, 0.25);
+  transition: 0.3s;
+}
+.normal-btn:hover{
+  transform: translateY(-2px);
+  
+}
+
 @media (max-width: 992px) {
   .main-wrapper {
     width: 90%;

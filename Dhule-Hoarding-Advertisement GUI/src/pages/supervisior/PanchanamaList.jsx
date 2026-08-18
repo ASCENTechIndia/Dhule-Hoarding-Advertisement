@@ -4,6 +4,7 @@ import apiClient from "../../services/apiClient";
 import { useLoader } from "../../context/LoaderContext";
 import ResponseModal from "../../components/ResponseModal";
 import { generatePDF } from "../../utils/pdfHelper.jsx";
+import ExcelExportButton from "../../components/ExcelExportButton.jsx";
 
 const getToday = () => {
   const d = new Date();
@@ -56,6 +57,25 @@ const PanchanamaList = () => {
   const [modalType, setModalType] = useState("info");
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
+  const [excelData, setExcelData] = useState([]);
+  const tableHeaders = [
+    "अनुक्र.",
+    "पंचनामा क्र.",
+    "नाव",
+    "पद",
+    "पंचनामा दिनांक व वेळ",
+    "जाहिरातीचा पत्ता",
+    "प्रभाग",
+  ];
+  const keyMapping = {
+    "अनुक्र.": "id",
+    "पंचनामा क्र.": "panchanamaNo",
+    नाव: "name",
+    पद: "post",
+    "पंचनामा दिनांक व वेळ": "captureDateTime",
+    "जाहिरातीचा पत्ता": "address",
+    प्रभाग: "ward",
+  };
 
   // =========================================================
   // DATE FILTER CHANGE
@@ -106,22 +126,30 @@ const PanchanamaList = () => {
         const participantData = response.data.data || [];
         const pagination = response.data.pagination || {};
 
+        const excelData = participantData.map((item) => ({
+          id: item.NUM_ILLEGALHOARD_ID,
+          panchanamaNo: item.VAR_ILLEGALHOARD_PANCHANAMA_NO,
+          name: item.VAR_USER1,
+          post: item.VAR_USER1_POST,
+          captureDateTime: formatDateTime(item.DAT_CAP_DT, item.VAR_CAP_TIME),
+          address: item.VAR_ILLEGALHOARD_ADD,
+          ward: item.VAR_ILLEGALHOARD_WARD,
+        }));
+        setExcelData(excelData);
         setParticipants(participantData);
-
         setCurrentPage(Number(pagination.page) || dataPage);
-
         setTotalPages(Number(pagination.totalPages) || 1);
-
         setTotalRecords(Number(pagination.total) || 0);
       } else {
         setParticipants([]);
+        setExcelData([]);
         setCurrentPage(1);
         setTotalPages(1);
         setTotalRecords(0);
       }
     } catch (err) {
       console.error("Error fetching participants:", err);
-
+      setExcelData([]);
       setParticipants([]);
       setCurrentPage(1);
       setTotalPages(1);
@@ -224,27 +252,27 @@ const PanchanamaList = () => {
       .replace(",", " - ");
   };
 
-const getPanchanamaPhotos = (panchanama) => {
+  const getPanchanamaPhotos = (panchanama) => {
     return [
-        {
-            label: "जवळून फोटो",
-            image: panchanama?.BLOB_NEAR_PHOTO,
-        },
-        {
-            label: "दुरून फोटो",
-            image: panchanama?.BLOB_FAR_PHOTO,
-        },
-        {
-            label: "पंचनामा करणाऱ्यासोबत फोटो",
-            image: panchanama?.BLOB_USER_PHOTO,
-        },
+      {
+        label: "जवळून फोटो",
+        image: panchanama?.BLOB_NEAR_PHOTO,
+      },
+      {
+        label: "दुरून फोटो",
+        image: panchanama?.BLOB_FAR_PHOTO,
+      },
+      {
+        label: "पंचनामा करणाऱ्यासोबत फोटो",
+        image: panchanama?.BLOB_USER_PHOTO,
+      },
     ].filter(
-        (photo) =>
-            photo.image &&
-            typeof photo.image === "string" &&
-            photo.image.trim() !== ""
+      (photo) =>
+        photo.image &&
+        typeof photo.image === "string" &&
+        photo.image.trim() !== "",
     );
-};
+  };
 
   const openImageInNewTab = (img) => {
     try {
@@ -331,8 +359,6 @@ const getPanchanamaPhotos = (panchanama) => {
       const response = await apiClient.get(
         `/advertisement/getPanchanamaDetails?id=${id}`,
       );
-
-      console.log("Panchanama Details Response:", response);
 
       if (response?.success && response?.data) {
         setSelectedPanchanamaDetails(response.data);
@@ -556,7 +582,6 @@ const getPanchanamaPhotos = (panchanama) => {
       BLOB_USER_PHOTO: "पंचनामा करणाऱ्यासोबत फोटो",
     };
 
-    
     const formatLabel = (key) => {
       return (
         fieldLabels[key] ||
@@ -632,7 +657,7 @@ const getPanchanamaPhotos = (panchanama) => {
               <div>
                 <h5 className="modal-title mb-1">
                   <i className="bi bi-file-earmark-text me-2"></i>
-                  पंचनामा माहिती 
+                  पंचनामा माहिती
                 </h5>
               </div>
 
@@ -668,7 +693,7 @@ const getPanchanamaPhotos = (panchanama) => {
                   }}
                 >
                   <i className="bi bi-info-circle me-2"></i>
-                  पंचनामा माहिती 
+                  पंचनामा माहिती
                 </div>
 
                 <div
@@ -681,56 +706,55 @@ const getPanchanamaPhotos = (panchanama) => {
                   }}
                 >
                   {masterEntries.map(([key, value]) => {
+                    const upperKey = key.toUpperCase();
 
-    const upperKey = key.toUpperCase();
+                    const skipFields = [
+                      "NUM_ILLEGALHOARD_ID",
+                      "NUM_ILLEGALHOARD_ULBID",
+                      "LATITUDE",
+                      "LONGITUDE",
+                    ];
 
-    const skipFields = [
-        "NUM_ILLEGALHOARD_ID",
-        "NUM_ILLEGALHOARD_ULBID",
-        "LATITUDE",
-        "LONGITUDE",
-    ];
+                    if (
+                      upperKey.startsWith("BLOB_") ||
+                      skipFields.includes(upperKey)
+                    ) {
+                      return null;
+                    }
 
-    if (
-        upperKey.startsWith("BLOB_") ||
-        skipFields.includes(upperKey)
-    ) {
-        return null;
-    }
+                    const formattedValue = formatDetailValue(key, value);
 
-    const formattedValue = formatDetailValue(key, value);
+                    if (formattedValue === null) {
+                      return null;
+                    }
 
-    if (formattedValue === null) {
-        return null;
-    }
+                    return (
+                      <div key={key} style={{ minWidth: 0 }}>
+                        <div
+                          style={{
+                            fontSize: "13px",
+                            fontWeight: 600,
+                            color: "#737887",
+                            marginBottom: "5px",
+                          }}
+                        >
+                          {formatLabel(key)}
+                        </div>
 
-    return (
-        <div key={key} style={{ minWidth: 0 }}>
-            <div
-                style={{
-                    fontSize: "13px",
-                    fontWeight: 600,
-                    color: "#737887",
-                    marginBottom: "5px",
-                }}
-            >
-                {formatLabel(key)}
-            </div>
-
-            <div
-                style={{
-                    fontSize: "15px",
-                    color: "#252525",
-                    lineHeight: "1.5",
-                    whiteSpace: "pre-wrap",
-                    wordBreak: "break-word",
-                }}
-            >
-                {formattedValue}
-            </div>
-        </div>
-    );
-})}
+                        <div
+                          style={{
+                            fontSize: "15px",
+                            color: "#252525",
+                            lineHeight: "1.5",
+                            whiteSpace: "pre-wrap",
+                            wordBreak: "break-word",
+                          }}
+                        >
+                          {formattedValue}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -811,8 +835,7 @@ const getPanchanamaPhotos = (panchanama) => {
                 >
                   <i className="bi bi-tools me-2"></i>
                   जाहिरात फलक प्रदर्शित करणाऱ्याचे नाव
-                  <span className="badge bg-danger ms-2">
-                  </span>
+                  <span className="badge bg-danger ms-2"></span>
                 </div>
 
                 <div className="p-3">
@@ -865,63 +888,49 @@ const getPanchanamaPhotos = (panchanama) => {
                   }}
                 >
                   <i className="bi bi-images me-2"></i>
-                  पंचनाम्याचे फोटो 
+                  पंचनाम्याचे फोटो
                 </div>
 
-              <div className="p-3">
-    {photos.length > 0 ? (
-        <div className="row g-3">
-            {photos.map((photo, index) => (
-                <div
-                    className="col-6 col-md-4"
-                    key={index}
-                >
-                    <div className="card h-100 shadow-sm">
-
-                        <img
-                            src={`data:image/jpeg;base64,${photo.image}`}
-                            alt={photo.label}
-                            className="card-img-top"
-                            style={{
+                <div className="p-3">
+                  {photos.length > 0 ? (
+                    <div className="row g-3">
+                      {photos.map((photo, index) => (
+                        <div className="col-6 col-md-4" key={index}>
+                          <div className="card h-100 shadow-sm">
+                            <img
+                              src={`data:image/jpeg;base64,${photo.image}`}
+                              alt={photo.label}
+                              className="card-img-top"
+                              style={{
                                 height: "200px",
                                 objectFit: "cover",
                                 cursor: "pointer",
-                            }}
-                            onClick={() =>
-                                handleImageClick(
-                                    master,
-                                    index
-                                )
-                            }
-                        />
+                              }}
+                              onClick={() => handleImageClick(master, index)}
+                            />
 
-                        <div className="card-body p-2 text-center">
-                            <small className="text-muted">
+                            <div className="card-body p-2 text-center">
+                              <small className="text-muted">
                                 {photo.label}
-                            </small>
+                              </small>
+                            </div>
+                          </div>
                         </div>
-
+                      ))}
                     </div>
+                  ) : (
+                    <div className="text-center text-muted py-4">
+                      <i
+                        className="bi bi-image"
+                        style={{
+                          fontSize: "2rem",
+                        }}
+                      ></i>
+
+                      <div className="mt-2">No photos available</div>
+                    </div>
+                  )}
                 </div>
-            ))}
-        </div>
-    ) : (
-        <div className="text-center text-muted py-4">
-
-            <i
-                className="bi bi-image"
-                style={{
-                    fontSize: "2rem",
-                }}
-            ></i>
-
-            <div className="mt-2">
-                No photos available
-            </div>
-
-        </div>
-    )}
-</div>
               </div>
             </div>
 
@@ -1021,6 +1030,17 @@ const getPanchanamaPhotos = (panchanama) => {
                   <i className="bi bi-x-lg me-1"></i>
                   Clear
                 </button>
+              </div>
+
+              <div>
+                <ExcelExportButton
+                  tableHeaders={tableHeaders}
+                  data={excelData}
+                  keyMapping={keyMapping}
+                  fileName="Panchanama_List.xlsx"
+                  buttonText="Excel"
+                  className="btn btn-sm btn-success"
+                />
               </div>
             </div>
           </div>
@@ -1341,7 +1361,6 @@ const getPanchanamaPhotos = (panchanama) => {
                   Next
                   <i className="bi bi-chevron-right ms-1"></i>
                 </button>
-                
               </div>
             </div>
           </div>

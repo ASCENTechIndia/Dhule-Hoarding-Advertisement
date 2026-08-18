@@ -2,14 +2,14 @@ import React from "react";
 import * as XLSX from "xlsx";
 
 const ExcelExportButton = ({
-  tableHeaders, // Array of header strings (e.g., ['क्र.सं.', 'नाव'])
-  data, // Array of objects (your fetched data)
-  keyMapping, // Object: { 'क्र.सं.': 'srNo', 'नाव': 'name', ... }
+  tableHeaders,
+  data,
+  keyMapping,
   fileName = "export.xlsx",
   buttonText = "Excel",
   className = "btn btn-success btn-sm",
   iconClass = "bi bi-file-earmark-excel me-1",
-  onError, // Optional callback for errors
+  onError,
 }) => {
   const handleExport = () => {
     if (!data || data.length === 0) {
@@ -20,14 +20,11 @@ const ExcelExportButton = ({
     }
 
     try {
-      // Build the 2D array: first row = headers
       const rows = [tableHeaders];
 
-      // For each data item, map header → value using keyMapping
       data.forEach((item) => {
         const row = tableHeaders.map((header) => {
           const key = keyMapping[header];
-          // If key exists, get the value; otherwise empty string
           return key && item.hasOwnProperty(key) ? item[key] : "";
         });
         rows.push(row);

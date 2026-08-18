@@ -1067,12 +1067,12 @@ if (response?.success && response?.data?.html) {
               ></i>
 
               <span>
-                All Notices ({totalRecords})
+                नोटिस यादी ({totalRecords})
               </span>
             </h2>
 
             <p className="text-muted mb-0">
-              View all Notice records.
+              संपूर्ण यादी पहा
             </p>
           </div>
 
@@ -1172,14 +1172,14 @@ if (response?.success && response?.data?.html) {
 
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Panchanama No.</th>
-                <th>User Name</th>
-                <th>User Post</th>
-                <th>Capture Date & Time</th>
-                <th>Address</th>
-                <th>Ward</th>
-                <th>Action</th>
+                <th>अनुक्रमांक</th>
+                <th>पंचनामा क्र.</th>
+                <th>नाव</th>
+                <th>पद</th>
+                <th>पंचनामा दिनांक व वेळ</th>
+                <th>जाहिरातीचा पत्ता</th>
+                <th>प्रभाग</th>
+                <th>क्रिया</th>
               </tr>
             </thead>
 

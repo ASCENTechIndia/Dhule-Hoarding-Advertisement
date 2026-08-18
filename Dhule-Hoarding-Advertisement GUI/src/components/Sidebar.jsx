@@ -10,12 +10,12 @@ export default function Sidebar() {
     {
       path: "/panchanama-list",
       icon: "bi-people",
-      label: "Panchanama List",
+      label: "पंचनामा यादी",
     },
     {
       path: "/notice-list",
       icon: "bi-people",
-      label: "Notice List",
+      label: "नोटिस यादी",
     },
   ];
 

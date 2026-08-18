@@ -959,10 +959,10 @@ const getPanchanamaPhotos = (panchanama) => {
             <h2 className="h5 mb-1 section-title">
               <i className="bi bi-people me-2" aria-hidden="true"></i>
 
-              <span>All Panchanama ({totalRecords})</span>
+              <span>पंचनामा यादी ({totalRecords})</span>
             </h2>
 
-            <p className="text-muted mb-0">View all Panchanama records.</p>
+            <p className="text-muted mb-0">संपूर्ण यादी पहा.</p>
           </div>
 
           {/* FILTERS */}
@@ -1041,14 +1041,14 @@ const getPanchanamaPhotos = (panchanama) => {
           <table className="table align-middle mb-0">
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Panchanama No.</th>
-                <th>User Name</th>
-                <th>User Post</th>
-                <th>Capture Date & Time</th>
-                <th>Address</th>
-                <th>Ward</th>
-                <th>Action</th>
+                <th>अनुक्र.</th>
+                <th>पंचनामा क्र.</th>
+                <th>नाव</th>
+                <th>पद</th>
+                <th>पंचनामा दिनांक व वेळ</th>
+                <th>जाहिरातीचा पत्ता</th>
+                <th>प्रभाग</th>
+                <th>क्रिया</th>
               </tr>
             </thead>
 

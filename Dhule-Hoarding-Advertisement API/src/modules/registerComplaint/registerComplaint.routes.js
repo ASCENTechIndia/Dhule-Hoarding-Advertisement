@@ -7,7 +7,8 @@ const {
 const { 
     // getWardList, getToiletList, getComplaintTypeList, registerComplaint, assignComplaint, getComplaintList,
     // getSupervisorList,getVendorList,
-    registerParticipant,getPanchanamalist ,registerIllegalHoard,getPanchanamaDetails
+    registerParticipant,getPanchanamalist ,registerIllegalHoard,getPanchanamaDetails,
+    generatePanchnamaPdf
  } = require('./registerComplaint.controller');
 
 const router = express.Router();
@@ -33,6 +34,8 @@ router.get(
   '/getPanchanamaDetails',
   getPanchanamaDetails
 );
+
+router.post("/generatePanchnamaPdf", generatePanchnamaPdf)
 
 router.post(
     "/insertIllegalHoard",

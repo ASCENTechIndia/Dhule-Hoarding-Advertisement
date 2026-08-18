@@ -57,7 +57,7 @@ export default function Navbar() {
                 className="profile-name d-none d-sm-inline"
                 style={{ fontSize: "0.80rem" }}
               >
-                {user?.userFullName}
+                {user?.firstName}
               </span>
             </button>
             {showProfile && (

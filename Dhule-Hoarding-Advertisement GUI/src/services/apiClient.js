@@ -1,74 +1,381 @@
-// Simple axios-like API client for the new GUI
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  "http://localhost:5000/api";
+
 
 class ApiClient {
+
   async request(endpoint, options = {}) {
+
     const {
-      method = 'GET',
+      method = "GET",
       data = null,
       params = null,
       headers = {},
       timeout = 300000,
-    } = options
 
-    const baseUrl = `${API_BASE_URL}${endpoint}`
-    const query = params ? new URLSearchParams(params).toString() : ''
-    const url = query ? `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}${query}` : baseUrl
-    
-    // Get token from localStorage
-    const token = localStorage.getItem('token')
+      // NEW:
+      // json | blob | arraybuffer | text
+      responseType = "json",
+
+    } = options;
+
+
+    // =====================================================
+    // BUILD URL
+    // =====================================================
+
+    const baseUrl =
+      `${API_BASE_URL}${endpoint}`;
+
+
+    const query =
+      params
+        ? new URLSearchParams(params).toString()
+        : "";
+
+
+    const url =
+      query
+        ? `${baseUrl}${
+            baseUrl.includes("?")
+              ? "&"
+              : "?"
+          }${query}`
+        : baseUrl;
+
+
+    // =====================================================
+    // TOKEN
+    // =====================================================
+
+    const token =
+      localStorage.getItem("token");
+
+
     const finalHeaders = {
-      'Content-Type': 'application/json',
+
+      "Content-Type":
+        "application/json",
+
       ...headers,
-    }
+
+    };
+
 
     if (token) {
-      finalHeaders.Authorization = `Bearer ${token}`
+
+      finalHeaders.Authorization =
+        `Bearer ${token}`;
+
     }
+
 
     try {
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), timeout)
 
-      const response = await fetch(url, {
-        method,
-        headers: finalHeaders,
-        body: data ? JSON.stringify(data) : null,
-        signal: controller.signal,
-      })
+      // ===================================================
+      // ABORT CONTROLLER
+      // ===================================================
 
-      clearTimeout(timeoutId)
+      const controller =
+        new AbortController();
+
+
+      const timeoutId =
+        setTimeout(
+          () => controller.abort(),
+          timeout
+        );
+
+
+      // ===================================================
+      // FETCH
+      // ===================================================
+
+      const response =
+        await fetch(
+          url,
+          {
+            method,
+
+            headers:
+              finalHeaders,
+
+            body:
+              data !== null &&
+              data !== undefined
+                ? JSON.stringify(data)
+                : null,
+
+            signal:
+              controller.signal,
+          }
+        );
+
+
+      clearTimeout(
+        timeoutId
+      );
+
+
+      // ===================================================
+      // ERROR RESPONSE
+      // ===================================================
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || `HTTP ${response.status}`)
+
+        let errorMessage =
+          `HTTP ${response.status}`;
+
+
+        try {
+
+          const contentType =
+            response.headers.get(
+              "content-type"
+            );
+
+
+          // -----------------------------------------------
+          // JSON ERROR
+          // -----------------------------------------------
+
+          if (
+            contentType &&
+            contentType.includes(
+              "application/json"
+            )
+          ) {
+
+            const errorData =
+              await response.json();
+
+
+            errorMessage =
+              errorData?.message ||
+              errorData?.error ||
+              errorMessage;
+
+          }
+
+          // -----------------------------------------------
+          // TEXT ERROR
+          // -----------------------------------------------
+
+          else {
+
+            const text =
+              await response.text();
+
+
+            if (text) {
+              errorMessage = text;
+            }
+
+          }
+
+        } catch (parseError) {
+
+          console.error(
+            "Error parsing API error:",
+            parseError
+          );
+
+        }
+
+
+        throw new Error(
+          errorMessage
+        );
+
       }
 
-      return await response.json()
+
+      // ===================================================
+      // RESPONSE TYPE: BLOB
+      // ===================================================
+
+      if (
+        responseType === "blob"
+      ) {
+
+        return await response.blob();
+
+      }
+
+
+      // ===================================================
+      // RESPONSE TYPE: ARRAY BUFFER
+      // ===================================================
+
+      if (
+        responseType === "arraybuffer"
+      ) {
+
+        return await response.arrayBuffer();
+
+      }
+
+
+      // ===================================================
+      // RESPONSE TYPE: TEXT
+      // ===================================================
+
+      if (
+        responseType === "text"
+      ) {
+
+        return await response.text();
+
+      }
+
+
+      // ===================================================
+      // DEFAULT: JSON
+      // =====================================================
+
+      return await response.json();
+
+
     } catch (error) {
-      throw new Error(error.message || 'API request failed')
+
+      // ===================================================
+      // TIMEOUT
+      // ===================================================
+
+      if (
+        error.name ===
+        "AbortError"
+      ) {
+
+        throw new Error(
+          "Request timeout"
+        );
+
+      }
+
+
+      // ===================================================
+      // API ERROR
+      // ===================================================
+
+      throw new Error(
+        error.message ||
+        "API request failed"
+      );
+
     }
+
   }
 
-  get(endpoint, options) {
-    return this.request(endpoint, { ...options, method: 'GET' })
+
+  // =======================================================
+  // GET
+  // =======================================================
+
+  get(
+    endpoint,
+    options = {}
+  ) {
+
+    return this.request(
+      endpoint,
+      {
+        ...options,
+        method: "GET",
+      }
+    );
+
   }
 
-  post(endpoint, data, options) {
-    return this.request(endpoint, { ...options, method: 'POST', data })
+
+  // =======================================================
+  // POST
+  // =======================================================
+
+  post(
+    endpoint,
+    data,
+    options = {}
+  ) {
+
+    return this.request(
+      endpoint,
+      {
+        ...options,
+        method: "POST",
+        data,
+      }
+    );
+
   }
 
-  put(endpoint, data, options) {
-    return this.request(endpoint, { ...options, method: 'PUT', data })
+
+  // =======================================================
+  // PUT
+  // =======================================================
+
+  put(
+    endpoint,
+    data,
+    options = {}
+  ) {
+
+    return this.request(
+      endpoint,
+      {
+        ...options,
+        method: "PUT",
+        data,
+      }
+    );
+
   }
 
-  patch(endpoint, data, options) {
-    return this.request(endpoint, { ...options, method: 'PATCH', data })
+
+  // =======================================================
+  // PATCH
+  // =======================================================
+
+  patch(
+    endpoint,
+    data,
+    options = {}
+  ) {
+
+    return this.request(
+      endpoint,
+      {
+        ...options,
+        method: "PATCH",
+        data,
+      }
+    );
+
   }
 
-  delete(endpoint, options) {
-    return this.request(endpoint, { ...options, method: 'DELETE' })
+
+  // =======================================================
+  // DELETE
+  // =======================================================
+
+  delete(
+    endpoint,
+    options = {}
+  ) {
+
+    return this.request(
+      endpoint,
+      {
+        ...options,
+        method: "DELETE",
+      }
+    );
+
   }
+
 }
 
-export default new ApiClient()
+
+export default new ApiClient();

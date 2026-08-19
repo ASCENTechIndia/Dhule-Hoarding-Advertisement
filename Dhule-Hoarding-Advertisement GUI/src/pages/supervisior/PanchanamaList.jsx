@@ -534,7 +534,6 @@ const PanchanamaList = () => {
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">
-                  <i className="bi bi-file-earmark-text me-2"></i>
                   पंचनामा माहिती
                 </h5>
 
@@ -586,8 +585,8 @@ const PanchanamaList = () => {
       VAR_USER1_POST: "पंचनामा करणाऱ्याचे पद",
       VAR_ILLEGALHOARD_ADD: "अनधिकृत जाहिरात लावलेल्या ठिकाणाचा संपूर्ण पत्ता",
       DAT_FROM_DT: "जाहिरात फलक केव्हापासून अनधिकृतपणे प्रदर्शित केला आहे ?",
-      NUM_SIZE_LENGTH: "लांबी",
-      NUM_SIZE_WIDTH: "रुंदी ",
+      NUM_SIZE_LENGTH: "फलकाची लांबी",
+      NUM_SIZE_WIDTH: "फलकाची रुंदी ",
       VAR_ILLEGALHOARD_WARD: "प्रभाग क्रमांक",
       BLOB_NEAR_PHOTO: "जवळून फोटो",
       BLOB_FAR_PHOTO: "दुरून फोटो",
@@ -669,7 +668,7 @@ const PanchanamaList = () => {
               <div>
                 <h5 className="modal-title mb-1">
                   <i className="bi bi-file-earmark-text me-2"></i>
-                  पंचनामा माहिती
+                  अनधिकृत जाहिरात फलक पंचनामा माहिती 
                 </h5>
               </div>
 
@@ -704,7 +703,6 @@ const PanchanamaList = () => {
                     color: "#333",
                   }}
                 >
-                  <i className="bi bi-info-circle me-2"></i>
                   पंचनामा माहिती
                 </div>
 
@@ -789,7 +787,6 @@ const PanchanamaList = () => {
                     color: "#333",
                   }}
                 >
-                  <i className="bi bi-list-ul me-2"></i>
                   सोबत उपस्थित कर्मचाऱ्यांचे नाव
                 </div>
 
@@ -845,7 +842,6 @@ const PanchanamaList = () => {
                     color: "#333",
                   }}
                 >
-                  <i className="bi bi-tools me-2"></i>
                   जाहिरात फलक प्रदर्शित करणाऱ्याचे नाव
                   <span className="badge bg-danger ms-2"></span>
                 </div>
@@ -899,7 +895,6 @@ const PanchanamaList = () => {
                     color: "#333",
                   }}
                 >
-                  <i className="bi bi-images me-2"></i>
                   पंचनाम्याचे फोटो
                 </div>
 

@@ -8,205 +8,394 @@
   <title>Notice / नोटीस</title>
 
   <style>
+    /* =====================================================
+       A4 PAGE
+    ===================================================== */
+
     @page {
-  size: A4;
-  margin: 0;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-html,
-body {
-  margin: 0;
-  padding: 0;
-  width: 210mm;
-  height: 297mm;
-}
-
-body {
-  font-family: 'Noto Sans Devanagari', Arial, sans-serif;
-  font-size: 10px;
-}
-
-.container {
-  width: 210mm;
-  height: 297mm;
-
-  border: 1px solid #000;
-
-  padding: 12mm 15mm;
-
-  margin: 0;
-
-  overflow: hidden;
-}
-
-    /* Header */
-    .header {
-      text-align: center;
-      margin-bottom: 20px;
+      size: A4;
+      margin: 0;
     }
 
-    .header-title {
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 210mm;
+      height: 297mm;
+    }
+
+    body {
+      font-family: 'Noto Sans Devanagari', Arial, sans-serif;
       font-size: 12px;
-      margin-bottom: 5px;
+    }
+
+    /* =====================================================
+       MAIN CONTAINER
+    ===================================================== */
+
+    .container {
+      width: 210mm;
+      height: 297mm;
+
+      border: 1px solid #000;
+
+      padding: 12mm 15mm;
+
+      margin: 0;
+
+      overflow: hidden;
+
+      position: relative;
+    }
+
+    /* =====================================================
+       HEADER
+    ===================================================== */
+
+    .header {
+      text-align: center;
+      margin-bottom: 18px;
     }
 
     .corporation-brand {
       display: flex;
       align-items: center;
       justify-content: center;
+
       gap: 12px;
+
       margin-top: 5px;
     }
 
     .logo {
-      width: 55px;
-      height: 55px;
+      width: 60px;
+      height: 60px;
+
       object-fit: contain;
     }
 
     .corporation-name {
-      font-size: 22px;
+      font-size: 24px;
+
       font-weight: bold;
+
       color: #0b68af;
-      line-height: 1;
+
+      line-height: 1.2;
     }
 
-    /* Office */
+    /* =====================================================
+       ZONAL OFFICE
+    ===================================================== */
+
+    .zonal-office {
+      text-align: center;
+
+      font-size: 13px;
+
+      font-weight: bold;
+
+      margin-top: 8px;
+
+      margin-bottom: 20px;
+    }
+
+    /* =====================================================
+       OFFICE / NOTICE DETAILS
+    ===================================================== */
+
     .office-section {
-      margin-top: 20px;
+      margin-top: 5px;
+
       margin-bottom: 25px;
+    }
+
+    .notice-number-row {
+      width: 100%;
+
+      display: flex;
+
+      justify-content: space-between;
+
+      align-items: center;
+
+      font-size: 12px;
+    }
+
+    .notice-number {
+      text-align: left;
+    }
+
+    .notice-date {
+      text-align: right;
+    }
+
+    /* =====================================================
+       RECEIVER
+    ===================================================== */
+
+    .receiver-section {
+      margin-top: 20px;
+
+      line-height: 1.9;
+
+      font-size: 12.5px;
     }
 
     .office-label {
       font-weight: bold;
-      margin-bottom: 5px;
-    }
 
-    /* Receiver */
-    .receiver-section {
-      margin-top: 20px;
-      line-height: 1.7;
+      margin-bottom: 6px;
+
+      font-size: 13px;
     }
 
     .dotted-line {
       display: inline-block;
-      min-width: 150px;
+
+      min-width: 180px;
+
       border-bottom: 1px dotted #000;
     }
 
-    /* Subject */
+    /* =====================================================
+       SUBJECT
+    ===================================================== */
+
     .subject {
       text-align: center;
+
       font-weight: bold;
-      margin: 20px 0;
-      font-size: 11px;
+
+      margin: 22px 0;
+
+      font-size: 13px;
+
+      line-height: 1.7;
     }
 
-    /* Notice */
+    /* =====================================================
+       NOTICE HEADING
+    ===================================================== */
+
     .notice-heading {
       font-weight: bold;
-      font-size: 12px;
-      margin-bottom: 12px;
+
+      font-size: 16px;
+
+      margin-bottom: 15px;
+
+      text-align: center;
     }
+
+    /* =====================================================
+       NOTICE CONTENT
+    ===================================================== */
 
     .notice-content {
       text-align: justify;
-      line-height: 1.8;
-      font-size: 10.5px;
+
+      line-height: 2;
+
+      font-size: 13px;
     }
 
-    /* Dynamic values */
+    /* =====================================================
+       DYNAMIC VALUES
+    ===================================================== */
+
     .dynamic {
       font-weight: bold;
+
+      font-size: 13px;
     }
 
-    /* Footer */
-    .footer {
-      margin-top: 45px;
-      width: 100%;
-    }
+    /* =====================================================
+       PLACE AND DATE AT END
+    ===================================================== */
 
-    .footer-row {
-      display: flex;
-      justify-content: flex-end;
-      margin-bottom: 7px;
-      line-height: 1.5;
-    }
+    .notice-end-details {
+      margin-top: 30px;
 
-    .footer-label {
-      width: 150px;
+      font-size: 12.5px;
+
+      line-height: 2;
+
       text-align: left;
+    }
+
+    /* =====================================================
+       DIGITAL SIGNATURE
+    ===================================================== */
+
+    .digital-signature {
+      width: 190px;
+
+      margin-left: auto;
+
+      margin-top: 25px;
+
+      margin-bottom: 12px;
+
+      text-align: center;
+
+      font-size: 9px;
+    }
+
+    .signature-check {
+      width: 24px;
+      height: 24px;
+
+      margin: 0 auto 4px auto;
+
+      border: 2px solid #168a3b;
+
+      border-radius: 50%;
+
+      color: #168a3b;
+
+      font-size: 17px;
+
+      font-weight: bold;
+
+      line-height: 20px;
+    }
+
+    .signature-title {
+      font-size: 11px;
+
+      font-weight: bold;
+
+      color: #168a3b;
+    }
+
+    .signature-text {
+      margin-top: 2px;
+
+      font-size: 8px;
+    }
+
+    .signature-name {
+      margin-top: 3px;
+
+      font-size: 9px;
+
       font-weight: bold;
     }
 
-    .footer-value {
-      width: 180px;
-      text-align: left;
+    .signature-designation {
+      margin-top: 2px;
+
+      font-size: 9px;
     }
 
-    /* Print */
+    /* =====================================================
+       PRINT
+    ===================================================== */
+
     @media print {
-  @page {
-    size: A4;
-    margin: 0;
-  }
 
-  html,
-  body {
-    width: 210mm;
-    height: 297mm;
-    margin: 0;
-    padding: 0;
-  }
+      @page {
+        size: A4;
 
-  .container {
-    width: 210mm;
-    height: 297mm;
+        margin: 0;
+      }
 
-    border: 1px solid #000;
+      html,
+      body {
+        width: 210mm;
 
-    padding: 12mm 15mm;
+        height: 297mm;
 
-    margin: 0;
+        margin: 0;
 
-    overflow: hidden;
-  }
-}
+        padding: 0;
+      }
+
+      .container {
+        width: 210mm;
+
+        height: 297mm;
+
+        border: 1px solid #000;
+
+        padding: 12mm 15mm;
+
+        margin: 0;
+
+        overflow: hidden;
+      }
+    }
   </style>
 </head>
+
 
 <body>
 
   <div class="container">
 
-    <!-- Notice Header -->
+    <!-- =================================================
+         HEADER
+    ================================================== -->
+
     <div class="header">
 
-      <div class="header-title">
-        Notice
-      </div>
-
       <div class="corporation-brand">
-        <img src="{{corporationLogo}}" alt="Corporation Logo" class="logo">
-        <span class="corporation-name">{{corporationName}}</span>
+
+        <img
+          src="{{corporationLogo}}"
+          alt="Corporation Logo"
+          class="logo"
+        >
+
+        <span class="corporation-name">
+          {{corporationName}}
+        </span>
+
       </div>
 
     </div>
 
 
-    <!-- Regional Office -->
+    <!-- =================================================
+         ZONAL OFFICE + NOTICE DETAILS
+    ================================================== -->
+
     <div class="office-section">
-      <div>
-        क्षेत्रीय कार्यालय क्र. {{REGIONAL_OFFICE_NO}}
+
+      <!-- Zonal Office -->
+
+      <div class="zonal-office">
+        क्षेत्रीय कार्यालय क्र, {{ZONAL_NAME}}
       </div>
+
+
+      <!-- Notice Number + Date -->
+
+      <div class="notice-number-row">
+
+        <div class="notice-number">
+          नोटीस क्रमांक : {{NOTICE_NO}}
+        </div>
+
+        <div class="notice-date">
+          दिनांक : {{NOTICE_DATE}}
+        </div>
+
+      </div>
+
     </div>
 
 
-    <!-- Receiver -->
+    <!-- =================================================
+         RECEIVER
+    ================================================== -->
+
     <div class="receiver-section">
 
       <div class="office-label">
@@ -214,28 +403,45 @@ body {
       </div>
 
       <div>
+
         <span class="dotted-line">
           {{ADVERTISER_NAME}}
         </span>
+
       </div>
 
     </div>
 
 
-    <!-- Subject -->
+    <!-- =================================================
+         SUBJECT
+    ================================================== -->
+
     <div class="subject">
-      विषय - अनधिकृत प्रदर्शित केलेल्या जाहिरात फलकाचे शुल्क भरणा करण्याबाबत
+
+      विषय - अनधिकृत प्रदर्शित केलेल्या जाहिरात फलकाचे
+      शुल्क भरणा करण्याबाबत
+
     </div>
 
 
-    <!-- Notice -->
+    <!-- =================================================
+         NOTICE HEADING
+    ================================================== -->
+
     <div class="notice-heading">
-      नोटीस - {{NOTICE_NO}}
+      नोटीस
     </div>
+
+
+    <!-- =================================================
+         NOTICE CONTENT
+    ================================================== -->
 
     <div class="notice-content">
 
-      धुळे महानगरपालिका क्षेत्रात कार्यालयीन कामकाजानिमित्त आज फिरनी करून पाहणी केली असता आपण
+      धुळे महानगरपालिका क्षेत्रात कार्यालयीन कामकाजानिमित्त
+      आज पाहणी केली असता आपण
 
       <span class="dynamic">
         {{ADDRESS}}
@@ -262,52 +468,110 @@ body {
       आकाराचा अनधिकृत जाहिरात फलक
 
       <span class="dynamic">
-        {{FROM_DATE}}
-      </span>
-
-      पासून
-
-      <span class="dynamic">
         {{TO_DATE}}
       </span>
 
+         पासून
+
+      <span class="dynamic">
+        {{FROM_DATE}}
+      </span>
+
+   
+
+      
+
       पर्यंत प्रदर्शित केलेला आढळून आला आहे.
 
-      <br><br>
 
-      महानगरपालिकेच्या अनधिकृत जाहिरात फलक शुल्क धोरणानुसार या जाहिरात फलकाचे शुल्क रु.
+      <br>
+      <br>
+
+
+      महानगरपालिकेच्या अनधिकृत जाहिरात फलक शुल्क धोरणानुसार
+      या जाहिरात फलकाचे शुल्क रु.
 
       <span class="dynamic">
         {{AMOUNT}}
       </span>
 
-      इतके होत आहे.
+      इतके निश्चित करण्यात आले आहे.
 
-      आपण महानगरपालिकेच्या परवानगीशिवाय हा जाहिरात फलक प्रसिद्ध केला असल्याने आपण हा सूचना मिळाल्यापासून ७ दिवसांच्या आत
-      वरीलप्रमाणे निश्चित शुल्काचा भरणा महानगरपालिकेकडे करावा.
 
-      आपण या शुल्काचा भरणा विहित मुदतीत न केल्यास हि रक्कम मालमत्ता कराची थकबाकी म्हणून आपल्याकडून वसूल करण्यात येतील.
+      आपण महानगरपालिकेची पूर्वपरवानगी न घेता सदर जाहिरात फलक
+      प्रसिद्ध केला असल्याने आपण हि नोटीस प्राप्त झाल्यापासून ७ (सात)
+      दिवसांच्या आत वरीलप्रमाणे निश्चित केलेल्या शुल्काचा भरणा धुळे 
+      महानगरपालिकेकडे करावा.
 
-      तसेच आपल्या विरुद्ध महाराष्ट्र मालमत्तेच्या विरुपणास प्रतिबंध करण्याकरिता अधिनियम १९९५ अन्वये गुन्हा दाखल करण्यात
-      येयील याची नोंद घ्यावी.
+
+      आपण या शुल्काचा भरणा विहित मुदतीत न केल्यास, हि रक्कम
+      मालमत्ता कराची थकबाकी म्हणून आपल्याकडून वसूल
+      करण्यात येईल.
+
+
+      तसेच आपल्या विरुद्ध <strong>महाराष्ट्र मालमत्तेच्या विरुपणास
+      प्रतिबंध करण्यासाठी अधिनियम १९९५ अन्वये गुन्हा दाखल
+      करण्यात येईल याची नोंद घ्यावी.</strong>
 
     </div>
 
 
-    <!-- Footer -->
-    <div class="footer">
+    <!-- =================================================
+         PLACE AND DATE
+    ================================================== -->
 
-      <div class="footer-row">
-        <div class="footer-value">
-          {{OFFICER_NAME}}
-        </div>
+    <div class="notice-end-details">
+
+      <div>
+        ठिकाण : धुळे
       </div>
 
-      <div class="footer-row">
-        <div class="footer-value">
-          {{OFFICER_DESIGNATION}}
-        </div>
+      <div>
+        दिनांक : {{NOTICE_DATE}}
       </div>
+
+    </div>
+
+
+    <!-- =================================================
+         DIGITAL SIGNATURE
+    ================================================== -->
+
+    <div class="digital-signature">
+
+      <!-- Green verification indicator -->
+
+      <div class="signature-check">
+        ✓
+      </div>
+
+
+      <div class="signature-title">
+        Digitally Signed
+      </div>
+
+
+      <div class="signature-text">
+        This document is digitally signed
+      </div>
+
+
+      <div class="signature-name">
+        {{OFFICER_NAME}}
+      </div>
+
+
+      <div class="signature-designation">
+        {{OFFICER_DESIGNATION}}
+      </div>
+
+
+ <div class="footer-row">
+        <div class="footer-value">
+          क्षेत्रीय कार्यालय क्र, {{ZONAL_NAME}}
+        </div>
+         </div>
+
 
     </div>
 

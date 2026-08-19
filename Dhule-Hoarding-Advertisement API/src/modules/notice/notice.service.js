@@ -195,8 +195,7 @@ async function renderNoticeHtmlService(data = {}) {
         : "",
 
     AMOUNT:
-      data.AMOUNT_DATA ||
-      data.AMOUNT ||  ''  , 
+      data.AMOUNT_DATA   , 
 
     OFFICER_NAME:
       data.OFFICER_NAME ||
@@ -373,7 +372,7 @@ async function generateNoticeService(payload) {
     ADVERTISER_NAME:  payload.ADVERTISER_NAME ||
       "-",
 
-    AMOUNT:
+    AMOUNT_DATA:
       noticeData.amount ||
       payload.AMOUNT ||
       "0",

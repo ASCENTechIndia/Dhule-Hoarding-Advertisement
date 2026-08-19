@@ -26,31 +26,34 @@
       margin: 0;
       padding: 0;
       width: 210mm;
-      height: 297mm;
+      min-height: 297mm;
     }
 
     body {
-      font-family: 'Noto Sans Devanagari', Arial, sans-serif;
+      font-family: "Noto Sans Devanagari", Arial, sans-serif;
       font-size: 12px;
+      background: #fff;
     }
 
     /* =====================================================
-       MAIN CONTAINER
+       A4 CONTAINER / PAGE BORDER
     ===================================================== */
 
     .container {
-      width: 210mm;
-      height: 297mm;
+      width: 194mm;
+      height: 281mm;
 
-      border: 1px solid #000;
+      margin: 8mm;
+
+      border: 1.5px solid #000;
 
       padding: 12mm 15mm;
 
-      margin: 0;
+      position: relative;
 
       overflow: hidden;
 
-      position: relative;
+      background: #fff;
     }
 
     /* =====================================================
@@ -66,24 +69,22 @@
       display: flex;
       align-items: center;
       justify-content: center;
-
       gap: 12px;
-
       margin-top: 5px;
     }
 
     .logo {
-  width: 75px;
-  height: 75px;
-  object-fit: contain;
-}
+      width: 75px;
+      height: 75px;
+      object-fit: contain;
+    }
 
-.corporation-name {
-  font-size: 30px;
-  font-weight: bold;
-  color: #0b68af;
-  line-height: 1.2;
-}
+    .corporation-name {
+      font-size: 30px;
+      font-weight: bold;
+      color: #0b68af;
+      line-height: 1.2;
+    }
 
     /* =====================================================
        ZONAL OFFICE
@@ -91,13 +92,9 @@
 
     .zonal-office {
       text-align: center;
-
       font-size: 14px;
-
       font-weight: bold;
-
       margin-top: 8px;
-
       margin-bottom: 20px;
     }
 
@@ -107,19 +104,14 @@
 
     .office-section {
       margin-top: 5px;
-
       margin-bottom: 25px;
     }
 
     .notice-number-row {
       width: 100%;
-
       display: flex;
-
       justify-content: space-between;
-
       align-items: center;
-
       font-size: 12px;
     }
 
@@ -137,24 +129,20 @@
 
     .receiver-section {
       margin-top: 20px;
-
       line-height: 1.9;
-
       font-size: 12.5px;
     }
 
     .office-label {
       font-weight: bold;
-
       margin-bottom: 6px;
-
       font-size: 13px;
     }
 
     .dotted-line {
-  display: inline;
-  border-bottom: none;
-}
+      display: inline;
+      border-bottom: none;
+    }
 
     /* =====================================================
        SUBJECT
@@ -162,13 +150,9 @@
 
     .subject {
       text-align: center;
-
       font-weight: bold;
-
       margin: 22px 0;
-
       font-size: 13px;
-
       line-height: 1.7;
     }
 
@@ -177,26 +161,26 @@
     ===================================================== */
 
     .notice-heading {
-  font-weight: bold;
-  font-size: 20px;
-  margin-bottom: 18px;
-  text-align: center;
-}
+      font-weight: bold;
+      font-size: 20px;
+      margin-bottom: 18px;
+      text-align: center;
+    }
 
     /* =====================================================
        NOTICE CONTENT
     ===================================================== */
 
-   .notice-content {
-  text-align: justify;
-  line-height: 2;
-  font-size: 13px;
-}
+    .notice-content {
+      text-align: justify;
+      line-height: 2;
+      font-size: 13px;
+    }
 
-.notice-content p {
-  margin: 0 0 14px 0;
-  text-indent: 45px;
-}
+    .notice-content p {
+      margin: 0 0 14px 0;
+      text-indent: 45px;
+    }
 
     /* =====================================================
        DYNAMIC VALUES
@@ -204,7 +188,6 @@
 
     .dynamic {
       font-weight: bold;
-
       font-size: 13px;
     }
 
@@ -214,11 +197,8 @@
 
     .notice-end-details {
       margin-top: 30px;
-
       font-size: 12.5px;
-
       line-height: 2;
-
       text-align: left;
     }
 
@@ -228,15 +208,10 @@
 
     .digital-signature {
       width: 190px;
-
       margin-left: auto;
-
       margin-top: 25px;
-
       margin-bottom: 12px;
-
       text-align: center;
-
       font-size: 9px;
     }
 
@@ -247,43 +222,46 @@
       margin: 0 auto 4px auto;
 
       border: 2px solid #168a3b;
-
       border-radius: 50%;
 
       color: #168a3b;
 
       font-size: 17px;
-
       font-weight: bold;
-
       line-height: 20px;
     }
 
     .signature-title {
       font-size: 11px;
-
       font-weight: bold;
-
       color: #168a3b;
     }
 
     .signature-text {
       margin-top: 2px;
-
       font-size: 8px;
     }
 
     .signature-name {
       margin-top: 3px;
-
       font-size: 9px;
-
       font-weight: bold;
     }
 
     .signature-designation {
       margin-top: 2px;
+      font-size: 9px;
+    }
 
+    /* =====================================================
+       FOOTER
+    ===================================================== */
+
+    .footer-row {
+      margin-top: 5px;
+    }
+
+    .footer-value {
       font-size: 9px;
     }
 
@@ -295,38 +273,39 @@
 
       @page {
         size: A4;
-
         margin: 0;
       }
 
       html,
       body {
         width: 210mm;
-
         height: 297mm;
 
         margin: 0;
-
         padding: 0;
       }
 
+      body {
+        background: #fff;
+      }
+
       .container {
-        width: 210mm;
+        width: 194mm;
+        height: 281mm;
 
-        height: 297mm;
+        margin: 8mm;
 
-        border: 1px solid #000;
+        border: 1.5px solid #000;
 
         padding: 12mm 15mm;
 
-        margin: 0;
-
         overflow: hidden;
+
+        background: #fff;
       }
     }
   </style>
 </head>
-
 
 <body>
 
@@ -361,14 +340,9 @@
 
     <div class="office-section">
 
-      <!-- Zonal Office -->
-
       <div class="zonal-office">
-        क्षेत्रीय कार्यालय क्र, {{ZONAL_NAME}}
+        क्षेत्रीय कार्यालय क्र {{ZONAL_NAME}}
       </div>
-
-
-      <!-- Notice Number + Date -->
 
       <div class="notice-number-row">
 
@@ -396,11 +370,9 @@
       </div>
 
       <div>
-
         <span class="dotted-line">
           {{ADVERTISER_NAME}}
         </span>
-
       </div>
 
     </div>
@@ -431,43 +403,47 @@
          NOTICE CONTENT
     ================================================== -->
 
-   <div class="notice-content">
+    <div class="notice-content">
 
-  <p>
-    धुळे महानगरपालिका क्षेत्रात कार्यालयीन कामकाजानिमित्त आज पाहणी केली असता आपण
-    <span class="dynamic">{{ADDRESS}}</span>
-    येथे
-    <span class="dynamic">{{LATITUDE}}</span>,
-    <span class="dynamic">{{LONGITUDE}}</span>
-    या ठिकाणी
-    <span class="dynamic">{{SIZE}}</span>
-    आकाराचा अनधिकृत जाहिरात फलक
-    <span class="dynamic">{{TO_DATE}}</span>
-    पासून
-    <span class="dynamic">{{FROM_DATE}}</span>
-    पर्यंत प्रदर्शित केलेला आढळून आला आहे.
-  </p>
+      <p>
+        धुळे महानगरपालिका क्षेत्रात कार्यालयीन कामकाजानिमित्त आज पाहणी केली असता आपण
+        <span class="dynamic">{{ADDRESS}}</span>
+        येथे
+        <span class="dynamic">{{LATITUDE}}</span>,
+        <span class="dynamic">{{LONGITUDE}}</span>
+        या ठिकाणी
+        <span class="dynamic">{{SIZE}}</span>
+        आकाराचा अनधिकृत जाहिरात फलक
+        <span class="dynamic">{{TO_DATE}}</span>
+        पासून
+        <span class="dynamic">{{FROM_DATE}}</span>
+        पर्यंत प्रदर्शित केलेला आढळून आला आहे.
+      </p>
 
-  <p>
-    धुळे महानगरपालिकेच्या अनधिकृत जाहिरात फलक शुल्क धोरणानुसार या जाहिरात फलकाचे शुल्क रु.
-    <span class="dynamic">{{AMOUNT}}</span>
-    इतके निश्चित करण्यात आले आहे.  आपण महानगरपालिकेची पूर्वपरवानगी न घेता सदर जाहिरात 
-    फलक प्रसिद्ध केला असल्याने आपण हि नोटीस प्राप्त झाल्यापासून ७ (सात) दिवसांच्या आत वरीलप्रमाणे निश्चित केलेल्या शुल्काचा भरणा धुळे महानगरपालिकेकडे करावा.
-  </p>
+      <p>
+        धुळे महानगरपालिकेच्या अनधिकृत जाहिरात फलक शुल्क धोरणानुसार या जाहिरात फलकाचे शुल्क रु.
+        <span class="dynamic">{{AMOUNT}}</span>
+        इतके निश्चित करण्यात आले आहे.
+        आपण महानगरपालिकेची पूर्वपरवानगी न घेता सदर जाहिरात फलक प्रसिद्ध केला असल्याने
+        आपण हि नोटीस प्राप्त झाल्यापासून ७ (सात) दिवसांच्या आत वरीलप्रमाणे निश्चित केलेल्या
+        शुल्काचा भरणा धुळे महानगरपालिकेकडे करावा.
+      </p>
 
-  <p>
-   
-  </p>
+      <p></p>
 
-  <p>
-    
-  </p>
+      <p></p>
 
-  <p>आपण या शुल्काचा भरणा विहित मुदतीत न केल्यास, हि रक्कम मालमत्ता कराची थकबाकी म्हणून आपल्याकडून वसूल करण्यात येईल.
-    तसेच आपल्या विरुद्ध <strong> महाराष्ट्र मालमत्तेच्या विरुपणास प्रतिबंध करण्यासाठी अधिनियम १९९५ अन्वये गुन्हा दाखल करण्यात येईल याची नोंद घ्यावी.</strong>
-  </p>
+      <p>
+        आपण या शुल्काचा भरणा विहित मुदतीत न केल्यास,
+        हि रक्कम मालमत्ता कराची थकबाकी म्हणून आपल्याकडून वसूल करण्यात येईल.
+        तसेच आपल्या विरुद्ध
+        <strong>
+          महाराष्ट्र मालमत्तेच्या विरुपणास प्रतिबंध करण्यासाठी अधिनियम १९९५
+          अन्वये गुन्हा दाखल करण्यात येईल याची नोंद घ्यावी.
+        </strong>
+      </p>
 
-</div>
+    </div>
 
 
     <!-- =================================================
@@ -493,39 +469,31 @@
 
     <div class="digital-signature">
 
-      <!-- Green verification indicator -->
-
       <div class="signature-check">
         ✓
       </div>
-
 
       <div class="signature-title">
         Digitally Signed
       </div>
 
-
       <div class="signature-text">
         This document is digitally signed
       </div>
-
 
       <div class="signature-name">
         {{OFFICER_NAME}}
       </div>
 
-
       <div class="signature-designation">
         {{OFFICER_DESIGNATION}}
       </div>
 
-
- <div class="footer-row">
+      <div class="footer-row">
         <div class="footer-value">
-          क्षेत्रीय कार्यालय क्र, {{ZONAL_NAME}}
+          क्षेत्रीय कार्यालय क्र {{ZONAL_NAME}}
         </div>
-         </div>
-
+      </div>
 
     </div>
 

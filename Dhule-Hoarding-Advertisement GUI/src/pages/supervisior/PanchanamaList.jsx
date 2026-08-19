@@ -391,65 +391,146 @@ const PanchanamaList = () => {
 
   // add at top of file
 
-  const handlePrintFromRow = async (id) => {
-    try {
-      setLoader(true);
+const handlePrintFromRow = async (id) => {
+  try {
+    setLoader(true);
 
-      // Use axios directly (or your apiClient if it works)
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/advertisement/generatePanchnamaPdf`,
-        { id },
-        {
-          responseType: "blob",
-          headers: {
-            "Content-Type": "application/json",
-            // Add any auth headers if needed
-          },
+    const response = await axios.post(
+      `${import.meta.env.VITE_API_BASE_URL}/advertisement/generatePanchnamaPdf`,
+      { id },
+      {
+        responseType: "blob",
+        headers: {
+          "Content-Type": "application/json",
         },
+      }
+    );
+
+    const contentType = response.headers["content-type"] || "";
+
+    // ==========================================
+    // Check whether response is PDF
+    // ==========================================
+    if (!contentType.includes("application/pdf")) {
+      const text = await response.data.text();
+
+      let errorMessage = "Unable to generate PDF.";
+
+      try {
+        const errorData = JSON.parse(text);
+
+        errorMessage =
+          errorData.message ||
+          errorData.error ||
+          errorMessage;
+      } catch {
+        if (text) {
+          errorMessage = text;
+        }
+      }
+
+      showError(errorMessage);
+      return;
+    }
+
+    // ==========================================
+    // Create PDF Blob
+    // ==========================================
+    const pdfBlob = new Blob([response.data], {
+      type: "application/pdf",
+    });
+
+    const pdfUrl = URL.createObjectURL(pdfBlob);
+
+    // ==========================================
+    // Open PDF after generation is completed
+    // ==========================================
+    const printWin = window.open(
+      pdfUrl,
+      "_blank",
+      `width=${screen.availWidth},height=${screen.availHeight},left=0,top=0`
+    );
+
+    // Popup blocked
+    if (!printWin) {
+      URL.revokeObjectURL(pdfUrl);
+
+      showError(
+        "Please allow pop-ups to open and print the PDF."
       );
 
-      // Check if the response is an error (JSON) or PDF
-      const blob = response.data;
-      const contentType = response.headers["content-type"]; // now should exist with axios
+      return;
+    }
 
-        // Open a new blank window
-       const printWin = window.open(
-  "",
-  "_blank",
-  `width=${screen.availWidth},height=${screen.availHeight},left=0,top=0`
-);
-        if (!printWin) {
-          // Popup blocked – fallback: use an iframe
-          showError("Please allow pop-ups to print the document.");
-          return;
-        }
-
-        // Write the HTML content
-        printWin.document.write(html);
-        printWin.document.close();
-
-        // Wait for the window to render, then print
-        setTimeout(() => {
+    // ==========================================
+    // Print after PDF viewer loads
+    // ==========================================
+    setTimeout(() => {
+      try {
+        if (!printWin.closed) {
           printWin.focus();
           printWin.print();
-        }, 1000); 
-      } else {
-        showError("Unable to fetch details for PDF.");
+        }
+      } catch (error) {
+        console.error("Print failed:", error);
       }
+    }, 2500);
 
-      // It's a PDF – create a blob URL and open in new tab
-      const url = URL.createObjectURL(blob);
-      const newTab = window.open(url, "_blank");
-      if (!newTab) {
-        console.error("Popup blocked. Please allow pop-ups to open the PDF.");
+    // ==========================================
+    // Cleanup Blob URL
+    // ==========================================
+    setTimeout(() => {
+      URL.revokeObjectURL(pdfUrl);
+    }, 60000);
+
+  } catch (err) {
+    console.error("PDF generation failed:", err);
+
+    // ==========================================
+    // Handle Blob error response
+    // ==========================================
+    if (err.response?.data instanceof Blob) {
+      try {
+        const text = await err.response.data.text();
+
+        let errorMessage =
+          "Unable to generate Panchnama PDF.";
+
+        try {
+          const errorData = JSON.parse(text);
+
+          errorMessage =
+            errorData.message ||
+            errorData.error ||
+            errorMessage;
+        } catch {
+          if (text) {
+            errorMessage = text;
+          }
+        }
+
+        showError(errorMessage);
+      } catch (blobError) {
+        console.error(
+          "Error reading API error response:",
+          blobError
+        );
+
+        showError(
+          "Unable to generate Panchnama PDF."
+        );
       }
-      setTimeout(() => URL.revokeObjectURL(url), 60000);
-    } catch (err) {
-      console.error("PDF generation failed:", err);
-    } finally {
-      setLoader(false);
+    } else {
+      showError(
+        err.response?.data?.message ||
+          err.message ||
+          "Unable to generate Panchnama PDF."
+      );
     }
-  };
+  } finally {
+    setLoader(false);
+  }
+};
 
   // =========================================================
   // CLOSE DETAILS MODAL

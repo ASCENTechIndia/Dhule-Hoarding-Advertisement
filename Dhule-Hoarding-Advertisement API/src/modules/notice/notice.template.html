@@ -47,7 +47,7 @@
 
       border: 1.5px solid #000;
 
-      padding: 12mm 15mm;
+      padding: 8mm 12mm;
 
       position: relative;
 
@@ -62,7 +62,7 @@
 
     .header {
       text-align: center;
-      margin-bottom: 18px;
+      margin-bottom: 10px;
     }
 
     .corporation-brand {
@@ -94,8 +94,8 @@
       text-align: center;
       font-size: 14px;
       font-weight: bold;
-      margin-top: 8px;
-      margin-bottom: 20px;
+      margin-top: 4px;
+      margin-bottom: 10px;
     }
 
     /* =====================================================
@@ -103,8 +103,8 @@
     ===================================================== */
 
     .office-section {
-      margin-top: 5px;
-      margin-bottom: 25px;
+      margin-top: 3px;
+      margin-bottom: 15px;
     }
 
     .notice-number-row {
@@ -151,9 +151,9 @@
     .subject {
       text-align: center;
       font-weight: bold;
-      margin: 22px 0;
+      margin: 14px 0;
       font-size: 13px;
-      line-height: 1.7;
+      line-height: 1.5;
     }
 
     /* =====================================================
@@ -162,8 +162,8 @@
 
     .notice-heading {
       font-weight: bold;
-      font-size: 20px;
-      margin-bottom: 18px;
+      font-size: 18px;
+      margin-bottom: 10px;
       text-align: center;
     }
 
@@ -173,13 +173,13 @@
 
     .notice-content {
       text-align: justify;
-      line-height: 2;
+      line-height: 1.7;
       font-size: 13px;
     }
 
     .notice-content p {
-      margin: 0 0 14px 0;
-      text-indent: 45px;
+      margin: 0 0 8px 0;
+      text-indent: 35px;
     }
 
     /* =====================================================
@@ -196,45 +196,48 @@
     ===================================================== */
 
     .notice-end-details {
-      margin-top: 30px;
+      margin-top: 20px;
       font-size: 12.5px;
       line-height: 2;
       text-align: left;
     }
 
     /* =====================================================
-       DIGITAL SIGNATURE
+       DIGITAL SIGNATURE ANCHOR
+
+       IMPORTANT:
+       This is ABSOLUTELY positioned.
+
+       It will NOT take space in normal document flow.
+       Therefore it cannot push itself onto page 2.
+
+       locateSignatureWidget() searches:
+       #signature-anchor
     ===================================================== */
 
     .digital-signature {
       width: 190px;
-      margin-left: auto;
-      margin-top: 25px;
-      margin-bottom: 12px;
+      height: 65px;
+
+      position: absolute;
+
+      right: 12mm;
+      bottom: 10mm;
+
+      margin: 0;
+      padding: 0;
+
       text-align: center;
       font-size: 9px;
-    }
 
-    .signature-check {
-      width: 24px;
-      height: 24px;
+      z-index: 10;
 
-      margin: 0 auto 4px auto;
-
-      border: 2px solid #168a3b;
-      border-radius: 50%;
-
-      color: #168a3b;
-
-      font-size: 17px;
-      font-weight: bold;
-      line-height: 20px;
+      overflow: hidden;
     }
 
     .signature-title {
       font-size: 11px;
       font-weight: bold;
-      color: #168a3b;
     }
 
     .signature-text {
@@ -297,13 +300,97 @@
 
         border: 1.5px solid #000;
 
-        padding: 12mm 15mm;
+        padding: 8mm 12mm;
+
+        position: relative;
 
         overflow: hidden;
 
         background: #fff;
       }
+
+      /*
+       * IMPORTANT:
+       * Keep signature absolute during printing as well.
+       */
+      .digital-signature {
+        position: absolute;
+
+        width: 190px;
+        height: 65px;
+
+        right: 12mm;
+        bottom: 10mm;
+
+        margin: 0;
+        padding: 0;
+
+        z-index: 10;
+
+        overflow: hidden;
+      }
     }
+
+    .notice-end-details {
+  margin-top: 20px;
+  font-size: 12.5px;
+  line-height: 2;
+  text-align: left;
+}
+
+
+/* =====================================================
+   DIGITAL SIGNATURE SECTION
+===================================================== */
+
+.footer-two-fields {
+  width: 100%;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+
+  margin-top: 15px;
+  padding: 0;
+
+  text-align: center;
+
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+
+/* Invisible anchor used by locateSignatureWidget() */
+#signature-anchor {
+  width: 70px;
+  height: 70px;
+
+  margin: 0 15px 4px 0;
+  padding: 0;
+
+  flex-shrink: 0;
+}
+
+
+/* Text below signature */
+.signature-details {
+  width: 190px;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: center;
+  margin: 0;
+  padding: 0;
+}
+
+.signature-details p {
+  margin: 0;
+  padding: 0;
+}
+
+.signature-details p:first-child {
+  font-size: 14px;
+  margin-bottom: 3px;
+}
   </style>
 </head>
 
@@ -429,10 +516,6 @@
         शुल्काचा भरणा धुळे महानगरपालिकेकडे करावा.
       </p>
 
-      <p></p>
-
-      <p></p>
-
       <p>
         आपण या शुल्काचा भरणा विहित मुदतीत न केल्यास,
         हि रक्कम मालमत्ता कराची थकबाकी म्हणून आपल्याकडून वसूल करण्यात येईल.
@@ -450,52 +533,30 @@
          PLACE AND DATE
     ================================================== -->
 
-    <div class="notice-end-details">
+<div class="notice-end-details">
 
-      <div>
-        ठिकाण : धुळे
-      </div>
+  <div>
+    ठिकाण : धुळे
+  </div>
 
-      <div>
-        दिनांक : {{NOTICE_DATE}}
-      </div>
+  <div>
+    दिनांक : {{NOTICE_DATE}}
+  </div>
 
-    </div>
+</div>
 
 
-    <!-- =================================================
-         DIGITAL SIGNATURE
-    ================================================== -->
+<div class="footer-two-fields">
 
-    <div class="digital-signature">
+  <div id="signature-anchor"></div>
 
-      <div class="signature-check">
-        ✓
-      </div>
+  <div class="signature-details">
+    <p>{{OFFICER_NAME}}</p>
+    <p>{{OFFICER_DESIGNATION}}</p>
+    <p>क्षेत्रीय कार्यालय क्र {{ZONAL_NAME}}</p>
+  </div>
 
-      <div class="signature-title">
-        Digitally Signed
-      </div>
-
-      <div class="signature-text">
-        This document is digitally signed
-      </div>
-
-      <div class="signature-name">
-        {{OFFICER_NAME}}
-      </div>
-
-      <div class="signature-designation">
-        {{OFFICER_DESIGNATION}}
-      </div>
-
-      <div class="footer-row">
-        <div class="footer-value">
-          क्षेत्रीय कार्यालय क्र {{ZONAL_NAME}}
-        </div>
-      </div>
-
-    </div>
+</div>
 
   </div>
 

@@ -3,6 +3,7 @@ const { SignPdf } = require("@signpdf/signpdf");
 const { P12Signer } = require("@signpdf/signer-p12");
 const { PDFDocument } = require("pdf-lib"); // add at top
 const puppeteer = require("puppeteer");
+const { PDF_RENDER_OPTIONS } = require("../../utils/shared-pdf-options");
 const {
   repoWardList,
   repoToiletList,
@@ -284,11 +285,7 @@ async function generatePanchnamaPdfService(id) {
   }
 
   // 5. Generate the final (clean) PDF without marker
-  const pdfBuffer = await page.pdf({
-    format: "A4",
-    printBackground: true,
-    margin: { top: "10mm", bottom: "10mm", left: "12mm", right: "12mm" },
-  });
+  const pdfBuffer = await page.pdf(PDF_RENDER_OPTIONS);
   await browser.close();
 
   // 6. Determine last page (fallback if detection gives invalid page)

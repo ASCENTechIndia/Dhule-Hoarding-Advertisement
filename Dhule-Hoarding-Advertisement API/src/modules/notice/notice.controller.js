@@ -52,64 +52,46 @@ async function getNotice(req, res, next) {
   }
 }
 
-async function generateNotice(
-  req,
-  res,
-  next
-) {
-
+async function generateNotice(req, res, next) {
   try {
+    const payload = req.body;
 
-    const payload =
-      req.body;
+    // Service returns the signed PDF Buffer directly
+    const signedPdfBuffer =
+      await generateNoticeService(payload);
 
-
-    const result =
-      await generateNoticeService(
-        payload
-      );
-
-
+    // Validate signed PDF
     if (
-      !result?.pdf ||
-      !Buffer.isBuffer(
-        result.pdf
-      )
+      !Buffer.isBuffer(signedPdfBuffer) ||
+      signedPdfBuffer.length === 0
     ) {
-
       throw new Error(
         "Signed PDF was not generated"
       );
     }
 
-
+    // PDF response headers
     res.setHeader(
       "Content-Type",
       "application/pdf"
     );
 
-
     res.setHeader(
       "Content-Disposition",
-      `inline; filename="notice-${
-        result.noticeData?.noticeNo ||
-        "document"
-      }.pdf"`
+      `inline; filename="notice-${payload.PANCHANAMA_NO || "document"}.pdf"`
     );
-
 
     res.setHeader(
       "Content-Length",
-      result.pdf.length
+      signedPdfBuffer.length
     );
 
-
+    // Return signed PDF
     return res.send(
-      result.pdf
+      signedPdfBuffer
     );
 
   } catch (error) {
-
     logApiError(
       req,
       500,

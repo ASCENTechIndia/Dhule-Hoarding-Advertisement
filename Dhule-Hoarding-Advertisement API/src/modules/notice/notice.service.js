@@ -1,5 +1,4 @@
-const path = require('path');
-const fs = require('fs').promises;
+
 const { repoGetNoticeById, repoGenerateNotice, repoGetCorporationInfo } = require('./notice.repo');
 const {
   signPdfWithPfx,
@@ -8,6 +7,19 @@ const {
 const {
   generatePdfFromHtml,
 } = require("../../services/pdfGeneratorService");
+
+const fs = require("fs").promises;
+const path = require("path");
+const { PDFDocument } = require("pdf-lib");
+
+const {
+  signPdf,
+  extractSignerNameFromPfx,
+} = require("../registerComplaint/signatureHelpers");
+
+const {
+  locateSignatureWidget,
+} = require("../registerComplaint/SignaturePlacement");
 
 const TEMPLATE_PATH = path.join(__dirname, 'notice.template.html');
 
@@ -267,7 +279,6 @@ async function getNoticeByIdService(id) {
 }
 
 async function generateNoticeService(payload) {
-
   // =========================================================
   // BASIC VALIDATION
   // =========================================================
@@ -276,8 +287,7 @@ async function generateNoticeService(payload) {
     throw new Error("Request payload is required");
   }
 
-  const userId =
-    payload.userId
+  const userId = payload.userId;
 
   const ulbId =
     payload.ULB_ID ||
@@ -290,15 +300,11 @@ async function generateNoticeService(payload) {
     payload.VAR_ILLEGALHOARD_PANCHANAMA_NO;
 
   if (!panchanamaNo) {
-    throw new Error(
-      "Panchanama number is required"
-    );
+    throw new Error("Panchanama number is required");
   }
 
   if (!ulbId) {
-    throw new Error(
-      "ULB ID is required"
-    );
+    throw new Error("ULB ID is required");
   }
 
   // =========================================================
@@ -317,13 +323,6 @@ async function generateNoticeService(payload) {
 
   const errorCode = procResult.errorCode;
 
-  /*
-   * Change this according to your Oracle procedure's
-   * success/error code convention.
-   *
-   * Usually 0 means success.
-   */
-
   if (
     errorCode !== null &&
     errorCode !== undefined &&
@@ -331,7 +330,7 @@ async function generateNoticeService(payload) {
   ) {
     throw new Error(
       procResult.errorMessage ||
-      "Notice generation procedure failed"
+        "Notice generation procedure failed"
     );
   }
 
@@ -339,20 +338,14 @@ async function generateNoticeService(payload) {
   // PROCEDURE DATA
   // =========================================================
 
-  const noticeData =
-    procResult.noticeData || {};
+  const noticeData = procResult.noticeData || {};
 
   // =========================================================
   // MERGE WITH FRONTEND PAYLOAD
   // =========================================================
 
   const mergedData = {
-
     ...payload,
-
-    // -------------------------------------------------------
-    // Values returned from procedure
-    // -------------------------------------------------------
 
     id:
       noticeData.id ||
@@ -369,7 +362,8 @@ async function generateNoticeService(payload) {
       payload.REGIONAL_OFFICE_NO ||
       "-",
 
-    ADVERTISER_NAME:  payload.ADVERTISER_NAME ||
+    ADVERTISER_NAME:
+      payload.ADVERTISER_NAME ||
       "-",
 
     AMOUNT_DATA:
@@ -401,24 +395,30 @@ async function generateNoticeService(payload) {
       noticeData.noticeNo ||
       "-",
 
-    FROM_DATE:noticeData.toDate ||
+    FROM_DATE:
+      noticeData.toDate ||
       payload.TO_DATE ||
       "-",
-      
 
-    TO_DATE: noticeData.fromDate ||
+    TO_DATE:
+      noticeData.fromDate ||
       payload.FROM_DATE ||
       "-",
-      
 
     REGIONAL_OFFICE:
       noticeData.ward ||
       payload.REGIONAL_OFFICE ||
       "-",
 
-     NOTICE_DATE: noticeData.noticeDate || noticeDate, 
+    NOTICE_DATE:
+      noticeData.noticeDate ||
+      payload.NOTICE_DATE ||
+      "-",
 
-     ZONAL_NAME: noticeData.zonalName
+    ZONAL_NAME:
+      noticeData.zonalName ||
+      payload.ZONAL_NAME ||
+      "-",
   };
 
   // =========================================================
@@ -430,69 +430,81 @@ async function generateNoticeService(payload) {
       mergedData
     );
 
-    const pdfBuffer =
-  await generatePdfFromHtml(
-    html
-  );
+  // =========================================================
+  // GENERATE PDF
+  // =========================================================
 
-console.log(
-  "Generated PDF:",
-  {
-    isBuffer:
-      Buffer.isBuffer(pdfBuffer),
+  const { pdfBuffer, placement } = await generatePdfFromHtml(html);
 
-    length:
-      pdfBuffer.length,
+  console.log("Generated PDF:", {
+  isBuffer: Buffer.isBuffer(pdfBuffer),
+  length: pdfBuffer.length,
+});
+
+if (!Buffer.isBuffer(pdfBuffer)) {
+  throw new Error("PDF generation failed: result is not a Buffer");
+}
+
+const signedPdfBuffer = await signNoticePdf(pdfBuffer, placement);
+
+  console.log("Signed PDF:", {
+    isBuffer: Buffer.isBuffer(signedPdfBuffer),
+    length: signedPdfBuffer.length,
+  });
+
+  if (!Buffer.isBuffer(signedPdfBuffer)) {
+    throw new Error(
+      "PDF signing failed: result is not a Buffer"
+    );
   }
-);
 
+  // =========================================================
+  // RETURN ONLY SIGNED PDF
+  // =========================================================
 
-// =========================================================
-// DIGITALLY SIGN PDF
-// =========================================================
+  return signedPdfBuffer;
+}
 
-const signedPdfBuffer =
-  await signPdfWithPfx(
-    pdfBuffer,
-    {
-      name:
-        mergedData.OFFICER_NAME ||
-        "Authorized Officer",
+// signNoticePdf no longer needs `page` — it needs `placement` directly
+async function signNoticePdf(pdfBuffer, placement = null) {
+  const pfxPath = path.join(__dirname, "DS Dhule Municipal Corporation.pfx");
+  const pfxPassword = "Pro452";
+  const signerName = extractSignerNameFromPfx(pfxPath, pfxPassword);
 
-      reason:
-        "Notice digitally signed",
+  const pdfDoc = await PDFDocument.load(pdfBuffer);
+  const pageCount = pdfDoc.getPageCount();
 
-      location:
-        "Dhule Municipal Corporation",
+  if (!pageCount) {
+    throw new Error("Generated PDF has no pages");
+  }
 
-      contactInfo:
-        "",
-    }
-  );
+  let pageNumber = pageCount;
+  let widgetRect = null;
 
+  if (placement && placement.widgetRect && placement.pageNumber) {
+    pageNumber = placement.pageNumber;
+    widgetRect = placement.widgetRect;
+  }
 
-console.log(
-  "Signed PDF:",
-  signedPdfBuffer.length
-);
+  if (!widgetRect) {
+    console.warn("Notice signature placement detection failed — using fallback position");
+    const boxSize = 70;
+    const marginFromBottom = 160;
+    const x1 = (595 - boxSize) / 2;
+    const y1 = marginFromBottom;
 
+    widgetRect = [
+      Math.round(x1),
+      Math.round(y1),
+      Math.round(x1 + boxSize),
+      Math.round(y1 + boxSize),
+    ];
+    pageNumber = pageCount;
+  }
 
-return {
-  procResult: {
-    errorCode,
-    message:
-      procResult.errorMessage ||
-      "Notice generated successfully",
-  },
+  console.log("Notice signature placement:", { pageNumber, widgetRect, signerName });
 
-  noticeData,
-
-  payload:
-    mergedData,
-
-  pdf:
-    signedPdfBuffer,
-};
+  return await signPdf(pdfBuffer, pfxPath, pfxPassword, pageNumber, widgetRect, signerName);
 }
 
 module.exports = {

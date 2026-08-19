@@ -52,7 +52,6 @@
 
       .footer-title {
         font-size: 14px;
-        font-weight: bold;
         margin-top: 7px;
       }
 
@@ -181,7 +180,6 @@
       }
 
       .outer-container {
-        border: 2px solid black;
         margin: 5px 0;
         padding: 0 5mm;
         min-height: 100vh;
@@ -256,7 +254,7 @@ body {
   <body>
     <div class="outer-container">
       <div class="corp-heading">
-        <img src={{CORPORATION_LOGO}} alt="logo" class="corp-logo-img" />
+        <img src="{{CORPORATION_LOGO}}" alt="logo" class="corp-logo-img" />
         <h1>धुळे महानगरपालिका</h1>
       </div>
 
@@ -366,13 +364,18 @@ body {
         <div class="photo-grid">{{PHOTO_GRID}}</div>
 
         <div class="footer-fields" style="margin-top: 10px">
-          <p class="footer-title">ठिकाण: धुळे </p>
+          <p class="footer-title">ठिकाण: धुळे</p>
           <p class="footer-title">दिनांक: {{CURRENT_DATE}}</p>
         </div>
         <div class="footer-two-fields">
-          <div>
-            <p class="footer-title">नाव : {{OFFICER_NAME}}</p>
-            <p class="footer-title">पद : {{OFFICER_POST}}</p>
+          <div
+            id="signature-anchor"
+            style="width: 70px; height: 70px; margin-left: auto"
+          ></div>
+          <div style="margin-top: -100px;">
+            <p class="footer-title">This document is digitally signed</p>
+            <p class="footer-title">{{OFFICER_NAME}}</p>
+            <p class="footer-title">{{OFFICER_POST}}</p>
             <p class="footer-title">क्षेत्रीय कार्यालय : {{REGIONAL_OFFICE}}</p>
           </div>
         </div>

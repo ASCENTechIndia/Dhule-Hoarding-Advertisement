@@ -400,15 +400,17 @@ async function getPanchanamaDetails(req, res, next) {
   }
 }
 
-async function generatePanchnamaPdf(req, res, next){
+async function generatePanchnamaPdf(req, res, next) {
   try {
-    const {id} = req.body
-    const result = await generatePanchnamaPdfService(id)
-    logApiSuccess(req, 200, 'Notice generated successfully');
-    return res.ok(result, 'Notice generated successfully');
+    const { id } = req.body;
+    const pdfBuffer = await generatePanchnamaPdfService(id);
+    logApiSuccess(req, 200, 'PDF generated successfully');
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="Panchanama_${id}.pdf"`);
+    res.send(pdfBuffer);
   } catch (error) {
-    logApiError(req, 500, error.message, "Panchanama pdf generate error")
-    return next(error)
+    logApiError(req, 500, error.message, 'Panchanama pdf generate error');
+    return next(error);
   }
 }
 

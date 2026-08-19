@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import apiClient from "../../services/apiClient";
 import { useLoader } from "../../context/LoaderContext";
 import ResponseModal from "../../components/ResponseModal";
+import axios from 'axios';
 import { generatePDF } from "../../utils/pdfHelper.jsx";
 import ExcelExportButton from "../../components/ExcelExportButton.jsx";
 
@@ -391,41 +392,45 @@ const PanchanamaList = () => {
     }
   };
 
+  // add at top of file
+
   const handlePrintFromRow = async (id) => {
     try {
       setLoader(true);
-      const response = await apiClient.post(
-        `/advertisement/generatePanchnamaPdf`,
+
+      // Use axios directly (or your apiClient if it works)
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/advertisement/generatePanchnamaPdf`,
         { id },
+        {
+          responseType: "blob",
+          headers: {
+            "Content-Type": "application/json",
+            // Add any auth headers if needed
+          },
+        },
       );
 
-      if (response?.success && response?.data?.html) {
-        const html = response.data.html;
+      // Check if the response is an error (JSON) or PDF
+      const blob = response.data;
+      const contentType = response.headers["content-type"]; // now should exist with axios
 
-        // Open a new blank window
-        const printWin = window.open("", "_blank", "width=800,height=600");
-
-        if (!printWin) {
-          // Popup blocked – fallback: use an iframe
-          showError("Please allow pop-ups to print the document.");
-          return;
-        }
-
-        // Write the HTML content
-        printWin.document.write(html);
-        printWin.document.close();
-
-        // Wait for the window to render, then print
-        setTimeout(() => {
-          printWin.focus();
-          printWin.print();
-        }, 1000); 
-      } else {
-        showError("Unable to fetch details for PDF.");
+      if (contentType && contentType.includes("application/json")) {
+        const text = await blob.text();
+        const json = JSON.parse(text);
+        console.error("PDF error:", json.message || "Failed to generate PDF.");
+        return;
       }
+
+      // It's a PDF – create a blob URL and open in new tab
+      const url = URL.createObjectURL(blob);
+      const newTab = window.open(url, "_blank");
+      if (!newTab) {
+        console.error("Popup blocked. Please allow pop-ups to open the PDF.");
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch (err) {
-      console.error(err);
-      showError("Failed to generate PDF.");
+      console.error("PDF generation failed:", err);
     } finally {
       setLoader(false);
     }
@@ -533,9 +538,7 @@ const PanchanamaList = () => {
           <div className="modal-dialog modal-dialog-centered" role="document">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">
-                  पंचनामा माहिती
-                </h5>
+                <h5 className="modal-title">पंचनामा माहिती</h5>
 
                 <button
                   type="button"
@@ -668,7 +671,7 @@ const PanchanamaList = () => {
               <div>
                 <h5 className="modal-title mb-1">
                   <i className="bi bi-file-earmark-text me-2"></i>
-                  अनधिकृत जाहिरात फलक पंचनामा माहिती 
+                  अनधिकृत जाहिरात फलक पंचनामा माहिती
                 </h5>
               </div>
 

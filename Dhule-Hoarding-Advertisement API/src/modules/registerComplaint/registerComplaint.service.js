@@ -279,7 +279,6 @@ async function generatePanchnamaPdfService(id) {
   let placement = null;
   try {
     placement = await locateSignatureWidget(page);
-    console.log("Detected placement:", placement);
   } catch (e) {
     console.warn("Signature placement detection failed:", e.message);
   }
@@ -318,7 +317,6 @@ async function generatePanchnamaPdfService(id) {
     y2 = y1 + boxSize;
     widgetRect = [x1, y1, x2, y2];
     pageNumber = placement.pageNumber;
-    console.log("Using detected placement:", { pageNumber, widgetRect });
   } else {
     // Fallback: place at bottom‑center, above the footer text
     const boxSize = 70;
@@ -335,7 +333,6 @@ async function generatePanchnamaPdfService(id) {
       Math.round(y2),
     ];
     pageNumber = lastPage;
-    console.log("Using fallback placement:", { pageNumber, widgetRect });
   }
 
   // 8. Get PFX credentials and signer name (for display, but not used in appearance)

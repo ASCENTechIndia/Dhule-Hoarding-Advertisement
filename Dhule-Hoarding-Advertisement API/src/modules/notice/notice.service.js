@@ -483,21 +483,31 @@ async function signNoticePdf(pdfBuffer, placement = null) {
 
   if (placement && placement.widgetRect && placement.pageNumber) {
     pageNumber = placement.pageNumber;
-    widgetRect = placement.widgetRect;
+    let [x1, y1, x2, y2] = placement.widgetRect;
+    const boxWidth = 240;
+    const boxHeight = 100;
+    const centerY = (y1 + y2) / 2;
+
+    // Keep the PDF widget on the same right edge as the HTML footer.
+    x1 = 540 - boxWidth;
+    y1 = Math.max(0, Math.round(centerY - boxHeight / 2));
+    y1 = Math.min(y1, 842 - boxHeight);
+    widgetRect = [x1, y1, x1 + boxWidth, y1 + boxHeight];
   }
 
   if (!widgetRect) {
     console.warn("Notice signature placement detection failed — using fallback position");
-    const boxSize = 70;
+    const boxWidth = 240;
+    const boxHeight = 100;
     const marginFromBottom = 160;
-    const x1 = (595 - boxSize) / 2;
+    const x1 = 540 - boxWidth;
     const y1 = marginFromBottom;
 
     widgetRect = [
       Math.round(x1),
       Math.round(y1),
-      Math.round(x1 + boxSize),
-      Math.round(y1 + boxSize),
+      Math.round(x1 + boxWidth),
+      Math.round(y1 + boxHeight),
     ];
     pageNumber = pageCount;
   }

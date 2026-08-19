@@ -203,7 +203,10 @@
       .footer-two-fields {
         display: flex;
         align-items: end;
-        flex-direction: column;
+        flex-direction: row;
+        justify-content: flex-end;
+        align-items: flex-start;
+        gap: 10px;
       }
 
       .top-date-field {
@@ -370,9 +373,9 @@ body {
         <div class="footer-two-fields">
           <div
             id="signature-anchor"
-            style="width: 70px; height: 70px; margin-left: auto"
+            style="width: 240px; height: 100px; margin-left: auto"
           ></div>
-          <div style="margin-top: -100px;">
+          <div>
             <p class="footer-title">{{OFFICER_NAME}}</p>
             <p class="footer-title">{{OFFICER_POST}}</p>
             <p class="footer-title">क्षेत्रीय कार्यालय : {{REGIONAL_OFFICE}}</p>

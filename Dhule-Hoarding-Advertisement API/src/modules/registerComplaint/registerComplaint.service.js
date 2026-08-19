@@ -299,30 +299,32 @@ async function generatePanchnamaPdfService(id) {
 
   if (placement && placement.widgetRect && placement.pageNumber) {
     let [x1, y1, x2, y2] = placement.widgetRect;
-    const boxSize = 70;
+    const boxWidth = 240;
+    const boxHeight = 100;
     const width = x2 - x1;
     const height = y2 - y1;
     const centerX = (x1 + x2) / 2;
     const centerY = (y1 + y2) / 2;
-    x1 = Math.max(0, Math.round(centerX - width / 2));
-    y1 = Math.max(0, Math.round(centerY - height / 2));
-    x2 = x1 + boxSize;
-    y2 = y1 + boxSize;
-    x1 = Math.min(x1, 595 - boxSize);
-    y1 = Math.min(y1, 842 - boxSize);
-    x2 = x1 + boxSize;
-    y2 = y1 + boxSize;
+    x1 = Math.max(0, Math.round(centerX - boxWidth / 2));
+    y1 = Math.max(0, Math.round(centerY - boxHeight / 2));
+    x2 = x1 + boxWidth;
+    y2 = y1 + boxHeight;
+    x1 = Math.min(x1, 595 - boxWidth);
+    y1 = Math.min(y1, 842 - boxHeight);
+    x2 = x1 + boxWidth;
+    y2 = y1 + boxHeight;
     widgetRect = [x1, y1, x2, y2];
     pageNumber = placement.pageNumber;
   } else {
     // Fallback: place at bottom‑center, above the footer text
-    const boxSize = 70;
+    const boxWidth = 240;
+    const boxHeight = 100;
     const marginFromBottom = 160; // adjust to position above the text
-    const centerX = (595 - boxSize) / 2;
+    const centerX = (595 - boxWidth) / 2;
     const y1 = marginFromBottom;
-    const y2 = y1 + boxSize;
+    const y2 = y1 + boxHeight;
     const x1 = centerX;
-    const x2 = x1 + boxSize;
+    const x2 = x1 + boxWidth;
     widgetRect = [
       Math.round(x1),
       Math.round(y1),

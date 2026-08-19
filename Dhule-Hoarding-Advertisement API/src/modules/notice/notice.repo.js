@@ -240,8 +240,69 @@ async function repoGetCorporationInfo(corpId) {
   return null;
 }
 
+async function repoGetNoticeData(illegalHoardId) {
+  const sql = `
+    SELECT
+      NUM_ILLEGALHOARD_ID,
+      VAR_ILLEGALHOARD_ADD,
+      VAR_ILLEGALHOARD_WARD,
+      VAR_USER1,
+      AMOUNT,
+      LATITUDE,
+      LONGITUDE,
+      NUM_SIZE_LENGTH,
+      NUM_SIZE_WIDTH,
+      DAT_CAP_DT,
+      DAT_FROM_DT,
+      VAR_MARATHI_USERNAME,
+      VAR_OFFICER_DIVISION,
+      SYSTEM_DATE
+    FROM VW_ILLEGALHOARD_NOTGEN
+    WHERE NUM_ILLEGALHOARD_ID = :illegalHoardId
+  `;
+
+  const binds = {
+    illegalHoardId: Number(illegalHoardId),
+  };
+
+  try {
+    const result = await executeQuery(sql, binds);
+
+    if (!result.rows || result.rows.length === 0) {
+      return null;
+    }
+
+    const row = result.rows[0];
+
+    return {
+      NUM_ILLEGALHOARD_ID: row.NUM_ILLEGALHOARD_ID,
+      VAR_ILLEGALHOARD_ADD: row.VAR_ILLEGALHOARD_ADD,
+      VAR_ILLEGALHOARD_WARD: row.VAR_ILLEGALHOARD_WARD,
+      VAR_USER1: row.VAR_USER1,
+      AMOUNT_DATA: row.AMOUNT,
+      LATITUDE: row.LATITUDE,
+      LONGITUDE: row.LONGITUDE,
+      NUM_SIZE_LENGTH: row.NUM_SIZE_LENGTH,
+      NUM_SIZE_WIDTH: row.NUM_SIZE_WIDTH,
+      DAT_CAP_DT: row.DAT_CAP_DT,
+      DAT_FROM_DT: row.DAT_FROM_DT,
+      VAR_MARATHI_USERNAME: row.VAR_MARATHI_USERNAME,
+      ZONAL_NAME: row.VAR_OFFICER_DIVISION,
+      SYSTEM_DATE: row.SYSTEM_DATE,
+    };
+  } catch (error) {
+    console.error(
+      "Error fetching notice data from VW_ILLEGALHOARD_NOTGEN:",
+      error
+    );
+
+    throw error;
+  }
+}
+
 module.exports = {
   repoGetNoticeById,
   repoGenerateNotice,
   repoGetCorporationInfo,
+  repoGetNoticeData
 };

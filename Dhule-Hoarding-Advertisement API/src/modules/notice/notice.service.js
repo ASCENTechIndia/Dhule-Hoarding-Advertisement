@@ -39,53 +39,226 @@ async function getSidebarLogoBase64() {
 }
 
 async function renderNoticeHtmlService(data = {}) {
-  let templateContent = await fs.readFile(TEMPLATE_PATH, 'utf-8');
+  let templateContent = await fs.readFile(
+    TEMPLATE_PATH,
+    "utf-8"
+  );
 
-  const corpId = data.corporationId || data.corpId || data.ulbId || data.num_illegalhoard_ulbid || data.NUM_ILLEGALHOARD_ULBID || 4;
+  // ---------------------------------------------------------
+  // Corporation
+  // ---------------------------------------------------------
+
+  const corpId =
+    data.corporationId ||
+    data.corpId ||
+    data.ulbId ||
+    data.num_illegalhoard_ulbid ||
+    data.NUM_ILLEGALHOARD_ULBID ||
+    4;
+
   let corpInfo = null;
+
   if (corpId) {
     try {
       corpInfo = await repoGetCorporationInfo(corpId);
     } catch (err) {
-      console.error('Error fetching corporation info:', err.message);
+      console.error(
+        "Error fetching corporation info:",
+        err.message
+      );
     }
   }
 
-  const sidebarLogoBase64 = await getSidebarLogoBase64();
+  const sidebarLogoBase64 =
+    await getSidebarLogoBase64();
 
   const logoValue = sidebarLogoBase64;
-  const corpNameValue = data.corporationName || data.corporation_name || corpInfo?.corporationName || 'धुळे महानगरपालिका';
 
-  const sizeValue = data.SIZE || data.size || (
-    (data.NUM_SIZE_LENGTH || data.num_size_length) && (data.NUM_SIZE_WIDTH || data.num_size_width)
-      ? `${data.NUM_SIZE_LENGTH || data.num_size_length} x ${data.NUM_SIZE_WIDTH || data.num_size_width}`
-      : ''
-  );
+  const corpNameValue =
+    data.corporationName ||
+    data.corporation_name ||
+    corpInfo?.corporationName ||
+    "धुळे महानगरपालिका";
+
+  // ---------------------------------------------------------
+  // Size
+  // ---------------------------------------------------------
+
+  const sizeValue = data.SIZE 
+
+  // ---------------------------------------------------------
+  // Date formatter
+  // ---------------------------------------------------------
+
+  const formatDate = (dateValue) => {
+    if (!dateValue) return "";
+
+    const date = new Date(dateValue);
+
+    if (isNaN(date.getTime())) {
+      return String(dateValue);
+    }
+
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(
+      date.getMonth() + 1
+    ).padStart(2, "0");
+    const year = date.getFullYear();
+
+    return `${day}-${month}-${year}`;
+  };
+
+  // ---------------------------------------------------------
+  // Notice date
+  // ---------------------------------------------------------
+
+  const noticeDate =
+    data.NOTICE_DATE ||
+    formatDate(
+      data.SYSTEM_DATE || data.system_date
+    );
+
+  // ---------------------------------------------------------
+  // Replacements
+  // ---------------------------------------------------------
 
   const replacements = {
     corporationLogo: logoValue,
+
     corporationName: corpNameValue,
-    REGIONAL_OFFICE_NO: data.REGIONAL_OFFICE_NO || data.regional_office_no || data.regionalOfficeNo || data.NUM_ILLEGALHOARD_ULBID || data.num_illegalhoard_ulbid || '',
-    ADVERTISER_NAME: data.ADVERTISER_NAME || data.advertiser_name || data.advertiserName || data.VAR_ADVERTISER_NAME || data.var_advertiser_name || '',
-    ADDRESS: data.ADDRESS || data.address || data.VAR_ILLEGALHOARD_ADD || data.var_illegalhoard_add || '',
-    LATITUDE: data.LATITUDE || data.latitude || '',
-    LONGITUDE: data.LONGITUDE || data.longitude || '',
+
+    REGIONAL_OFFICE_NO:
+      data.REGIONAL_OFFICE_NO ||
+      data.regional_office_no ||
+      data.regionalOfficeNo ||
+      data.NUM_ILLEGALHOARD_ULBID ||
+      data.num_illegalhoard_ulbid ||
+      "",
+
+    ADVERTISER_NAME:
+      data.ADVERTISER_NAME ||
+      data.advertiser_name ||
+      data.advertiserName ||
+      data.VAR_ADVERTISER_NAME ||
+      data.var_advertiser_name ||
+      data.VAR_MARATHI_USERNAME ||
+      data.var_marathi_username ||
+      "",
+
+    ADDRESS:
+      data.ADDRESS ||
+      data.address ||
+      data.VAR_ILLEGALHOARD_ADD ||
+      data.var_illegalhoard_add ||
+      "",
+
+    LATITUDE:
+      data.LATITUDE ||
+      data.latitude ||
+      "",
+
+    LONGITUDE:
+      data.LONGITUDE ||
+      data.longitude ||
+      "",
+
     SIZE: sizeValue,
-    FROM_DATE: data.FROM_DATE || data.from_date || data.fromDate || data.DAT_FROM_DT || data.dat_from_dt || '',
-    TO_DATE: data.TO_DATE || data.to_date || data.toDate || data.DAT_TO_DT || data.dat_to_dt || '',
-    AMOUNT: data.AMOUNT || data.amount || data.NUM_HOARD_AMOUNT || data.num_hoard_amount || '',
-    OFFICER_NAME: data.OFFICER_NAME || data.officer_name || data.officerName || data.VAR_USER1 || data.var_user1 || '',
-    OFFICER_DESIGNATION: 'सहाय्यक आयुक्त',
-    REGIONAL_OFFICE: data.REGIONAL_OFFICE || data.regional_office || data.regionalOffice || data.VAR_ILLEGALHOARD_WARD || data.var_illegalhoard_ward || '',
-    NOTICE_NO: data.NOTICE_NO || '',
-    NOTICE_DATE: data.NOTICE_DATE,
-    ZONAL_NAME: data.ZONAL_NAME
+
+     TO_DATE:
+      data.FROM_DATE ||
+      data.from_date ||
+      data.fromDate ||
+      data.DAT_FROM_DT ||
+      data.dat_from_dt
+        ? formatDate(
+            data.FROM_DATE ||
+            data.from_date ||
+            data.fromDate ||
+            data.DAT_FROM_DT ||
+            data.dat_from_dt
+          )
+        : "",
+
+    FROM_DATE:
+      data.TO_DATE ||
+      data.to_date ||
+      data.toDate ||
+      data.DAT_TO_DT ||
+      data.dat_to_dt
+        ? formatDate(
+            data.TO_DATE ||
+            data.to_date ||
+            data.toDate ||
+            data.DAT_TO_DT ||
+            data.dat_to_dt
+          )
+        : "",
+
+    AMOUNT:
+      data.AMOUNT_DATA ||
+      data.amount ||
+      data.NUM_HOARD_AMOUNT ||
+      data.num_hoard_amount ||
+      "",
+
+    OFFICER_NAME:
+      data.OFFICER_NAME ||
+      data.officer_name ||
+      data.officerName ||
+      data.VAR_USER1 ||
+      data.var_user1 ||
+      "",
+
+    OFFICER_DESIGNATION:
+      data.OFFICER_DESIGNATION ||
+      data.officer_designation ||
+      data.VAR_OFFICER_DIVISION ||
+      data.var_officer_division ||
+      "सहाय्यक आयुक्त",
+
+    REGIONAL_OFFICE:
+      data.REGIONAL_OFFICE ||
+      data.regional_office ||
+      data.regionalOffice ||
+      data.VAR_ILLEGALHOARD_WARD ||
+      data.var_illegalhoard_ward ||
+      "",
+
+    NOTICE_NO:
+      data.NOTICE_NO ||
+      data.notice_no ||
+      "",
+
+    NOTICE_DATE:
+      noticeDate,
+
+    ZONAL_NAME:
+      data.ZONAL_NAME ||
+      data.zonal_name ||
+      data.VAR_OFFICER_DIVISION ||
+      data.var_officer_division ||
+      ""
   };
 
-  Object.entries(replacements).forEach(([key, val]) => {
-    const regex = new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'g');
-    templateContent = templateContent.replace(regex, val !== null && val !== undefined ? String(val) : '');
-  });
+  // ---------------------------------------------------------
+  // Replace template variables
+  // ---------------------------------------------------------
+
+  Object.entries(replacements).forEach(
+    ([key, val]) => {
+      const regex = new RegExp(
+        `\\{\\{\\s*${key}\\s*\\}\\}`,
+        "g"
+      );
+
+      templateContent = templateContent.replace(
+        regex,
+        val !== null && val !== undefined
+          ? String(val)
+          : ""
+      );
+    }
+  );
 
   return templateContent;
 }

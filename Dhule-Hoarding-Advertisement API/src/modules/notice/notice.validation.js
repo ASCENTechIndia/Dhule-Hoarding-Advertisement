@@ -25,6 +25,9 @@ const noticeSchema = z.object({
     .optional()
     .default(""),
     userId: z.string().trim().optional().default(''),
+    ID: z
+  .number()
+  .optional(),
 });
 
 const getNoticeSchema = z.object({

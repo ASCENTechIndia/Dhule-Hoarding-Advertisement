@@ -8,15 +8,20 @@ export default function Sidebar() {
 
   const navLinks = [
     {
-      path: "/panchanama-list",
-      icon: "bi-people",
-      label: "पंचनामा यादी",
-    },
-    {
-      path: "/notice-list",
-      icon: "bi-people",
-      label: "नोटिस यादी",
-    },
+  path: "/advertisementPanchnama-form",
+  icon: "bi-file-earmark-plus",
+  label: "नवीन पंचनामा",
+},
+{
+  path: "/panchanama-list",
+  icon: "bi-file-earmark-text",
+  label: "पंचनामा यादी",
+},
+{
+  path: "/notice-list",
+  icon: "bi-file-earmark-check",
+  label: "नोटिस यादी",
+},
   ];
 
   return (

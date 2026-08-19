@@ -5,6 +5,7 @@ import { useLoader } from "../../context/LoaderContext";
 import ResponseModal from "../../components/ResponseModal";
 import dhuleLogo from "../../../public/assets/images/dhule-logo.png";
 import ExcelExportButton from "../../components/ExcelExportButton";
+import { useAuth } from "../../context/AuthContext";
 
 const getToday = () => {
   const d = new Date();
@@ -17,6 +18,7 @@ const getToday = () => {
 };
 
 const NoticeList = () => {
+   const { user } = useAuth();
   const { setLoader } = useLoader();
 
   // =========================================================
@@ -114,7 +116,7 @@ const NoticeList = () => {
       setLoader(true);
       setError(null);
 
-      let url = `/advertisement/getPanchanamalist?page=${dataPage}&limit=${pageSize}`;
+      let url = `/advertisement/getPanchanamalist?page=${dataPage}&limit=${pageSize}&ulbId=${import.meta.env.VITE_ULBID}&userId=${user.userId}`;
 
       if (filters.fromDate) {
         url += `&fromDate=${encodeURIComponent(filters.fromDate)}`;
@@ -439,6 +441,8 @@ const NoticeList = () => {
         OFFICER_DESIGNATION: masterData?.VAR_USER1_POST || "-",
 
         REGIONAL_OFFICE: masterData?.VAR_ILLEGALHOARD_WARD || "-",
+
+        ID: masterData.NUM_ILLEGALHOARD_ID
       };
 
       // =====================================================

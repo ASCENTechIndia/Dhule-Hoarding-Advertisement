@@ -235,13 +235,17 @@ async function getPanchanamalist(req, res, next) {
       toDate = null,
       page = 1,
       limit = 10,
+      ulbId,
+      userId
     } = req.query;
 
     const rows = await getPanchanamalistService(
       fromDate,
       toDate,
       page,
-      limit
+      limit,
+      ulbId,
+      userId
     );
 
     logApiSuccess(

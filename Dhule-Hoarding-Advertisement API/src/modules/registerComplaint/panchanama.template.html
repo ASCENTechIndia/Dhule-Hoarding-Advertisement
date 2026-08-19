@@ -8,7 +8,7 @@
       /* ----- Reset & Page ----- */
       @page {
         size: A4;
-        margin: 10mm 12mm;
+        margin: 0;
       }
 
       * {
@@ -217,6 +217,40 @@
         margin: 0;
         size: A4;
       }
+
+      .tag-line {
+  text-align: center;
+  font-size: 14px;
+  font-weight: bold;
+  padding: 5px 0;
+  border-bottom: 1px solid black;
+}
+
+@page {
+  size: A4;
+  margin: 0;
+}
+
+html,
+body {
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0;
+  padding: 0;
+}
+
+.outer-container {
+  width: calc(210mm - 16mm);
+  min-height: calc(297mm - 16mm);
+
+  margin: 8mm;
+
+  border: 2px solid #000;
+
+  padding: 0 8mm 8mm 8mm;
+
+  box-sizing: border-box;
+}
     </style>
   </head>
   <body>
@@ -225,6 +259,11 @@
         <img src={{CORPORATION_LOGO}} alt="logo" class="corp-logo-img" />
         <h1>धुळे महानगरपालिका</h1>
       </div>
+
+      <div class="tag-line">
+  <!-- Your Tag Line -->
+  अनधिकृत जाहिरात फलकाचा पंचनामा 
+</div>
       <div class="container">
         <!-- ===== PAGE TITLE ===== -->
         <div class="date-field">
@@ -282,7 +321,7 @@
           </div>
           <div class="grid-item">
             <span class="grid-label">वेळ</span>
-            <span class="grid-value">{{CAPTURE_DATE_TIME}}</span>
+            <span class="grid-value">{{CAPTURE_TIME}}</span>
           </div>
         </div>
 

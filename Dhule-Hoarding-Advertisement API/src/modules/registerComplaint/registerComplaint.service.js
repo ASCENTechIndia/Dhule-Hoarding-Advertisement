@@ -47,13 +47,17 @@ async function getPanchanamalistService(
   fromDate,
   toDate,
   page,
-  limit
+  limit,
+  ulbId,
+  userId
 ) {
   return getPanchanamalistRepo(
     fromDate,
     toDate,
     page,
-    limit
+    limit,
+    ulbId,
+    userId
   );
 }
 
@@ -67,23 +71,20 @@ async function getPanchanamaDetailsService(id) {
   return getPanchanamaDetailsRepo(id);
 }
 
-function formatPanchanamaDateTime(dateStr, timeStr) {
+function formatPanchanamaDateTime(dateStr) {
   if (!dateStr) return '-';
+
   const date = new Date(dateStr);
+
   if (isNaN(date.getTime())) return '-';
+
   const day = String(date.getDate()).padStart(2, '0');
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = date.getFullYear();
 
-  let formattedTime = '';
-  if (timeStr) {
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    const h12 = hours % 12 || 12;
-    formattedTime = `${h12}:${String(minutes).padStart(2, '0')} ${ampm}`;
-  }
-  return formattedTime ? `${day}/${month}/${year} - ${formattedTime}` : `${day}/${month}/${year}`;
+  return `${day}/${month}/${year}`;
 }
+
 function buildDetailsRows(details) {
   if (!details || details.length === 0) {
     return `<tr><td colspan="3" class="no-data">कोणतेही कर्मचारी नाहीत.</td></tr>`;
@@ -134,7 +135,7 @@ async function renderPanchanamaHtml(data = {}){
   let templateContent = await fs.readFile(TEMPLATE_PATH, 'utf-8');
 
   // Build dynamic parts
-  const captureDateTime = formatPanchanamaDateTime(master.DAT_CAP_DT, master.VAR_CAP_TIME);
+  const captureDateTime = formatPanchanamaDateTime(master.DAT_CAP_DT);
   const detailsRows = buildDetailsRows(details);
   const demolitionRows = buildDemolitionRows(demolitionDetails);
   const photoGrid = buildPhotoGrid(master);
@@ -203,7 +204,8 @@ const replacements = {
 
   // Today's date
   'CURRENT_DATE':
-    currentDate
+    currentDate,
+    'CAPTURE_TIME': master.VAR_CAP_TIME
 };
 
   // Replace all placeholders

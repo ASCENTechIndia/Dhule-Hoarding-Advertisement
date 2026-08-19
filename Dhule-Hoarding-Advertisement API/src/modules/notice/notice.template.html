@@ -73,21 +73,17 @@
     }
 
     .logo {
-      width: 60px;
-      height: 60px;
+  width: 75px;
+  height: 75px;
+  object-fit: contain;
+}
 
-      object-fit: contain;
-    }
-
-    .corporation-name {
-      font-size: 24px;
-
-      font-weight: bold;
-
-      color: #0b68af;
-
-      line-height: 1.2;
-    }
+.corporation-name {
+  font-size: 30px;
+  font-weight: bold;
+  color: #0b68af;
+  line-height: 1.2;
+}
 
     /* =====================================================
        ZONAL OFFICE
@@ -96,7 +92,7 @@
     .zonal-office {
       text-align: center;
 
-      font-size: 13px;
+      font-size: 14px;
 
       font-weight: bold;
 
@@ -156,12 +152,9 @@
     }
 
     .dotted-line {
-      display: inline-block;
-
-      min-width: 180px;
-
-      border-bottom: 1px dotted #000;
-    }
+  display: inline;
+  border-bottom: none;
+}
 
     /* =====================================================
        SUBJECT
@@ -184,26 +177,26 @@
     ===================================================== */
 
     .notice-heading {
-      font-weight: bold;
-
-      font-size: 16px;
-
-      margin-bottom: 15px;
-
-      text-align: center;
-    }
+  font-weight: bold;
+  font-size: 20px;
+  margin-bottom: 18px;
+  text-align: center;
+}
 
     /* =====================================================
        NOTICE CONTENT
     ===================================================== */
 
-    .notice-content {
-      text-align: justify;
+   .notice-content {
+  text-align: justify;
+  line-height: 2;
+  font-size: 13px;
+}
 
-      line-height: 2;
-
-      font-size: 13px;
-    }
+.notice-content p {
+  margin: 0 0 14px 0;
+  text-indent: 45px;
+}
 
     /* =====================================================
        DYNAMIC VALUES
@@ -438,82 +431,43 @@
          NOTICE CONTENT
     ================================================== -->
 
-    <div class="notice-content">
+   <div class="notice-content">
 
-      धुळे महानगरपालिका क्षेत्रात कार्यालयीन कामकाजानिमित्त
-      आज पाहणी केली असता आपण
+  <p>
+    धुळे महानगरपालिका क्षेत्रात कार्यालयीन कामकाजानिमित्त आज पाहणी केली असता आपण
+    <span class="dynamic">{{ADDRESS}}</span>
+    येथे
+    <span class="dynamic">{{LATITUDE}}</span>,
+    <span class="dynamic">{{LONGITUDE}}</span>
+    या ठिकाणी
+    <span class="dynamic">{{SIZE}}</span>
+    आकाराचा अनधिकृत जाहिरात फलक
+    <span class="dynamic">{{TO_DATE}}</span>
+    पासून
+    <span class="dynamic">{{FROM_DATE}}</span>
+    पर्यंत प्रदर्शित केलेला आढळून आला आहे.
+  </p>
 
-      <span class="dynamic">
-        {{ADDRESS}}
-      </span>
+  <p>
+    धुळे महानगरपालिकेच्या अनधिकृत जाहिरात फलक शुल्क धोरणानुसार या जाहिरात फलकाचे शुल्क रु.
+    <span class="dynamic">{{AMOUNT}}</span>
+    इतके निश्चित करण्यात आले आहे.  आपण महानगरपालिकेची पूर्वपरवानगी न घेता सदर जाहिरात 
+    फलक प्रसिद्ध केला असल्याने आपण हि नोटीस प्राप्त झाल्यापासून ७ (सात) दिवसांच्या आत वरीलप्रमाणे निश्चित केलेल्या शुल्काचा भरणा धुळे महानगरपालिकेकडे करावा.
+  </p>
 
-      येथे
-
-      <span class="dynamic">
-        {{LATITUDE}}
-      </span>
-
-      ,
-
-      <span class="dynamic">
-        {{LONGITUDE}}
-      </span>
-
-      या ठिकाणी
-
-      <span class="dynamic">
-        {{SIZE}}
-      </span>
-
-      आकाराचा अनधिकृत जाहिरात फलक
-
-      <span class="dynamic">
-        {{TO_DATE}}
-      </span>
-
-         पासून
-
-      <span class="dynamic">
-        {{FROM_DATE}}
-      </span>
-
+  <p>
    
+  </p>
 
-      
+  <p>
+    
+  </p>
 
-      पर्यंत प्रदर्शित केलेला आढळून आला आहे.
+  <p>आपण या शुल्काचा भरणा विहित मुदतीत न केल्यास, हि रक्कम मालमत्ता कराची थकबाकी म्हणून आपल्याकडून वसूल करण्यात येईल.
+    तसेच आपल्या विरुद्ध <strong> महाराष्ट्र मालमत्तेच्या विरुपणास प्रतिबंध करण्यासाठी अधिनियम १९९५ अन्वये गुन्हा दाखल करण्यात येईल याची नोंद घ्यावी.</strong>
+  </p>
 
-
-      <br>
-      <br>
-
-
-      महानगरपालिकेच्या अनधिकृत जाहिरात फलक शुल्क धोरणानुसार
-      या जाहिरात फलकाचे शुल्क रु.
-
-      <span class="dynamic">
-        {{AMOUNT}}
-      </span>
-
-      इतके निश्चित करण्यात आले आहे.
-
-
-      आपण महानगरपालिकेची पूर्वपरवानगी न घेता सदर जाहिरात फलक
-      प्रसिद्ध केला असल्याने आपण हि नोटीस प्राप्त झाल्यापासून ७ (सात)
-      दिवसांच्या आत वरीलप्रमाणे निश्चित केलेल्या शुल्काचा भरणा धुळे 
-      महानगरपालिकेकडे करावा.
-
-
-      आपण या शुल्काचा भरणा विहित मुदतीत न केल्यास, हि रक्कम
-      मालमत्ता कराची थकबाकी म्हणून आपल्याकडून वसूल
-      करण्यात येईल.
-
-
-      तसेच आपल्या विरुद्ध <strong>महाराष्ट्र मालमत्तेच्या विरुपणास
-      प्रतिबंध करण्यासाठी अधिनियम १९९५ अन्वये गुन्हा दाखल
-      करण्यात येईल याची नोंद घ्यावी.</strong>
-
-    </div>
+</div>
 
 
     <!-- =================================================

@@ -3,12 +3,23 @@ const {
   getNoticeByIdService,
   generateNoticeService,
 } = require('./notice.service');
+
+const {repoGetNoticeData} = require('./notice.repo')
 const { logApiSuccess, logApiError } = require('../../utils/log');
 
 async function renderNoticeHtml(req, res, next) {
   try {
     const payload = { ...req.query, ...req.body };
-    const html = await renderNoticeHtmlService(payload);
+
+    const noticeData = await repoGetNoticeData(payload.ID);
+
+      if (!noticeData) {
+        throw new Error(
+          "Notice data not found for ID: 26"
+        );
+      }
+
+    const html = await renderNoticeHtmlService({...noticeData,...payload});
 
     if (req.query.format === 'html' || req.headers.accept?.includes('text/html')) {
       res.setHeader('Content-Type', 'text/html');

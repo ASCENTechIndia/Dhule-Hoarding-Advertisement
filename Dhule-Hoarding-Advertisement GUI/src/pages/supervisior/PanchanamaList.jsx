@@ -5,6 +5,7 @@ import { useLoader } from "../../context/LoaderContext";
 import ResponseModal from "../../components/ResponseModal";
 import { generatePDF } from "../../utils/pdfHelper.jsx";
 import ExcelExportButton from "../../components/ExcelExportButton.jsx";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 const getToday = () => {
   const d = new Date();
@@ -17,6 +18,7 @@ const getToday = () => {
 };
 
 const PanchanamaList = () => {
+  const { user } = useAuth();
   const { setLoader } = useLoader();
 
   // =========================================================
@@ -111,7 +113,7 @@ const PanchanamaList = () => {
       setLoader(true);
       setError(null);
 
-      let url = `/advertisement/getPanchanamalist?page=${dataPage}&limit=${pageSize}`;
+      let url = `/advertisement/getPanchanamalist?page=${dataPage}&limit=${pageSize}&ulbId=${import.meta.env.VITE_ULBID}&userId=${user.userId}`;
 
       if (filters.fromDate) {
         url += `&fromDate=${encodeURIComponent(filters.fromDate)}`;
@@ -229,29 +231,24 @@ const PanchanamaList = () => {
     return pages;
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) {
-      return "-";
-    }
+ const formatDate = (dateString) => {
+  if (!dateString) {
+    return "-";
+  }
 
-    const date = new Date(dateString);
+  const date = new Date(dateString);
 
-    if (isNaN(date.getTime())) {
-      return "-";
-    }
+  if (isNaN(date.getTime())) {
+    return "-";
+  }
 
-    return date
-      .toLocaleString("en-IN", {
-        timeZone: "Asia/Kolkata",
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-      })
-      .replace(",", " - ");
-  };
+  return date.toLocaleDateString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+};
 
   const getPanchanamaPhotos = (panchanama) => {
     return [
@@ -403,8 +400,11 @@ const PanchanamaList = () => {
         const html = response.data.html;
 
         // Open a new blank window
-        const printWin = window.open("", "_blank", "width=800,height=600");
-
+       const printWin = window.open(
+  "",
+  "_blank",
+  `width=${screen.availWidth},height=${screen.availHeight},left=0,top=0`
+);
         if (!printWin) {
           // Popup blocked – fallback: use an iframe
           showError("Please allow pop-ups to print the document.");
@@ -579,8 +579,8 @@ const PanchanamaList = () => {
     // =========================================================
     const fieldLabels = {
       VAR_ILLEGALHOARD_PANCHANAMA_NO: "पंचनामा क्रमांक",
-      DAT_CAP_DT: "वेळ",
-      VAR_CAP_TIME: "दिनांक",
+      DAT_CAP_DT: "दिनांक",
+      VAR_CAP_TIME: "वेळ",
       VAR_USER1: "पंचनामा करणाऱ्याचे नाव",
       VAR_USER1_POST: "पंचनामा करणाऱ्याचे पद",
       VAR_ILLEGALHOARD_ADD: "अनधिकृत जाहिरात लावलेल्या ठिकाणाचा संपूर्ण पत्ता",

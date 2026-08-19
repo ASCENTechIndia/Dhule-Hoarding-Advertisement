@@ -196,10 +196,7 @@ async function renderNoticeHtmlService(data = {}) {
 
     AMOUNT:
       data.AMOUNT_DATA ||
-      data.amount ||
-      data.NUM_HOARD_AMOUNT ||
-      data.num_hoard_amount ||
-      "",
+      data.AMOUNT ||  ''  , 
 
     OFFICER_NAME:
       data.OFFICER_NAME ||
@@ -405,15 +402,15 @@ async function generateNoticeService(payload) {
       noticeData.noticeNo ||
       "-",
 
-    FROM_DATE:
-      noticeData.fromDate ||
-      payload.FROM_DATE ||
-      "-",
-
-    TO_DATE:
-      noticeData.toDate ||
+    FROM_DATE:noticeData.toDate ||
       payload.TO_DATE ||
       "-",
+      
+
+    TO_DATE: noticeData.fromDate ||
+      payload.FROM_DATE ||
+      "-",
+      
 
     REGIONAL_OFFICE:
       noticeData.ward ||

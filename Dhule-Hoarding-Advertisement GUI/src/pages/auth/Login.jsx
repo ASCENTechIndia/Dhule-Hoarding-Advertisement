@@ -348,17 +348,19 @@ export default function Login() {
         <div>
           <main className="auth-page">
             <section className="auth-card">
-              <div className="auth-brand">
-                <img
-                  src={logo}
-                  alt="Dhule Municipal Corporation Logo"
-                  className="m-auto"
-                />
-                {/* <span className="brand-icon"> */}
-                {/* <i className="bi bi-grid-1x2-fill" aria-hidden="true"></i> */}
-                {/* </span> */}
-                {/* <span><strong>adminHMD</strong><small>Sign in to your admin workspace.</small></span> */}
-              </div>
+           <div className="auth-brand">
+  <img
+    src={logo}
+    alt="Dhule Municipal Corporation Logo"
+    className="m-auto"
+  />
+
+  <div>
+    <strong>
+      माझी कानबाई, पर्यावरणपूरक कानबाई स्पर्धा
+    </strong>
+  </div>
+</div>
               <form
                 className="needs-validation"
                 noValidate

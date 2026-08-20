@@ -1,16 +1,15 @@
-
-const { repoGetNoticeById, repoGenerateNotice, repoGetCorporationInfo } = require('./notice.repo');
-const {
-  signPdfWithPfx,
-} = require("../../services/pdfSignerService");
-
-const {
-  generatePdfFromHtml,
-} = require("../../services/pdfGeneratorService");
-
+﻿const path = require("path");
 const fs = require("fs").promises;
-const path = require("path");
+const fsSync = require("fs");
+
 const { PDFDocument } = require("pdf-lib");
+const puppeteer = require("puppeteer");
+
+const {
+  repoGetNoticeById,
+  repoGenerateNotice,
+  repoGetCorporationInfo,
+} = require("./notice.repo");
 
 const {
   signPdf,
@@ -21,25 +20,407 @@ const {
   locateSignatureWidget,
 } = require("../registerComplaint/SignaturePlacement");
 
-const TEMPLATE_PATH = path.join(__dirname, 'notice.template.html');
+const TEMPLATE_PATH = path.join(
+  __dirname,
+  "notice.template.html"
+);
 
-async function getSidebarLogoBase64() {
-  const logoPath = path.join(
-    __dirname,
-    "dhule-logo.png"
+/*
+|--------------------------------------------------------------------------
+| SERVER CHROME PATH
+|--------------------------------------------------------------------------
+*/
+
+const CHROME_CACHE_PATH =
+  "C:\\inetpub\\wwwroot\\Dhule-Advertisement\\Backend\\node_modules\\puppeteer\\.cache\\puppeteer\\chrome";
+
+/*
+|--------------------------------------------------------------------------
+| Find Chrome Executable
+|--------------------------------------------------------------------------
+*/
+
+function findChromeExecutable() {
+  if (!fsSync.existsSync(CHROME_CACHE_PATH)) {
+    throw new Error(
+      `Chrome cache folder not found:\n${CHROME_CACHE_PATH}`
+    );
+  }
+
+  function searchDirectory(directory) {
+    const entries = fsSync.readdirSync(directory, {
+      withFileTypes: true,
+    });
+
+    // Check files first
+    for (const entry of entries) {
+      if (
+        entry.isFile() &&
+        entry.name.toLowerCase() === "chrome.exe"
+      ) {
+        return path.join(
+          directory,
+          entry.name
+        );
+      }
+    }
+
+    // Search folders
+    for (const entry of entries) {
+      if (entry.isDirectory()) {
+        const result = searchDirectory(
+          path.join(
+            directory,
+            entry.name
+          )
+        );
+
+        if (result) {
+          return result;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  const chromePath =
+    searchDirectory(
+      CHROME_CACHE_PATH
+    );
+
+  if (!chromePath) {
+    throw new Error(
+      `chrome.exe not found inside:\n${CHROME_CACHE_PATH}`
+    );
+  }
+
+  console.log(
+    "Chrome executable:",
+    chromePath
   );
 
-  try {
-    const buf = await fs.readFile(logoPath);
+  return chromePath;
+}
 
-    if (!buf || buf.length === 0) {
+/*
+|--------------------------------------------------------------------------
+| Launch Server Chrome
+|--------------------------------------------------------------------------
+*/
+
+async function launchChrome() {
+  const executablePath =
+    findChromeExecutable();
+
+  return await puppeteer.launch({
+    headless: true,
+
+    executablePath,
+
+    args: [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-dev-shm-usage",
+      "--disable-gpu",
+      "--no-first-run",
+      "--no-zygote",
+      "--disable-extensions",
+      "--disable-background-networking",
+      "--disable-background-timer-throttling",
+      "--disable-renderer-backgrounding",
+      "--disable-features=Translate,BackForwardCache",
+    ],
+  });
+}
+
+/*
+|--------------------------------------------------------------------------
+| Generate PDF From HTML
+|--------------------------------------------------------------------------
+|
+| Returns:
+|
+| {
+|   pdfBuffer: Buffer,
+|   placement
+| }
+|
+|--------------------------------------------------------------------------
+*/
+
+async function generatePdfFromHtml(html) {
+  if (!html) {
+    throw new Error(
+      "HTML is required to generate PDF"
+    );
+  }
+
+  let browser = null;
+
+  try {
+    browser =
+      await launchChrome();
+
+    const page =
+      await browser.newPage();
+
+    /*
+    |--------------------------------------------------------------------------
+    | A4 Viewport
+    |--------------------------------------------------------------------------
+    */
+
+    await page.setViewport({
+      width: 794,
+      height: 1123,
+      deviceScaleFactor: 1,
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Load HTML
+    |--------------------------------------------------------------------------
+    */
+
+    await page.setContent(
+      html,
+      {
+        waitUntil: [
+          "load",
+          "networkidle0",
+        ],
+      }
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Wait For Images
+    |--------------------------------------------------------------------------
+    */
+
+    await page.evaluate(async () => {
+      const images =
+        Array.from(
+          document.images
+        );
+
+      await Promise.all(
+        images.map((img) => {
+          if (img.complete) {
+            return Promise.resolve();
+          }
+
+          return new Promise(
+            (resolve) => {
+              img.onload =
+                resolve;
+
+              img.onerror =
+                resolve;
+            }
+          );
+        })
+      );
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Detect Signature Placement
+    |--------------------------------------------------------------------------
+    */
+
+    let placement = null;
+
+    try {
+      placement =
+        await locateSignatureWidget(
+          page
+        );
+
+      console.log(
+        "Notice signature placement:",
+        placement
+      );
+    } catch (error) {
+      console.warn(
+        "Notice signature placement detection failed:",
+        error.message
+      );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Generate PDF
+    |--------------------------------------------------------------------------
+    */
+
+    const generatedPdf =
+      await page.pdf({
+        format: "A4",
+
+        printBackground: true,
+
+        preferCSSPageSize: true,
+
+        margin: {
+          top: "0mm",
+          right: "0mm",
+          bottom: "0mm",
+          left: "0mm",
+        },
+      });
+
+    /*
+    |--------------------------------------------------------------------------
+    | IMPORTANT:
+    | Puppeteer may return Uint8Array.
+    | Convert explicitly to Node Buffer.
+    |--------------------------------------------------------------------------
+    */
+
+    let pdfBuffer;
+
+    if (
+      Buffer.isBuffer(
+        generatedPdf
+      )
+    ) {
+      pdfBuffer =
+        generatedPdf;
+    } else if (
+      generatedPdf instanceof
+      Uint8Array
+    ) {
+      pdfBuffer =
+        Buffer.from(
+          generatedPdf.buffer,
+          generatedPdf.byteOffset,
+          generatedPdf.byteLength
+        );
+    } else {
+      pdfBuffer =
+        Buffer.from(
+          generatedPdf
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validate PDF
+    |--------------------------------------------------------------------------
+    */
+
+    console.log(
+      "PDF Generator:",
+      {
+        originalType:
+          generatedPdf?.constructor
+            ?.name,
+
+        originalIsBuffer:
+          Buffer.isBuffer(
+            generatedPdf
+          ),
+
+        finalIsBuffer:
+          Buffer.isBuffer(
+            pdfBuffer
+          ),
+
+        length:
+          pdfBuffer.length,
+
+        header:
+          pdfBuffer
+            .subarray(0, 5)
+            .toString(),
+
+        placement,
+      }
+    );
+
+    if (
+      !Buffer.isBuffer(
+        pdfBuffer
+      )
+    ) {
+      throw new Error(
+        "PDF generation failed: unable to create Buffer"
+      );
+    }
+
+    if (
+      pdfBuffer.length === 0
+    ) {
+      throw new Error(
+        "PDF generation returned empty Buffer"
+      );
+    }
+
+    if (
+      pdfBuffer
+        .subarray(0, 5)
+        .toString() !==
+      "%PDF-"
+    ) {
+      throw new Error(
+        "Generated data is not a valid PDF"
+      );
+    }
+
+    return {
+      pdfBuffer,
+      placement,
+    };
+  } finally {
+    if (browser) {
+      try {
+        await browser.close();
+      } catch (error) {
+        console.error(
+          "Chrome close error:",
+          error.message
+        );
+      }
+    }
+  }
+}
+
+/*
+|--------------------------------------------------------------------------
+| Load Dhule Logo
+|--------------------------------------------------------------------------
+*/
+
+async function getSidebarLogoBase64() {
+  const logoPath =
+    path.join(
+      __dirname,
+      "dhule-logo.png"
+    );
+
+  try {
+    const buf =
+      await fs.readFile(
+        logoPath
+      );
+
+    if (
+      !buf ||
+      buf.length === 0
+    ) {
       return "";
     }
 
-    console.log("Dhule logo loaded:", logoPath);
+    console.log(
+      "Dhule logo loaded:",
+      logoPath
+    );
 
-    return `data:image/png;base64,${buf.toString("base64")}`;
-
+    return `data:image/png;base64,${buf.toString(
+      "base64"
+    )}`;
   } catch (error) {
     console.error(
       "Failed to load Dhule logo:",
@@ -50,15 +431,26 @@ async function getSidebarLogoBase64() {
   }
 }
 
-async function renderNoticeHtmlService(data = {}) {
-  let templateContent = await fs.readFile(
-    TEMPLATE_PATH,
-    "utf-8"
-  );
+/*
+|--------------------------------------------------------------------------
+| Render Notice HTML
+|--------------------------------------------------------------------------
+*/
 
-  // ---------------------------------------------------------
-  // Corporation
-  // ---------------------------------------------------------
+async function renderNoticeHtmlService(
+  data = {}
+) {
+  let templateContent =
+    await fs.readFile(
+      TEMPLATE_PATH,
+      "utf-8"
+    );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Corporation
+  |--------------------------------------------------------------------------
+  */
 
   const corpId =
     data.corporationId ||
@@ -72,7 +464,10 @@ async function renderNoticeHtmlService(data = {}) {
 
   if (corpId) {
     try {
-      corpInfo = await repoGetCorporationInfo(corpId);
+      corpInfo =
+        await repoGetCorporationInfo(
+          corpId
+        );
     } catch (err) {
       console.error(
         "Error fetching corporation info:",
@@ -84,60 +479,94 @@ async function renderNoticeHtmlService(data = {}) {
   const sidebarLogoBase64 =
     await getSidebarLogoBase64();
 
-  const logoValue = sidebarLogoBase64;
-
   const corpNameValue =
     data.corporationName ||
     data.corporation_name ||
     corpInfo?.corporationName ||
     "धुळे महानगरपालिका";
 
-  // ---------------------------------------------------------
-  // Size
-  // ---------------------------------------------------------
+  /*
+  |--------------------------------------------------------------------------
+  | Size
+  |--------------------------------------------------------------------------
+  */
 
-  const sizeValue = data.SIZE 
+  const sizeValue =
+    data.SIZE || "";
 
-  // ---------------------------------------------------------
-  // Date formatter
-  // ---------------------------------------------------------
+  /*
+  |--------------------------------------------------------------------------
+  | Date Formatter
+  |--------------------------------------------------------------------------
+  */
 
-  const formatDate = (dateValue) => {
-    if (!dateValue) return "";
-
-    const date = new Date(dateValue);
-
-    if (isNaN(date.getTime())) {
-      return String(dateValue);
+  const formatDate = (
+    dateValue
+  ) => {
+    if (!dateValue) {
+      return "";
     }
 
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(
-      date.getMonth() + 1
-    ).padStart(2, "0");
-    const year = date.getFullYear();
+    const date =
+      new Date(dateValue);
+
+    if (
+      isNaN(
+        date.getTime()
+      )
+    ) {
+      return String(
+        dateValue
+      );
+    }
+
+    const day =
+      String(
+        date.getDate()
+      ).padStart(
+        2,
+        "0"
+      );
+
+    const month =
+      String(
+        date.getMonth() + 1
+      ).padStart(
+        2,
+        "0"
+      );
+
+    const year =
+      date.getFullYear();
 
     return `${day}-${month}-${year}`;
   };
 
-  // ---------------------------------------------------------
-  // Notice date
-  // ---------------------------------------------------------
+  /*
+  |--------------------------------------------------------------------------
+  | Notice Date
+  |--------------------------------------------------------------------------
+  */
 
   const noticeDate =
     data.NOTICE_DATE ||
     formatDate(
-      data.SYSTEM_DATE || data.system_date
+      data.SYSTEM_DATE ||
+      data.system_date
     );
 
-  // ---------------------------------------------------------
-  // Replacements
-  // ---------------------------------------------------------
+  /*
+  |--------------------------------------------------------------------------
+  | Replacements
+  |--------------------------------------------------------------------------
+  */
 
   const replacements = {
-    corporationLogo: logoValue,
+    corporationLogo:
+      sidebarLogoBase64,
 
-    corporationName: corpNameValue,
+    corporationName:
+      corpNameValue,
 
     REGIONAL_OFFICE_NO:
       data.REGIONAL_OFFICE_NO ||
@@ -174,9 +603,10 @@ async function renderNoticeHtmlService(data = {}) {
       data.longitude ||
       "",
 
-    SIZE: sizeValue,
+    SIZE:
+      sizeValue,
 
-     TO_DATE:
+    TO_DATE:
       data.FROM_DATE ||
       data.from_date ||
       data.fromDate ||
@@ -184,10 +614,10 @@ async function renderNoticeHtmlService(data = {}) {
       data.dat_from_dt
         ? formatDate(
             data.FROM_DATE ||
-            data.from_date ||
-            data.fromDate ||
-            data.DAT_FROM_DT ||
-            data.dat_from_dt
+              data.from_date ||
+              data.fromDate ||
+              data.DAT_FROM_DT ||
+              data.dat_from_dt
           )
         : "",
 
@@ -199,15 +629,15 @@ async function renderNoticeHtmlService(data = {}) {
       data.dat_to_dt
         ? formatDate(
             data.TO_DATE ||
-            data.to_date ||
-            data.toDate ||
-            data.DAT_TO_DT ||
-            data.dat_to_dt
+              data.to_date ||
+              data.toDate ||
+              data.DAT_TO_DT ||
+              data.dat_to_dt
           )
         : "",
 
     AMOUNT:
-      data.AMOUNT_DATA   , 
+      data.AMOUNT_DATA || "",
 
     OFFICER_NAME:
       data.OFFICER_NAME ||
@@ -245,49 +675,90 @@ async function renderNoticeHtmlService(data = {}) {
       data.zonal_name ||
       data.VAR_OFFICER_DIVISION ||
       data.var_officer_division ||
-      ""
+      "",
   };
 
-  // ---------------------------------------------------------
-  // Replace template variables
-  // ---------------------------------------------------------
+  /*
+  |--------------------------------------------------------------------------
+  | Replace Variables
+  |--------------------------------------------------------------------------
+  */
 
-  Object.entries(replacements).forEach(
+  Object.entries(
+    replacements
+  ).forEach(
     ([key, val]) => {
-      const regex = new RegExp(
-        `\\{\\{\\s*${key}\\s*\\}\\}`,
-        "g"
-      );
+      const regex =
+        new RegExp(
+          `\\{\\{\\s*${key}\\s*\\}\\}`,
+          "g"
+        );
 
-      templateContent = templateContent.replace(
-        regex,
-        val !== null && val !== undefined
-          ? String(val)
-          : ""
-      );
+      templateContent =
+        templateContent.replace(
+          regex,
+          val !== null &&
+            val !== undefined
+            ? String(val)
+            : ""
+        );
     }
   );
 
   return templateContent;
 }
 
-async function getNoticeByIdService(id) {
-  const dbData = await repoGetNoticeById(id);
-  const data = dbData || {};
-  const html = await renderNoticeHtmlService(data);
-  return { data, html };
+/*
+|--------------------------------------------------------------------------
+| Get Notice By ID
+|--------------------------------------------------------------------------
+*/
+
+async function getNoticeByIdService(
+  id
+) {
+  const dbData =
+    await repoGetNoticeById(
+      id
+    );
+
+  const data =
+    dbData || {};
+
+  const html =
+    await renderNoticeHtmlService(
+      data
+    );
+
+  return {
+    data,
+    html,
+  };
 }
 
-async function generateNoticeService(payload) {
-  // =========================================================
-  // BASIC VALIDATION
-  // =========================================================
+/*
+|--------------------------------------------------------------------------
+| Generate Notice
+|--------------------------------------------------------------------------
+*/
+
+async function generateNoticeService(
+  payload
+) {
+  /*
+  |--------------------------------------------------------------------------
+  | Validation
+  |--------------------------------------------------------------------------
+  */
 
   if (!payload) {
-    throw new Error("Request payload is required");
+    throw new Error(
+      "Request payload is required"
+    );
   }
 
-  const userId = payload.userId;
+  const userId =
+    payload.userId;
 
   const ulbId =
     payload.ULB_ID ||
@@ -300,28 +771,33 @@ async function generateNoticeService(payload) {
     payload.VAR_ILLEGALHOARD_PANCHANAMA_NO;
 
   if (!panchanamaNo) {
-    throw new Error("Panchanama number is required");
+    throw new Error(
+      "Panchanama number is required"
+    );
   }
 
   if (!ulbId) {
-    throw new Error("ULB ID is required");
+    throw new Error(
+      "ULB ID is required"
+    );
   }
 
-  // =========================================================
-  // CALL ORACLE PROCEDURE
-  // =========================================================
+  /*
+  |--------------------------------------------------------------------------
+  | Oracle Procedure
+  |--------------------------------------------------------------------------
+  */
 
-  const procResult = await repoGenerateNotice({
-    userId,
-    ulbId,
-    PANCHANAMA_NO: panchanamaNo,
-  });
+  const procResult =
+    await repoGenerateNotice({
+      userId,
+      ulbId,
+      PANCHANAMA_NO:
+        panchanamaNo,
+    });
 
-  // =========================================================
-  // CHECK PROCEDURE ERROR
-  // =========================================================
-
-  const errorCode = procResult.errorCode;
+  const errorCode =
+    procResult.errorCode;
 
   if (
     errorCode !== null &&
@@ -334,15 +810,21 @@ async function generateNoticeService(payload) {
     );
   }
 
-  // =========================================================
-  // PROCEDURE DATA
-  // =========================================================
+  /*
+  |--------------------------------------------------------------------------
+  | Procedure Data
+  |--------------------------------------------------------------------------
+  */
 
-  const noticeData = procResult.noticeData || {};
+  const noticeData =
+    procResult.noticeData ||
+    {};
 
-  // =========================================================
-  // MERGE WITH FRONTEND PAYLOAD
-  // =========================================================
+  /*
+  |--------------------------------------------------------------------------
+  | Merge Data
+  |--------------------------------------------------------------------------
+  */
 
   const mergedData = {
     ...payload,
@@ -385,7 +867,8 @@ async function generateNoticeService(payload) {
       noticeData.length &&
       noticeData.width
         ? `${noticeData.length} x ${noticeData.width}`
-        : payload.SIZE || "-",
+        : payload.SIZE ||
+          "-",
 
     PANCHANAMA_NO:
       noticeData.panchanamaNo ||
@@ -421,101 +904,381 @@ async function generateNoticeService(payload) {
       "-",
   };
 
-  // =========================================================
-  // GENERATE HTML
-  // =========================================================
+  /*
+  |--------------------------------------------------------------------------
+  | Generate HTML
+  |--------------------------------------------------------------------------
+  */
 
   const html =
     await renderNoticeHtmlService(
       mergedData
     );
 
-  // =========================================================
-  // GENERATE PDF
-  // =========================================================
+  /*
+  |--------------------------------------------------------------------------
+  | Generate PDF
+  |--------------------------------------------------------------------------
+  */
 
-  const { pdfBuffer, placement } = await generatePdfFromHtml(html);
+  const {
+    pdfBuffer,
+    placement,
+  } =
+    await generatePdfFromHtml(
+      html
+    );
 
-  console.log("Generated PDF:", {
-  isBuffer: Buffer.isBuffer(pdfBuffer),
-  length: pdfBuffer.length,
-});
+  /*
+  |--------------------------------------------------------------------------
+  | Verify PDF
+  |--------------------------------------------------------------------------
+  */
 
-if (!Buffer.isBuffer(pdfBuffer)) {
-  throw new Error("PDF generation failed: result is not a Buffer");
-}
+  console.log(
+    "Generated Notice PDF:",
+    {
+      isBuffer:
+        Buffer.isBuffer(
+          pdfBuffer
+        ),
 
-const signedPdfBuffer = await signNoticePdf(pdfBuffer, placement);
+      constructor:
+        pdfBuffer?.constructor
+          ?.name,
 
-  console.log("Signed PDF:", {
-    isBuffer: Buffer.isBuffer(signedPdfBuffer),
-    length: signedPdfBuffer.length,
-  });
+      length:
+        pdfBuffer?.length,
 
-  if (!Buffer.isBuffer(signedPdfBuffer)) {
+      header:
+        pdfBuffer
+          ?.subarray(
+            0,
+            5
+          )
+          ?.toString(),
+
+      placement,
+    }
+  );
+
+  if (
+    !Buffer.isBuffer(
+      pdfBuffer
+    )
+  ) {
+    throw new Error(
+      "PDF generation failed: result is not a Buffer"
+    );
+  }
+
+  if (
+    pdfBuffer.length === 0
+  ) {
+    throw new Error(
+      "PDF generation failed: empty PDF"
+    );
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Sign PDF
+  |--------------------------------------------------------------------------
+  */
+
+  const signedPdfBuffer =
+    await signNoticePdf(
+      pdfBuffer,
+      placement
+    );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Verify Signed PDF
+  |--------------------------------------------------------------------------
+  */
+
+  console.log(
+    "Signed Notice PDF:",
+    {
+      isBuffer:
+        Buffer.isBuffer(
+          signedPdfBuffer
+        ),
+
+      length:
+        signedPdfBuffer?.length,
+    }
+  );
+
+  if (
+    !Buffer.isBuffer(
+      signedPdfBuffer
+    )
+  ) {
     throw new Error(
       "PDF signing failed: result is not a Buffer"
     );
   }
 
-  // =========================================================
-  // RETURN ONLY SIGNED PDF
-  // =========================================================
-
   return signedPdfBuffer;
 }
 
-// signNoticePdf no longer needs `page` — it needs `placement` directly
-async function signNoticePdf(pdfBuffer, placement = null) {
-  const pfxPath = path.join(__dirname, "DS Dhule Municipal Corporation.pfx");
-  const pfxPassword = "Pro452";
-  const signerName = extractSignerNameFromPfx(pfxPath, pfxPassword);
+/*
+|--------------------------------------------------------------------------
+| Sign Notice PDF
+|--------------------------------------------------------------------------
+*/
 
-  const pdfDoc = await PDFDocument.load(pdfBuffer);
-  const pageCount = pdfDoc.getPageCount();
+async function signNoticePdf(
+  pdfBuffer,
+  placement = null
+) {
+  const pfxPath =
+    path.join(
+      __dirname,
+      "DS Dhule Municipal Corporation.pfx"
+    );
+
+  const pfxPassword =
+    "Pro452";
+
+  /*
+  |--------------------------------------------------------------------------
+  | Check PFX
+  |--------------------------------------------------------------------------
+  */
+
+  try {
+    await fs.access(
+      pfxPath
+    );
+  } catch {
+    throw new Error(
+      `PFX file not found:\n${pfxPath}`
+    );
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Signer Name
+  |--------------------------------------------------------------------------
+  */
+
+  const signerName =
+    extractSignerNameFromPfx(
+      pfxPath,
+      pfxPassword
+    );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Load PDF
+  |--------------------------------------------------------------------------
+  */
+
+  const pdfDoc =
+    await PDFDocument.load(
+      pdfBuffer
+    );
+
+  const pageCount =
+    pdfDoc.getPageCount();
+
+  console.log(
+    "[SIGNATURE] Detected PDF page count:",
+    pageCount
+  );
 
   if (!pageCount) {
-    throw new Error("Generated PDF has no pages");
+    throw new Error(
+      "Generated PDF has no pages"
+    );
   }
 
-  let pageNumber = pageCount;
-  let widgetRect = null;
+  let pageNumber =
+    pageCount;
 
-  if (placement && placement.widgetRect && placement.pageNumber) {
-    pageNumber = placement.pageNumber;
-    let [x1, y1, x2, y2] = placement.widgetRect;
-    const boxWidth = 240;
-    const boxHeight = 100;
-    const centerY = (y1 + y2) / 2;
+  let widgetRect =
+    null;
 
-    // Keep the PDF widget on the same right edge as the HTML footer.
-    x1 = 540 - boxWidth;
-    y1 = Math.max(0, Math.round(centerY - boxHeight / 2));
-    y1 = Math.min(y1, 842 - boxHeight);
-    widgetRect = [x1, y1, x1 + boxWidth, y1 + boxHeight];
-  }
+  /*
+  |--------------------------------------------------------------------------
+  | Signature Placement
+  |--------------------------------------------------------------------------
+  */
 
-  if (!widgetRect) {
-    console.warn("Notice signature placement detection failed — using fallback position");
-    const boxWidth = 240;
-    const boxHeight = 100;
-    const marginFromBottom = 160;
-    const x1 = 540 - boxWidth;
-    const y1 = marginFromBottom;
+  if (
+    placement &&
+    placement.widgetRect &&
+    placement.pageNumber
+  ) {
+    pageNumber =
+      placement.pageNumber;
+
+    let [
+      x1,
+      y1,
+      x2,
+      y2,
+    ] =
+      placement.widgetRect;
+
+    const boxWidth =
+      240;
+
+    const boxHeight =
+      100;
+
+    const centerY =
+      (y1 + y2) / 2;
+
+    /*
+    |--------------------------------------------------------------------------
+    | Right Side Position
+    |--------------------------------------------------------------------------
+    */
+
+    x1 =
+      540 -
+      boxWidth;
+
+    y1 =
+      Math.max(
+        0,
+        Math.round(
+          centerY -
+            boxHeight / 2
+        )
+      );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Keep Inside A4
+    |--------------------------------------------------------------------------
+    */
+
+    y1 =
+      Math.min(
+        y1,
+        842 -
+          boxHeight
+      );
 
     widgetRect = [
       Math.round(x1),
       Math.round(y1),
-      Math.round(x1 + boxWidth),
-      Math.round(y1 + boxHeight),
+      Math.round(
+        x1 + boxWidth
+      ),
+      Math.round(
+        y1 + boxHeight
+      ),
     ];
-    pageNumber = pageCount;
   }
 
-  console.log("Notice signature placement:", { pageNumber, widgetRect, signerName });
+  /*
+  |--------------------------------------------------------------------------
+  | Fallback
+  |--------------------------------------------------------------------------
+  */
 
-  return await signPdf(pdfBuffer, pfxPath, pfxPassword, pageNumber, widgetRect, signerName);
+  if (!widgetRect) {
+    console.warn(
+      "Notice signature placement detection failed — using fallback position"
+    );
+
+    const boxWidth =
+      240;
+
+    const boxHeight =
+      100;
+
+    const marginFromBottom =
+      160;
+
+    const x1 =
+      540 -
+      boxWidth;
+
+    const y1 =
+      marginFromBottom;
+
+    widgetRect = [
+      Math.round(x1),
+      Math.round(y1),
+      Math.round(
+        x1 + boxWidth
+      ),
+      Math.round(
+        y1 + boxHeight
+      ),
+    ];
+
+    pageNumber =
+      pageCount;
+  }
+
+  console.log(
+    "Notice signature placement:",
+    {
+      pageNumber,
+      widgetRect,
+      signerName,
+    }
+  );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Sign
+  |--------------------------------------------------------------------------
+  */
+
+  const signedPdf =
+    await signPdf(
+      pdfBuffer,
+      pfxPath,
+      pfxPassword,
+      pageNumber,
+      widgetRect,
+      signerName
+    );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Ensure Signed PDF Is Buffer
+  |--------------------------------------------------------------------------
+  */
+
+  if (
+    Buffer.isBuffer(
+      signedPdf
+    )
+  ) {
+    return signedPdf;
+  }
+
+  if (
+    signedPdf instanceof
+    Uint8Array
+  ) {
+    return Buffer.from(
+      signedPdf.buffer,
+      signedPdf.byteOffset,
+      signedPdf.byteLength
+    );
+  }
+
+  return Buffer.from(
+    signedPdf
+  );
 }
+
+/*
+|--------------------------------------------------------------------------
+| Exports
+|--------------------------------------------------------------------------
+*/
 
 module.exports = {
   renderNoticeHtmlService,

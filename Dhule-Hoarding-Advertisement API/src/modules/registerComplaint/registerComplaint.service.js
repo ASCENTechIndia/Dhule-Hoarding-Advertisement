@@ -2,12 +2,15 @@
 const fs = require("fs").promises;
 const fsSync = require("fs");
 
-const { SignPdf } = require("@signpdf/signpdf");
-const { P12Signer } = require("@signpdf/signer-p12");
-const { PDFDocument } = require("pdf-lib");
 const puppeteer = require("puppeteer");
 
-const { PDF_RENDER_OPTIONS } = require("../../utils/shared-pdf-options");
+const {
+  digitallySignPdf,
+} = require("../../utils/digitalSignature");
+
+const {
+  PDF_RENDER_OPTIONS,
+} = require("../../utils/shared-pdf-options");
 
 const {
   repoWardList,
@@ -24,69 +27,97 @@ const {
   getPanchanamaDetailsRepo,
 } = require("./registerComplaint.repo");
 
-const {
-  signPdf,
-  extractSignerNameFromPfx,
-} = require("./signatureHelpers");
-
-const { locateSignatureWidget } = require("./SignaturePlacement");
-
 const TEMPLATE_PATH = path.join(
   __dirname,
   "panchanama.template.html"
 );
 
-/*
-|--------------------------------------------------------------------------
-| SERVER CHROME PATH
-|--------------------------------------------------------------------------
-|
-| Puppeteer cache:
-|
-| C:\inetpub\wwwroot\Dhule-Advertisement\Backend\
-| node_modules\puppeteer\.cache\puppeteer\chrome
-|
-| We automatically find chrome.exe inside this folder.
-|
-*/
-
-const CHROME_CACHE_PATH =
-  "C:\\inetpub\\wwwroot\\Dhule-Advertisement\\Backend\\node_modules\\puppeteer\\.cache\\puppeteer\\chrome";
-
-/*
-|--------------------------------------------------------------------------
-| Find Chrome executable
-|--------------------------------------------------------------------------
-*/
-
 function findChromeExecutable() {
-  if (!fsSync.existsSync(CHROME_CACHE_PATH)) {
-    throw new Error(
-      `Puppeteer Chrome cache folder not found:\n${CHROME_CACHE_PATH}`
-    );
+  const possiblePaths = [
+    // Google Chrome - Windows
+
+      // Chrome on your IIS production server
+    "C:\\inetpub\\wwwroot\\Dhule-Advertisement\\Backend\\node_modules\\puppeteer\\.cache\\puppeteer\\chrome",
+
+    
+    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+
+    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+
+  
+    // Local Puppeteer cache
+    path.join(
+      process.cwd(),
+      "node_modules",
+      "puppeteer",
+      ".cache",
+      "puppeteer",
+      "chrome"
+    ),
+  ];
+
+  /*
+  |--------------------------------------------------------------------------
+  | Check direct Chrome executable paths
+  |--------------------------------------------------------------------------
+  */
+
+  for (const chromePath of possiblePaths) {
+    if (
+      chromePath.toLowerCase().endsWith("chrome.exe") &&
+      fsSync.existsSync(chromePath)
+    ) {
+      console.log(
+        "Chrome executable found:",
+        chromePath
+      );
+
+      return chromePath;
+    }
   }
 
-  function searchDirectory(directory) {
-    const entries = fsSync.readdirSync(directory, {
-      withFileTypes: true,
-    });
+  /*
+  |--------------------------------------------------------------------------
+  | Recursively search cache folders
+  |--------------------------------------------------------------------------
+  */
 
-    // First check files
+  function searchDirectory(directory) {
+    if (!fsSync.existsSync(directory)) {
+      return null;
+    }
+
+    const entries =
+      fsSync.readdirSync(
+        directory,
+        {
+          withFileTypes: true,
+        }
+      );
+
+    // Check files
     for (const entry of entries) {
       if (
         entry.isFile() &&
         entry.name.toLowerCase() === "chrome.exe"
       ) {
-        return path.join(directory, entry.name);
+        return path.join(
+          directory,
+          entry.name
+        );
       }
     }
 
-    // Then search subdirectories
+    // Check folders
     for (const entry of entries) {
       if (entry.isDirectory()) {
-        const result = searchDirectory(
-          path.join(directory, entry.name)
-        );
+        const result =
+          searchDirectory(
+            path.join(
+              directory,
+              entry.name
+            )
+          );
 
         if (result) {
           return result;
@@ -97,29 +128,71 @@ function findChromeExecutable() {
     return null;
   }
 
-  const chromePath = searchDirectory(CHROME_CACHE_PATH);
+  /*
+  |--------------------------------------------------------------------------
+  | Search Puppeteer caches
+  |--------------------------------------------------------------------------
+  */
 
-  if (!chromePath) {
-    throw new Error(
-      `chrome.exe not found inside:\n${CHROME_CACHE_PATH}`
-    );
+  const cachePaths = [
+    "C:\\inetpub\\wwwroot\\Dhule-Advertisement\\Backend\\node_modules\\puppeteer\\.cache\\puppeteer\\chrome",
+
+    path.join(
+      process.cwd(),
+      "node_modules",
+      "puppeteer",
+      ".cache",
+      "puppeteer",
+      "chrome"
+    ),
+  ];
+
+  for (const cachePath of cachePaths) {
+    const chromePath =
+      searchDirectory(cachePath);
+
+    if (chromePath) {
+      console.log(
+        "Chrome executable found:",
+        chromePath
+      );
+
+      return chromePath;
+    }
   }
 
-  console.log("Chrome executable found:", chromePath);
+  /*
+  |--------------------------------------------------------------------------
+  | Nothing found
+  |--------------------------------------------------------------------------
+  */
 
-  return chromePath;
+  throw new Error(
+    [
+      "Chrome executable could not be found.",
+      "",
+      "Please check whether Google Chrome is installed.",
+      "",
+      "Expected locations:",
+      ...possiblePaths,
+    ].join("\n")
+  );
 }
 
 /*
 |--------------------------------------------------------------------------
-| Launch Puppeteer
+| Launch Chrome
 |--------------------------------------------------------------------------
 */
 
 async function launchChrome() {
-  const executablePath = findChromeExecutable();
+  const executablePath =
+    findChromeExecutable();
 
-  console.log("Launching Chrome:", executablePath);
+  console.log(
+    "Launching Chrome:",
+    executablePath
+  );
 
   return await puppeteer.launch({
     headless: true,
@@ -146,34 +219,55 @@ async function launchChrome() {
   });
 }
 
-/*
-|--------------------------------------------------------------------------
-| Basic Services
-|--------------------------------------------------------------------------
-*/
 
-async function serviceWardList(ulbid) {
-  return repoWardList(ulbid);
+async function serviceWardList(
+  ulbid
+) {
+  return repoWardList(
+    ulbid
+  );
 }
 
-async function serviceVendorList(ulbid) {
-  return repoVendorList(ulbid);
+async function serviceVendorList(
+  ulbid
+) {
+  return repoVendorList(
+    ulbid
+  );
 }
 
-async function serviceToiletList(ulbid, wardid) {
-  return repoToiletList(ulbid, wardid);
+async function serviceToiletList(
+  ulbid,
+  wardid
+) {
+  return repoToiletList(
+    ulbid,
+    wardid
+  );
 }
 
-async function serviceComplaintTypeList(ulbid) {
-  return repoComplaintTypeList(ulbid);
+async function serviceComplaintTypeList(
+  ulbid
+) {
+  return repoComplaintTypeList(
+    ulbid
+  );
 }
 
-async function regComplaintService(payload) {
-  return regComplaintRepo(payload);
+async function regComplaintService(
+  payload
+) {
+  return regComplaintRepo(
+    payload
+  );
 }
 
-async function assignComplaintService(payload) {
-  return assignComplaintRepo(payload);
+async function assignComplaintService(
+  payload
+) {
+  return assignComplaintRepo(
+    payload
+  );
 }
 
 async function compListService(
@@ -196,12 +290,20 @@ async function compListService(
   );
 }
 
-async function serviceSupervisorList(ulbid) {
-  return repoSupervisorList(ulbid);
+async function serviceSupervisorList(
+  ulbid
+) {
+  return repoSupervisorList(
+    ulbid
+  );
 }
 
-async function regParticipantService(payload) {
-  return regParticipantRepo(payload);
+async function regParticipantService(
+  payload
+) {
+  return regParticipantRepo(
+    payload
+  );
 }
 
 async function getPanchanamalistService(
@@ -222,12 +324,20 @@ async function getPanchanamalistService(
   );
 }
 
-async function illegalHoardService(payload) {
-  return illegalHoardRepo(payload);
+async function illegalHoardService(
+  payload
+) {
+  return illegalHoardRepo(
+    payload
+  );
 }
 
-async function getPanchanamaDetailsService(id) {
-  return getPanchanamaDetailsRepo(id);
+async function getPanchanamaDetailsService(
+  id
+) {
+  return getPanchanamaDetailsRepo(
+    id
+  );
 }
 
 /*
@@ -236,18 +346,36 @@ async function getPanchanamaDetailsService(id) {
 |--------------------------------------------------------------------------
 */
 
-function formatPanchanamaDateTime(dateStr) {
-  if (!dateStr) return "-";
-
-  const date = new Date(dateStr);
-
-  if (isNaN(date.getTime())) {
+function formatPanchanamaDateTime(
+  dateStr
+) {
+  if (!dateStr) {
     return "-";
   }
 
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = date.getFullYear();
+  const date =
+    new Date(dateStr);
+
+  if (
+    isNaN(
+      date.getTime()
+    )
+  ) {
+    return "-";
+  }
+
+  const day =
+    String(
+      date.getDate()
+    ).padStart(2, "0");
+
+  const month =
+    String(
+      date.getMonth() + 1
+    ).padStart(2, "0");
+
+  const year =
+    date.getFullYear();
 
   return `${day}/${month}/${year}`;
 }
@@ -258,8 +386,13 @@ function formatPanchanamaDateTime(dateStr) {
 |--------------------------------------------------------------------------
 */
 
-function buildDetailsRows(details) {
-  if (!details || details.length === 0) {
+function buildDetailsRows(
+  details
+) {
+  if (
+    !details ||
+    details.length === 0
+  ) {
     return `
       <tr>
         <td colspan="3" class="no-data">
@@ -271,11 +404,20 @@ function buildDetailsRows(details) {
 
   return details
     .map(
-      (item, idx) => `
+      (
+        item,
+        idx
+      ) => `
         <tr>
           <td>${idx + 1}</td>
-          <td>${item.VAR_USER || "-"}</td>
-          <td>${item.VAR_USER_POST || "-"}</td>
+
+          <td>
+            ${item.VAR_USER || "-"}
+          </td>
+
+          <td>
+            ${item.VAR_USER_POST || "-"}
+          </td>
         </tr>
       `
     )
@@ -288,8 +430,13 @@ function buildDetailsRows(details) {
 |--------------------------------------------------------------------------
 */
 
-function buildDemolitionRows(demolitionDetails) {
-  if (!demolitionDetails || demolitionDetails.length === 0) {
+function buildDemolitionRows(
+  demolitionDetails
+) {
+  if (
+    !demolitionDetails ||
+    demolitionDetails.length === 0
+  ) {
     return `
       <tr>
         <td colspan="2" class="no-data">
@@ -301,10 +448,19 @@ function buildDemolitionRows(demolitionDetails) {
 
   return demolitionDetails
     .map(
-      (item, idx) => `
+      (
+        item,
+        idx
+      ) => `
         <tr>
           <td>${idx + 1}</td>
-          <td>${item.VAR_DEMONSTARTED_NAME || "-"}</td>
+
+          <td>
+            ${
+              item.VAR_DEMONSTARTED_NAME ||
+              "-"
+            }
+          </td>
         </tr>
       `
     )
@@ -317,7 +473,9 @@ function buildDemolitionRows(demolitionDetails) {
 |--------------------------------------------------------------------------
 */
 
-function buildPhotoGrid(master) {
+function buildPhotoGrid(
+  master
+) {
   const photos = [
     master.BLOB_NEAR_PHOTO,
     master.BLOB_FAR_PHOTO,
@@ -329,7 +487,9 @@ function buildPhotoGrid(master) {
       img.trim() !== ""
   );
 
-  if (photos.length === 0) {
+  if (
+    photos.length === 0
+  ) {
     return `
       <div class="no-data">
         फोटो उपलब्ध नाहीत.
@@ -345,16 +505,27 @@ function buildPhotoGrid(master) {
 
   return photos
     .map(
-      (base64, idx) => `
+      (
+        base64,
+        idx
+      ) => `
         <div class="photo-item">
+
           <img
             src="data:image/jpeg;base64,${base64}"
-            alt="${labels[idx] || "फोटो"}"
+            alt="${
+              labels[idx] ||
+              "फोटो"
+            }"
           />
 
           <span class="photo-label">
-            ${labels[idx] || "फोटो"}
+            ${
+              labels[idx] ||
+              "फोटो"
+            }
           </span>
+
         </div>
       `
     )
@@ -367,32 +538,67 @@ function buildPhotoGrid(master) {
 |--------------------------------------------------------------------------
 */
 
-async function renderPanchanamaHtml(data = {}) {
-  const master = data.master || {};
-  const details = data.details || [];
+async function renderPanchanamaHtml(
+  data = {}
+) {
+  const master =
+    data.master || {};
+
+  const details =
+    data.details || [];
+
   const demolitionDetails =
     data.demolitionDetails || [];
 
-  let templateContent = await fs.readFile(
-    TEMPLATE_PATH,
-    "utf-8"
-  );
+  /*
+  |--------------------------------------------------------------------------
+  | Read HTML Template
+  |--------------------------------------------------------------------------
+  */
+
+  let templateContent =
+    await fs.readFile(
+      TEMPLATE_PATH,
+      "utf-8"
+    );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Capture Date
+  |--------------------------------------------------------------------------
+  */
 
   const captureDateTime =
     formatPanchanamaDateTime(
       master.DAT_CAP_DT
     );
 
+  /*
+  |--------------------------------------------------------------------------
+  | Build Rows
+  |--------------------------------------------------------------------------
+  */
+
   const detailsRows =
-    buildDetailsRows(details);
+    buildDetailsRows(
+      details
+    );
 
   const demolitionRows =
     buildDemolitionRows(
       demolitionDetails
     );
 
+  /*
+  |--------------------------------------------------------------------------
+  | Photos
+  |--------------------------------------------------------------------------
+  */
+
   const photoGrid =
-    buildPhotoGrid(master);
+    buildPhotoGrid(
+      master
+    );
 
   /*
   |--------------------------------------------------------------------------
@@ -400,17 +606,21 @@ async function renderPanchanamaHtml(data = {}) {
   |--------------------------------------------------------------------------
   */
 
-  const logoPath = path.join(
-    __dirname,
-    "../../img/dhule-logo.png"
-  );
+  const logoPath =
+    path.join(
+      __dirname,
+      "../../img/dhule-logo.png"
+    );
 
-  const logoBuffer = await fs.readFile(
-    logoPath
-  );
+  const logoBuffer =
+    await fs.readFile(
+      logoPath
+    );
 
   const logoBase64 =
-    `data:image/png;base64,${logoBuffer.toString("base64")}`;
+    `data:image/png;base64,${logoBuffer.toString(
+      "base64"
+    )}`;
 
   /*
   |--------------------------------------------------------------------------
@@ -418,50 +628,96 @@ async function renderPanchanamaHtml(data = {}) {
   |--------------------------------------------------------------------------
   */
 
-  const currentDate = new Date()
-    .toLocaleDateString("en-GB", {
-      timeZone: "Asia/Kolkata",
-    })
-    .replace(/\//g, "-");
+  const currentDate =
+    new Date()
+      .toLocaleDateString(
+        "en-GB",
+        {
+          timeZone:
+            "Asia/Kolkata",
+        }
+      )
+      .replace(
+        /\//g,
+        "-"
+      );
 
   /*
   |--------------------------------------------------------------------------
   | Replacement Map
   |--------------------------------------------------------------------------
   */
+ const getCurrentDateTime = () => {
+  const now = new Date();
+
+  const day = String(now.getDate()).padStart(2, "0");
+
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+
+  const year = now.getFullYear();
+
+  let hours = now.getHours();
+
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+
+  const seconds = String(now.getSeconds()).padStart(2, "0");
+
+  const ampm = hours >= 12 ? "PM" : "AM";
+
+  hours = hours % 12;
+
+  hours = hours || 12;
+
+  hours = String(hours).padStart(2, "0");
+
+  return `${day}-${month}-${year} ${hours}:${minutes}:${seconds} ${ampm}`;
+};
 
   const replacements = {
+
     VAR_ILLEGALHOARD_PANCHANAMA_NO:
-      master.VAR_ILLEGALHOARD_PANCHANAMA_NO || "-",
+      master.VAR_ILLEGALHOARD_PANCHANAMA_NO ||
+      "-",
 
     CAPTURE_DATE_TIME:
       captureDateTime,
 
     VAR_USER1:
-      master.VAR_USER1 || "-",
+      master.VAR_USER1 ||
+      "-",
 
     VAR_USER1_POST:
-      master.VAR_USER1_POST || "-",
+      master.VAR_USER1_POST ||
+      "-",
 
     VAR_ILLEGALHOARD_ADD:
-      master.VAR_ILLEGALHOARD_ADD || "-",
+      master.VAR_ILLEGALHOARD_ADD ||
+      "-",
 
     VAR_ILLEGALHOARD_WARD:
-      master.VAR_ILLEGALHOARD_WARD || "-",
+      master.VAR_ILLEGALHOARD_WARD ||
+      "-",
 
     NUM_SIZE_LENGTH:
-      master.NUM_SIZE_LENGTH || "-",
+      master.NUM_SIZE_LENGTH ||
+      "-",
 
     NUM_SIZE_WIDTH:
-      master.NUM_SIZE_WIDTH || "-",
+      master.NUM_SIZE_WIDTH ||
+      "-",
 
-    DAT_FROM_DT: master.DAT_FROM_DT
-      ? new Date(
-          master.DAT_FROM_DT
-        ).toLocaleDateString("en-IN", {
-          timeZone: "Asia/Kolkata",
-        })
-      : "-",
+    DAT_FROM_DT:
+      master.DAT_FROM_DT
+        ? new Date(
+            master.DAT_FROM_DT
+          ).toLocaleDateString(
+            "en-IN",
+            {
+              timeZone:
+                "Asia/Kolkata",
+            }
+          )
+        : "-",
 
     DETAILS_ROWS:
       detailsRows,
@@ -473,13 +729,16 @@ async function renderPanchanamaHtml(data = {}) {
       photoGrid,
 
     OFFICER_NAME:
-      master.VAR_USER1 || "-",
+      master.VAR_USER1 ||
+      "-",
 
     OFFICER_POST:
-      master.VAR_USER1_POST || "-",
+      master.VAR_USER1_POST ||
+      "-",
 
     REGIONAL_OFFICE:
-      master.VAR_ILLEGALHOARD_WARD || "-",
+      master.VAR_ILLEGALHOARD_WARD ||
+      "-",
 
     CORPORATION_LOGO:
       logoBase64,
@@ -488,7 +747,10 @@ async function renderPanchanamaHtml(data = {}) {
       currentDate,
 
     CAPTURE_TIME:
-      master.VAR_CAP_TIME || "-",
+      master.VAR_CAP_TIME ||
+      "-",
+      CURRENT_DATE_TIME: getCurrentDateTime()
+      
   };
 
   /*
@@ -497,12 +759,21 @@ async function renderPanchanamaHtml(data = {}) {
   |--------------------------------------------------------------------------
   */
 
-  Object.entries(replacements).forEach(
-    ([key, value]) => {
-      const regex = new RegExp(
-        `\\{\\{\\s*${key}\\s*\\}\\}`,
-        "g"
-      );
+  Object.entries(
+    replacements
+  ).forEach(
+    (
+      [
+        key,
+        value,
+      ]
+    ) => {
+
+      const regex =
+        new RegExp(
+          `\\{\\{\\s*${key}\\s*\\}\\}`,
+          "g"
+        );
 
       templateContent =
         templateContent.replace(
@@ -521,10 +792,13 @@ async function renderPanchanamaHtml(data = {}) {
 |--------------------------------------------------------------------------
 */
 
-async function generatePanchnamaPdfService(id) {
+async function generatePanchnamaPdfService(
+  id
+) {
   let browser = null;
 
   try {
+
     /*
     |--------------------------------------------------------------------------
     | 1. Fetch Panchanama Data
@@ -537,7 +811,9 @@ async function generatePanchnamaPdfService(id) {
     );
 
     const result =
-      await getPanchanamaDetailsRepo(id);
+      await getPanchanamaDetailsRepo(
+        id
+      );
 
     if (
       !result ||
@@ -561,7 +837,7 @@ async function generatePanchnamaPdfService(id) {
 
     /*
     |--------------------------------------------------------------------------
-    | 3. Launch Server Chrome
+    | 3. Launch Chrome
     |--------------------------------------------------------------------------
     */
 
@@ -573,7 +849,7 @@ async function generatePanchnamaPdfService(id) {
 
     /*
     |--------------------------------------------------------------------------
-    | A4 viewport
+    | 4. A4 Viewport
     |--------------------------------------------------------------------------
     */
 
@@ -585,76 +861,91 @@ async function generatePanchnamaPdfService(id) {
 
     /*
     |--------------------------------------------------------------------------
-    | 4. Load HTML
+    | 5. Load HTML
     |--------------------------------------------------------------------------
     */
 
-    await page.setContent(
-      html,
-      {
-        waitUntil: "networkidle0",
+  await page.setContent(html, {
+  waitUntil: "domcontentloaded",
+  timeout: 30000,
+});
+
+    /*
+    |--------------------------------------------------------------------------
+    | 6. Wait for Images
+    |--------------------------------------------------------------------------
+    */
+
+    await page.evaluate(
+      async () => {
+
+        const images =
+          Array.from(
+            document.images
+          );
+
+        await Promise.all(
+          images.map(
+            (img) => {
+
+              if (
+                img.complete
+              ) {
+                return Promise.resolve();
+              }
+
+              return new Promise(
+                (resolve) => {
+
+                  img.onload =
+                    resolve;
+
+                  img.onerror =
+                    resolve;
+
+                }
+              );
+            }
+          )
+        );
+
       }
     );
 
     /*
     |--------------------------------------------------------------------------
-    | Wait for images
+    | 7. Verify Signature Anchor
     |--------------------------------------------------------------------------
     */
 
-    await page.evaluate(async () => {
-      const images =
-        Array.from(
-          document.images
-        );
+    const signatureAnchorExists =
+      await page.evaluate(
+        () => {
 
-      await Promise.all(
-        images.map((img) => {
-          if (img.complete) {
-            return Promise.resolve();
-          }
-
-          return new Promise(
-            (resolve) => {
-              img.onload =
-                resolve;
-
-              img.onerror =
-                resolve;
-            }
+          return !!document.querySelector(
+            "#signature-anchor"
           );
-        })
+
+        }
       );
-    });
 
-    /*
-    |--------------------------------------------------------------------------
-    | 5. Detect Signature Anchor
-    |--------------------------------------------------------------------------
-    */
+    if (
+      !signatureAnchorExists
+    ) {
 
-    let placement = null;
-
-    try {
-      placement =
-        await locateSignatureWidget(
-          page
-        );
-
-      console.log(
-        "Signature placement detected:",
-        placement
+      throw new Error(
+        'Signature anchor "#signature-anchor" was not found in Panchanama HTML template.'
       );
-    } catch (e) {
-      console.warn(
-        "Signature placement detection failed:",
-        e.message
-      );
+
     }
 
+    console.log(
+      'Signature anchor "#signature-anchor" found.'
+    );
+
     /*
     |--------------------------------------------------------------------------
-    | 6. Generate Clean PDF
+    | 8. Generate Clean PDF
     |--------------------------------------------------------------------------
     */
 
@@ -663,175 +954,25 @@ async function generatePanchnamaPdfService(id) {
         PDF_RENDER_OPTIONS
       );
 
-    /*
-    |--------------------------------------------------------------------------
-    | 7. Close Browser
-    |--------------------------------------------------------------------------
-    */
-
-    await browser.close();
-    browser = null;
-
-    /*
-    |--------------------------------------------------------------------------
-    | 8. Get PDF Page Count
-    |--------------------------------------------------------------------------
-    */
-
-    const pdfDoc =
-      await PDFDocument.load(
-        pdfBuffer
-      );
-
-    const pageCount =
-      pdfDoc.getPageCount();
-
-    if (!pageCount) {
-      throw new Error(
-        "Generated PDF has no pages"
-      );
-    }
-
-    const lastPage =
-      pageCount;
-
-    /*
-    |--------------------------------------------------------------------------
-    | 9. Signature Widget Position
-    |--------------------------------------------------------------------------
-    */
-
-    let pageNumber;
-    let widgetRect;
-
     if (
-      placement &&
-      placement.widgetRect &&
-      placement.pageNumber
+      !pdfBuffer ||
+      pdfBuffer.length === 0
     ) {
-      let [
-        x1,
-        y1,
-        x2,
-        y2,
-      ] =
-        placement.widgetRect;
 
-      /*
-      |--------------------------------------------------------------------------
-      | Signature Box Size
-      |--------------------------------------------------------------------------
-      */
-
-      const boxWidth = 240;
-      const boxHeight = 100;
-
-      const centerX =
-        (x1 + x2) / 2;
-
-      const centerY =
-        (y1 + y2) / 2;
-
-      /*
-      |--------------------------------------------------------------------------
-      | Center Signature Box
-      |--------------------------------------------------------------------------
-      */
-
-      x1 = Math.max(
-        0,
-        Math.round(
-          centerX -
-            boxWidth / 2
-        )
+      throw new Error(
+        "PDF generation failed or generated PDF is empty."
       );
 
-      y1 = Math.max(
-        0,
-        Math.round(
-          centerY -
-            boxHeight / 2
-        )
-      );
-
-      /*
-      |--------------------------------------------------------------------------
-      | A4 PDF = 595 x 842 points
-      |--------------------------------------------------------------------------
-      */
-
-      x1 = Math.min(
-        x1,
-        595 - boxWidth
-      );
-
-      y1 = Math.min(
-        y1,
-        842 - boxHeight
-      );
-
-      x2 =
-        x1 + boxWidth;
-
-      y2 =
-        y1 + boxHeight;
-
-      widgetRect = [
-        x1,
-        y1,
-        x2,
-        y2,
-      ];
-
-      pageNumber =
-        placement.pageNumber;
-    } else {
-      /*
-      |--------------------------------------------------------------------------
-      | Fallback Position
-      |--------------------------------------------------------------------------
-      */
-
-      const boxWidth = 240;
-      const boxHeight = 100;
-
-      const marginFromBottom = 160;
-
-      const x1 =
-        (595 - boxWidth) /
-        2;
-
-      const y1 =
-        marginFromBottom;
-
-      const x2 =
-        x1 + boxWidth;
-
-      const y2 =
-        y1 + boxHeight;
-
-      widgetRect = [
-        Math.round(x1),
-        Math.round(y1),
-        Math.round(x2),
-        Math.round(y2),
-      ];
-
-      pageNumber =
-        lastPage;
     }
 
     console.log(
-      "Final signature position:",
-      {
-        pageNumber,
-        widgetRect,
-      }
+      "PDF generated:",
+      pdfBuffer.length
     );
 
     /*
     |--------------------------------------------------------------------------
-    | 10. PFX Credentials
+    | 9. PFX Credentials
     |--------------------------------------------------------------------------
     */
 
@@ -846,76 +987,166 @@ async function generatePanchnamaPdfService(id) {
 
     /*
     |--------------------------------------------------------------------------
-    | Validate PFX
+    | 10. Validate PFX
     |--------------------------------------------------------------------------
     */
 
     try {
+
       await fs.access(
         pfxPath
       );
+
     } catch {
+
       throw new Error(
         `PFX file not found:\n${pfxPath}`
       );
+
     }
+
+    console.log(
+      "PFX found:",
+      pfxPath
+    );
 
     /*
     |--------------------------------------------------------------------------
-    | 11. Sign PDF
+    | 11. GLOBAL DIGITAL SIGNATURE
+    |--------------------------------------------------------------------------
+    |
+    | IMPORTANT:
+    |
+    | Keep browser/page alive here.
+    |
+    | digitallySignPdf() internally uses Puppeteer
+    | to detect #signature-anchor.
+    |
     |--------------------------------------------------------------------------
     */
 
-    const signerName =
-      extractSignerNameFromPfx(
+    const signedResult =
+      await digitallySignPdf({
+
+        pdfBuffer,
+
+        page,
+
         pfxPath,
-        pfxPassword
+
+        password:
+          pfxPassword,
+
+        selector:
+          "#signature-anchor",
+
+      });
+
+    /*
+    |--------------------------------------------------------------------------
+    | 12. Validate Signed PDF
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      !signedResult ||
+      !signedResult.pdfBuffer
+    ) {
+
+      throw new Error(
+        "Digital signature failed: signed PDF buffer was not returned."
+      );
+
+    }
+
+    const finalPdfBuffer =
+      Buffer.from(
+        signedResult.pdfBuffer
       );
 
     console.log(
-      "Signing PDF with:",
-      signerName
+      "Signed PDF:",
+      finalPdfBuffer.length
     );
 
-    const signedPdf =
-      await signPdf(
-        pdfBuffer,
-        pfxPath,
-        pfxPassword,
-        pageNumber,
-        widgetRect,
-        signerName
-      );
+    /*
+    |--------------------------------------------------------------------------
+    | 13. Signature Information
+    |--------------------------------------------------------------------------
+    */
+
+    console.log(
+      "Signature information:",
+      {
+        signerName:
+          signedResult.signerName,
+
+        pageNumber:
+          signedResult.pageNumber,
+
+        widgetRect:
+          signedResult.widgetRect,
+      }
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | 14. Close Browser
+    |--------------------------------------------------------------------------
+    */
+
+    await browser.close();
+
+    browser = null;
+
+    /*
+    |--------------------------------------------------------------------------
+    | 15. Return Signed PDF
+    |--------------------------------------------------------------------------
+    */
 
     console.log(
       "Panchanama PDF generated and signed successfully."
     );
 
-    return signedPdf;
+    return finalPdfBuffer;
+
   } catch (error) {
+
     console.error(
       "generatePanchnamaPdfService ERROR:",
       error
     );
 
     throw error;
+
   } finally {
+
     /*
     |--------------------------------------------------------------------------
-    | Always close browser
+    | Always Close Browser
     |--------------------------------------------------------------------------
     */
 
     if (browser) {
+
       try {
+
         await browser.close();
-      } catch (closeError) {
+
+      } catch (
+        closeError
+      ) {
+
         console.error(
           "Browser close error:",
           closeError.message
         );
+
       }
+
     }
+
   }
 }
 
@@ -926,17 +1157,31 @@ async function generatePanchnamaPdfService(id) {
 */
 
 module.exports = {
+
   serviceWardList,
+
   serviceToiletList,
+
   serviceComplaintTypeList,
+
   regComplaintService,
+
   assignComplaintService,
+
   compListService,
+
   serviceSupervisorList,
+
   serviceVendorList,
+
   regParticipantService,
+
   getPanchanamalistService,
+
   illegalHoardService,
+
   getPanchanamaDetailsService,
+
   generatePanchnamaPdfService,
+
 };

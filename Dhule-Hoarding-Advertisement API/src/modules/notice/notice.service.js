@@ -12,13 +12,8 @@ const {
 } = require("./notice.repo");
 
 const {
-  signPdf,
-  extractSignerNameFromPfx,
-} = require("../registerComplaint/signatureHelpers");
-
-const {
-  locateSignatureWidget,
-} = require("../registerComplaint/SignaturePlacement");
+  digitallySignPdf,
+} = require("../../utils/digitalSignature");
 
 const TEMPLATE_PATH = path.join(
   __dirname,
@@ -29,30 +24,74 @@ const TEMPLATE_PATH = path.join(
 |--------------------------------------------------------------------------
 | SERVER CHROME PATH
 |--------------------------------------------------------------------------
-*/
-
-const CHROME_CACHE_PATH =
-  "C:\\inetpub\\wwwroot\\Dhule-Advertisement\\Backend\\node_modules\\puppeteer\\.cache\\puppeteer\\chrome";
-
-/*
-|--------------------------------------------------------------------------
-| Find Chrome Executable
-|--------------------------------------------------------------------------
+|
+| Production server Puppeteer Chrome path
+|
 */
 
 function findChromeExecutable() {
-  if (!fsSync.existsSync(CHROME_CACHE_PATH)) {
-    throw new Error(
-      `Chrome cache folder not found:\n${CHROME_CACHE_PATH}`
-    );
+  const possiblePaths = [
+
+     // Chrome on your IIS production server
+    "C:\\inetpub\\wwwroot\\Dhule-Advertisement\\Backend\\node_modules\\puppeteer\\.cache\\puppeteer\\chrome",
+
+    // Google Chrome - Windows
+    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+
+    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+
+   
+    // Local Puppeteer cache
+    path.join(
+      process.cwd(),
+      "node_modules",
+      "puppeteer",
+      ".cache",
+      "puppeteer",
+      "chrome"
+    ),
+  ];
+
+  /*
+  |--------------------------------------------------------------------------
+  | Check direct Chrome executable paths
+  |--------------------------------------------------------------------------
+  */
+
+  for (const chromePath of possiblePaths) {
+    if (
+      chromePath.toLowerCase().endsWith("chrome.exe") &&
+      fsSync.existsSync(chromePath)
+    ) {
+      console.log(
+        "Chrome executable found:",
+        chromePath
+      );
+
+      return chromePath;
+    }
   }
 
-  function searchDirectory(directory) {
-    const entries = fsSync.readdirSync(directory, {
-      withFileTypes: true,
-    });
+  /*
+  |--------------------------------------------------------------------------
+  | Recursively search cache folders
+  |--------------------------------------------------------------------------
+  */
 
-    // Check files first
+  function searchDirectory(directory) {
+    if (!fsSync.existsSync(directory)) {
+      return null;
+    }
+
+    const entries =
+      fsSync.readdirSync(
+        directory,
+        {
+          withFileTypes: true,
+        }
+      );
+
+    // Check files
     for (const entry of entries) {
       if (
         entry.isFile() &&
@@ -65,15 +104,16 @@ function findChromeExecutable() {
       }
     }
 
-    // Search folders
+    // Check folders
     for (const entry of entries) {
       if (entry.isDirectory()) {
-        const result = searchDirectory(
-          path.join(
-            directory,
-            entry.name
-          )
-        );
+        const result =
+          searchDirectory(
+            path.join(
+              directory,
+              entry.name
+            )
+          );
 
         if (result) {
           return result;
@@ -84,34 +124,71 @@ function findChromeExecutable() {
     return null;
   }
 
-  const chromePath =
-    searchDirectory(
-      CHROME_CACHE_PATH
-    );
+  /*
+  |--------------------------------------------------------------------------
+  | Search Puppeteer caches
+  |--------------------------------------------------------------------------
+  */
 
-  if (!chromePath) {
-    throw new Error(
-      `chrome.exe not found inside:\n${CHROME_CACHE_PATH}`
-    );
+  const cachePaths = [
+    "C:\\inetpub\\wwwroot\\Dhule-Advertisement\\Backend\\node_modules\\puppeteer\\.cache\\puppeteer\\chrome",
+
+    path.join(
+      process.cwd(),
+      "node_modules",
+      "puppeteer",
+      ".cache",
+      "puppeteer",
+      "chrome"
+    ),
+  ];
+
+  for (const cachePath of cachePaths) {
+    const chromePath =
+      searchDirectory(cachePath);
+
+    if (chromePath) {
+      console.log(
+        "Chrome executable found:",
+        chromePath
+      );
+
+      return chromePath;
+    }
   }
 
-  console.log(
-    "Chrome executable:",
-    chromePath
-  );
+  /*
+  |--------------------------------------------------------------------------
+  | Nothing found
+  |--------------------------------------------------------------------------
+  */
 
-  return chromePath;
+  throw new Error(
+    [
+      "Chrome executable could not be found.",
+      "",
+      "Please check whether Google Chrome is installed.",
+      "",
+      "Expected locations:",
+      ...possiblePaths,
+    ].join("\n")
+  );
 }
 
 /*
 |--------------------------------------------------------------------------
-| Launch Server Chrome
+| Launch Chrome
 |--------------------------------------------------------------------------
 */
 
 async function launchChrome() {
   const executablePath =
     findChromeExecutable();
+
+  console.log(
+    "Launching Chrome:",
+    executablePath
+  );
 
   return await puppeteer.launch({
     headless: true,
@@ -131,23 +208,12 @@ async function launchChrome() {
       "--disable-renderer-backgrounding",
       "--disable-features=Translate,BackForwardCache",
     ],
+
+    ignoreDefaultArgs: [
+      "--disable-extensions",
+    ],
   });
 }
-
-/*
-|--------------------------------------------------------------------------
-| Generate PDF From HTML
-|--------------------------------------------------------------------------
-|
-| Returns:
-|
-| {
-|   pdfBuffer: Buffer,
-|   placement
-| }
-|
-|--------------------------------------------------------------------------
-*/
 
 async function generatePdfFromHtml(html) {
   if (!html) {
@@ -159,8 +225,20 @@ async function generatePdfFromHtml(html) {
   let browser = null;
 
   try {
+    /*
+    |--------------------------------------------------------------------------
+    | Launch Browser
+    |--------------------------------------------------------------------------
+    */
+
     browser =
       await launchChrome();
+
+    /*
+    |--------------------------------------------------------------------------
+    | New Page
+    |--------------------------------------------------------------------------
+    */
 
     const page =
       await browser.newPage();
@@ -179,25 +257,73 @@ async function generatePdfFromHtml(html) {
 
     /*
     |--------------------------------------------------------------------------
+    | Increase Navigation Timeout
+    |--------------------------------------------------------------------------
+    |
+    | Your previous error was:
+    |
+    | Navigation timeout of 30000 ms exceeded
+    |
+    */
+
+    page.setDefaultNavigationTimeout(
+      120000
+    );
+
+    page.setDefaultTimeout(
+      120000
+    );
+
+    /*
+    |--------------------------------------------------------------------------
     | Load HTML
     |--------------------------------------------------------------------------
     */
 
+    console.log(
+      "[PDF] Loading HTML..."
+    );
+
     await page.setContent(
       html,
       {
-        waitUntil: [
-          "load",
-          "networkidle0",
-        ],
+        waitUntil: "domcontentloaded",
+
+        timeout: 120000,
       }
     );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Wait For Fonts
+    |--------------------------------------------------------------------------
+    */
+
+    try {
+      await page.evaluate(async () => {
+        if (
+          document.fonts &&
+          document.fonts.ready
+        ) {
+          await document.fonts.ready;
+        }
+      });
+    } catch (error) {
+      console.warn(
+        "[PDF] Font loading warning:",
+        error.message
+      );
+    }
 
     /*
     |--------------------------------------------------------------------------
     | Wait For Images
     |--------------------------------------------------------------------------
     */
+
+    console.log(
+      "[PDF] Waiting for images..."
+    );
 
     await page.evaluate(async () => {
       const images =
@@ -206,46 +332,65 @@ async function generatePdfFromHtml(html) {
         );
 
       await Promise.all(
-        images.map((img) => {
-          if (img.complete) {
-            return Promise.resolve();
-          }
-
-          return new Promise(
-            (resolve) => {
-              img.onload =
-                resolve;
-
-              img.onerror =
-                resolve;
+        images.map(
+          (img) => {
+            if (
+              img.complete
+            ) {
+              return Promise.resolve();
             }
-          );
-        })
+
+            return new Promise(
+              (resolve) => {
+                img.onload =
+                  resolve;
+
+                img.onerror =
+                  resolve;
+              }
+            );
+          }
+        )
       );
     });
 
     /*
     |--------------------------------------------------------------------------
-    | Detect Signature Placement
+    | Small Rendering Delay
+    |--------------------------------------------------------------------------
+    |
+    | Gives Chrome time to finish layout.
+    |
+    */
+
+    await new Promise(
+      (resolve) =>
+        setTimeout(
+          resolve,
+          300
+        )
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Verify Signature Anchor
     |--------------------------------------------------------------------------
     */
 
-    let placement = null;
-
-    try {
-      placement =
-        await locateSignatureWidget(
-          page
-        );
-
-      console.log(
-        "Notice signature placement:",
-        placement
+    const signatureAnchor =
+      await page.$(
+        "#signature-anchor"
       );
-    } catch (error) {
+
+    if (
+      signatureAnchor
+    ) {
+      console.log(
+        "[SIGNATURE] #signature-anchor found."
+      );
+    } else {
       console.warn(
-        "Notice signature placement detection failed:",
-        error.message
+        "[SIGNATURE] #signature-anchor NOT found."
       );
     }
 
@@ -254,6 +399,10 @@ async function generatePdfFromHtml(html) {
     | Generate PDF
     |--------------------------------------------------------------------------
     */
+
+    console.log(
+      "[PDF] Generating PDF..."
+    );
 
     const generatedPdf =
       await page.pdf({
@@ -273,9 +422,7 @@ async function generatePdfFromHtml(html) {
 
     /*
     |--------------------------------------------------------------------------
-    | IMPORTANT:
-    | Puppeteer may return Uint8Array.
-    | Convert explicitly to Node Buffer.
+    | Convert Uint8Array -> Buffer
     |--------------------------------------------------------------------------
     */
 
@@ -312,18 +459,9 @@ async function generatePdfFromHtml(html) {
     */
 
     console.log(
-      "PDF Generator:",
+      "[PDF] Generated:",
       {
-        originalType:
-          generatedPdf?.constructor
-            ?.name,
-
-        originalIsBuffer:
-          Buffer.isBuffer(
-            generatedPdf
-          ),
-
-        finalIsBuffer:
+        isBuffer:
           Buffer.isBuffer(
             pdfBuffer
           ),
@@ -333,10 +471,11 @@ async function generatePdfFromHtml(html) {
 
         header:
           pdfBuffer
-            .subarray(0, 5)
+            .subarray(
+              0,
+              5
+            )
             .toString(),
-
-        placement,
       }
     );
 
@@ -360,7 +499,10 @@ async function generatePdfFromHtml(html) {
 
     if (
       pdfBuffer
-        .subarray(0, 5)
+        .subarray(
+          0,
+          5
+        )
         .toString() !==
       "%PDF-"
     ) {
@@ -369,21 +511,46 @@ async function generatePdfFromHtml(html) {
       );
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | IMPORTANT
+    |--------------------------------------------------------------------------
+    |
+    | Return browser + page.
+    |
+    | They must remain alive until digitallySignPdf()
+    | has finished.
+    |
+    */
+
     return {
       pdfBuffer,
-      placement,
+      browser,
+      page,
     };
-  } finally {
+
+  } catch (error) {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Close Browser On Error
+    |--------------------------------------------------------------------------
+    */
+
     if (browser) {
       try {
         await browser.close();
-      } catch (error) {
+      } catch (
+        closeError
+      ) {
         console.error(
-          "Chrome close error:",
-          error.message
+          "[PDF] Browser close error:",
+          closeError.message
         );
       }
     }
+
+    throw error;
   }
 }
 
@@ -414,16 +581,18 @@ async function getSidebarLogoBase64() {
     }
 
     console.log(
-      "Dhule logo loaded:",
+      "[LOGO] Dhule logo loaded:",
       logoPath
     );
 
     return `data:image/png;base64,${buf.toString(
       "base64"
     )}`;
+
   } catch (error) {
+
     console.error(
-      "Failed to load Dhule logo:",
+      "[LOGO] Failed to load Dhule logo:",
       error.message
     );
 
@@ -468,7 +637,9 @@ async function renderNoticeHtmlService(
         await repoGetCorporationInfo(
           corpId
         );
+
     } catch (err) {
+
       console.error(
         "Error fetching corporation info:",
         err.message
@@ -476,8 +647,20 @@ async function renderNoticeHtmlService(
     }
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | Logo
+  |--------------------------------------------------------------------------
+  */
+
   const sidebarLogoBase64 =
     await getSidebarLogoBase64();
+
+  /*
+  |--------------------------------------------------------------------------
+  | Corporation Name
+  |--------------------------------------------------------------------------
+  */
 
   const corpNameValue =
     data.corporationName ||
@@ -503,12 +686,15 @@ async function renderNoticeHtmlService(
   const formatDate = (
     dateValue
   ) => {
+
     if (!dateValue) {
       return "";
     }
 
     const date =
-      new Date(dateValue);
+      new Date(
+        dateValue
+      );
 
     if (
       isNaN(
@@ -562,6 +748,7 @@ async function renderNoticeHtmlService(
   */
 
   const replacements = {
+
     corporationLogo:
       sidebarLogoBase64,
 
@@ -676,6 +863,8 @@ async function renderNoticeHtmlService(
       data.VAR_OFFICER_DIVISION ||
       data.var_officer_division ||
       "",
+
+      CURRENT_DATE_TIME: data.CURRENT_DATE_TIME
   };
 
   /*
@@ -688,6 +877,7 @@ async function renderNoticeHtmlService(
     replacements
   ).forEach(
     ([key, val]) => {
+
       const regex =
         new RegExp(
           `\\{\\{\\s*${key}\\s*\\}\\}`,
@@ -791,7 +981,9 @@ async function generateNoticeService(
   const procResult =
     await repoGenerateNotice({
       userId,
+
       ulbId,
+
       PANCHANAMA_NO:
         panchanamaNo,
     });
@@ -826,83 +1018,114 @@ async function generateNoticeService(
   |--------------------------------------------------------------------------
   */
 
-  const mergedData = {
-    ...payload,
+  const getCurrentDateTime = () => {
+  const now = new Date();
 
-    id:
-      noticeData.id ||
-      payload.id ||
-      null,
+  const day = String(now.getDate()).padStart(2, "0");
 
-    ADDRESS:
-      noticeData.address ||
-      payload.ADDRESS ||
-      "-",
+  const month = String(now.getMonth() + 1).padStart(2, "0");
 
-    REGIONAL_OFFICE_NO:
-      noticeData.ward ||
-      payload.REGIONAL_OFFICE_NO ||
-      "-",
+  const year = now.getFullYear();
 
-    ADVERTISER_NAME:
-      payload.ADVERTISER_NAME ||
-      "-",
+  let hours = now.getHours();
 
-    AMOUNT_DATA:
-      noticeData.amount ||
-      payload.AMOUNT ||
-      "0",
+  const minutes = String(now.getMinutes()).padStart(2, "0");
 
-    LATITUDE:
-      noticeData.latitude ||
-      payload.LATITUDE ||
-      "-",
+  const seconds = String(now.getSeconds()).padStart(2, "0");
 
-    LONGITUDE:
-      noticeData.longitude ||
-      payload.LONGITUDE ||
-      "-",
+  const ampm = hours >= 12 ? "PM" : "AM";
 
-    SIZE:
-      noticeData.length &&
-      noticeData.width
-        ? `${noticeData.length} x ${noticeData.width}`
-        : payload.SIZE ||
-          "-",
+  hours = hours % 12;
 
-    PANCHANAMA_NO:
-      noticeData.panchanamaNo ||
-      panchanamaNo,
+  hours = hours || 12;
 
-    NOTICE_NO:
-      noticeData.noticeNo ||
-      "-",
+  hours = String(hours).padStart(2, "0");
 
-    FROM_DATE:
-      noticeData.toDate ||
-      payload.TO_DATE ||
-      "-",
+  return `${day}-${month}-${year} ${hours}:${minutes}:${seconds} ${ampm}`;
+};
 
-    TO_DATE:
-      noticeData.fromDate ||
-      payload.FROM_DATE ||
-      "-",
+const mergedData = {
+  ...payload,
 
-    REGIONAL_OFFICE:
-      noticeData.ward ||
-      payload.REGIONAL_OFFICE ||
-      "-",
+  id:
+    noticeData.id ||
+    payload.id ||
+    null,
 
-    NOTICE_DATE:
-      noticeData.noticeDate ||
-      payload.NOTICE_DATE ||
-      "-",
+  ADDRESS:
+    noticeData.address ||
+    payload.ADDRESS ||
+    "-",
 
-    ZONAL_NAME:
-      noticeData.zonalName ||
-      payload.ZONAL_NAME ||
-      "-",
-  };
+  REGIONAL_OFFICE_NO:
+    noticeData.ward ||
+    payload.REGIONAL_OFFICE_NO ||
+    "-",
+
+  ADVERTISER_NAME:
+    payload.ADVERTISER_NAME ||
+    "-",
+
+  AMOUNT_DATA:
+    noticeData.amount ||
+    payload.AMOUNT ||
+    "0",
+
+  LATITUDE:
+    noticeData.latitude ||
+    payload.LATITUDE ||
+    "-",
+
+  LONGITUDE:
+    noticeData.longitude ||
+    payload.LONGITUDE ||
+    "-",
+
+  SIZE:
+    noticeData.length &&
+    noticeData.width
+      ? `${noticeData.length} x ${noticeData.width}`
+      : payload.SIZE || "-",
+
+  PANCHANAMA_NO:
+    noticeData.panchanamaNo ||
+    panchanamaNo,
+
+  NOTICE_NO:
+    noticeData.noticeNo ||
+    "-",
+
+  FROM_DATE:
+    noticeData.toDate ||
+    payload.TO_DATE ||
+    "-",
+
+  TO_DATE:
+    noticeData.fromDate ||
+    payload.FROM_DATE ||
+    "-",
+
+  REGIONAL_OFFICE:
+    noticeData.ward ||
+    payload.REGIONAL_OFFICE ||
+    "-",
+
+  NOTICE_DATE:
+    noticeData.noticeDate ||
+    payload.NOTICE_DATE ||
+    "-",
+
+  ZONAL_NAME:
+    noticeData.zonalName ||
+    payload.ZONAL_NAME ||
+    "-",
+
+  // ==========================================
+  // CURRENT DATE + TIME
+  // ==========================================
+  CURRENT_DATE_TIME:
+    getCurrentDateTime(),
+};
 
   /*
   |--------------------------------------------------------------------------
@@ -919,364 +1142,247 @@ async function generateNoticeService(
   |--------------------------------------------------------------------------
   | Generate PDF
   |--------------------------------------------------------------------------
+  |
+  | IMPORTANT:
+  |
+  | generatePdfFromHtml returns browser + page.
+  |
   */
 
-  const {
-    pdfBuffer,
-    placement,
-  } =
-    await generatePdfFromHtml(
-      html
-    );
-
-  /*
-  |--------------------------------------------------------------------------
-  | Verify PDF
-  |--------------------------------------------------------------------------
-  */
-
-  console.log(
-    "Generated Notice PDF:",
-    {
-      isBuffer:
-        Buffer.isBuffer(
-          pdfBuffer
-        ),
-
-      constructor:
-        pdfBuffer?.constructor
-          ?.name,
-
-      length:
-        pdfBuffer?.length,
-
-      header:
-        pdfBuffer
-          ?.subarray(
-            0,
-            5
-          )
-          ?.toString(),
-
-      placement,
-    }
-  );
-
-  if (
-    !Buffer.isBuffer(
-      pdfBuffer
-    )
-  ) {
-    throw new Error(
-      "PDF generation failed: result is not a Buffer"
-    );
-  }
-
-  if (
-    pdfBuffer.length === 0
-  ) {
-    throw new Error(
-      "PDF generation failed: empty PDF"
-    );
-  }
-
-  /*
-  |--------------------------------------------------------------------------
-  | Sign PDF
-  |--------------------------------------------------------------------------
-  */
-
-  const signedPdfBuffer =
-    await signNoticePdf(
-      pdfBuffer,
-      placement
-    );
-
-  /*
-  |--------------------------------------------------------------------------
-  | Verify Signed PDF
-  |--------------------------------------------------------------------------
-  */
-
-  console.log(
-    "Signed Notice PDF:",
-    {
-      isBuffer:
-        Buffer.isBuffer(
-          signedPdfBuffer
-        ),
-
-      length:
-        signedPdfBuffer?.length,
-    }
-  );
-
-  if (
-    !Buffer.isBuffer(
-      signedPdfBuffer
-    )
-  ) {
-    throw new Error(
-      "PDF signing failed: result is not a Buffer"
-    );
-  }
-
-  return signedPdfBuffer;
-}
-
-/*
-|--------------------------------------------------------------------------
-| Sign Notice PDF
-|--------------------------------------------------------------------------
-*/
-
-async function signNoticePdf(
-  pdfBuffer,
-  placement = null
-) {
-  const pfxPath =
-    path.join(
-      __dirname,
-      "DS Dhule Municipal Corporation.pfx"
-    );
-
-  const pfxPassword =
-    "Pro452";
-
-  /*
-  |--------------------------------------------------------------------------
-  | Check PFX
-  |--------------------------------------------------------------------------
-  */
+  let browser = null;
 
   try {
-    await fs.access(
-      pfxPath
-    );
-  } catch {
-    throw new Error(
-      `PFX file not found:\n${pfxPath}`
-    );
-  }
 
-  /*
-  |--------------------------------------------------------------------------
-  | Signer Name
-  |--------------------------------------------------------------------------
-  */
+    const result =
+      await generatePdfFromHtml(
+        html
+      );
 
-  const signerName =
-    extractSignerNameFromPfx(
-      pfxPath,
-      pfxPassword
-    );
+    const pdfBuffer =
+      result.pdfBuffer;
 
-  /*
-  |--------------------------------------------------------------------------
-  | Load PDF
-  |--------------------------------------------------------------------------
-  */
+    const page =
+      result.page;
 
-  const pdfDoc =
-    await PDFDocument.load(
-      pdfBuffer
-    );
-
-  const pageCount =
-    pdfDoc.getPageCount();
-
-  console.log(
-    "[SIGNATURE] Detected PDF page count:",
-    pageCount
-  );
-
-  if (!pageCount) {
-    throw new Error(
-      "Generated PDF has no pages"
-    );
-  }
-
-  let pageNumber =
-    pageCount;
-
-  let widgetRect =
-    null;
-
-  /*
-  |--------------------------------------------------------------------------
-  | Signature Placement
-  |--------------------------------------------------------------------------
-  */
-
-  if (
-    placement &&
-    placement.widgetRect &&
-    placement.pageNumber
-  ) {
-    pageNumber =
-      placement.pageNumber;
-
-    let [
-      x1,
-      y1,
-      x2,
-      y2,
-    ] =
-      placement.widgetRect;
-
-    const boxWidth =
-      240;
-
-    const boxHeight =
-      100;
-
-    const centerY =
-      (y1 + y2) / 2;
+    browser =
+      result.browser;
 
     /*
     |--------------------------------------------------------------------------
-    | Right Side Position
+    | Verify PDF
     |--------------------------------------------------------------------------
     */
 
-    x1 =
-      540 -
-      boxWidth;
+    console.log(
+      "[NOTICE] Generated PDF:",
+      {
+        isBuffer:
+          Buffer.isBuffer(
+            pdfBuffer
+          ),
 
-    y1 =
-      Math.max(
-        0,
-        Math.round(
-          centerY -
-            boxHeight / 2
-        )
-      );
+        constructor:
+          pdfBuffer?.constructor
+            ?.name,
 
-    /*
-    |--------------------------------------------------------------------------
-    | Keep Inside A4
-    |--------------------------------------------------------------------------
-    */
+        length:
+          pdfBuffer?.length,
 
-    y1 =
-      Math.min(
-        y1,
-        842 -
-          boxHeight
-      );
-
-    widgetRect = [
-      Math.round(x1),
-      Math.round(y1),
-      Math.round(
-        x1 + boxWidth
-      ),
-      Math.round(
-        y1 + boxHeight
-      ),
-    ];
-  }
-
-  /*
-  |--------------------------------------------------------------------------
-  | Fallback
-  |--------------------------------------------------------------------------
-  */
-
-  if (!widgetRect) {
-    console.warn(
-      "Notice signature placement detection failed — using fallback position"
+        header:
+          pdfBuffer
+            ?.subarray(
+              0,
+              5
+            )
+            ?.toString(),
+      }
     );
 
-    const boxWidth =
-      240;
-
-    const boxHeight =
-      100;
-
-    const marginFromBottom =
-      160;
-
-    const x1 =
-      540 -
-      boxWidth;
-
-    const y1 =
-      marginFromBottom;
-
-    widgetRect = [
-      Math.round(x1),
-      Math.round(y1),
-      Math.round(
-        x1 + boxWidth
-      ),
-      Math.round(
-        y1 + boxHeight
-      ),
-    ];
-
-    pageNumber =
-      pageCount;
-  }
-
-  console.log(
-    "Notice signature placement:",
-    {
-      pageNumber,
-      widgetRect,
-      signerName,
+    if (
+      !Buffer.isBuffer(
+        pdfBuffer
+      )
+    ) {
+      throw new Error(
+        "PDF generation failed: result is not a Buffer"
+      );
     }
-  );
 
-  /*
-  |--------------------------------------------------------------------------
-  | Sign
-  |--------------------------------------------------------------------------
-  */
+    if (
+      pdfBuffer.length === 0
+    ) {
+      throw new Error(
+        "PDF generation failed: empty PDF"
+      );
+    }
 
-  const signedPdf =
-    await signPdf(
-      pdfBuffer,
-      pfxPath,
-      pfxPassword,
-      pageNumber,
-      widgetRect,
-      signerName
+    /*
+    |--------------------------------------------------------------------------
+    | GLOBAL DIGITAL SIGNATURE
+    |--------------------------------------------------------------------------
+    |
+    | IMPORTANT:
+    |
+    | Do NOT close browser before this function.
+    |
+    | digitallySignPdf() uses Puppeteer page
+    | to detect #signature-anchor.
+    |
+    */
+
+    console.log(
+      "[SIGNATURE] Starting global digital signature..."
     );
 
-  /*
-  |--------------------------------------------------------------------------
-  | Ensure Signed PDF Is Buffer
-  |--------------------------------------------------------------------------
-  */
+    const signedResult =
+      await digitallySignPdf({
+        pdfBuffer,
 
-  if (
-    Buffer.isBuffer(
-      signedPdf
-    )
-  ) {
-    return signedPdf;
-  }
+        page,
 
-  if (
-    signedPdf instanceof
-    Uint8Array
-  ) {
-    return Buffer.from(
-      signedPdf.buffer,
-      signedPdf.byteOffset,
-      signedPdf.byteLength
+        pfxPath:
+          path.join(
+            __dirname,
+            "DS Dhule Municipal Corporation.pfx"
+          ),
+
+        password:
+          "Pro452",
+
+        selector:
+          "#signature-anchor",
+      });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Final Signed PDF
+    |--------------------------------------------------------------------------
+    */
+
+    let signedPdfBuffer =
+      signedResult.pdfBuffer;
+
+    /*
+    |--------------------------------------------------------------------------
+    | Ensure Buffer
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      !Buffer.isBuffer(
+        signedPdfBuffer
+      )
+    ) {
+
+      if (
+        signedPdfBuffer instanceof
+        Uint8Array
+      ) {
+
+        signedPdfBuffer =
+          Buffer.from(
+            signedPdfBuffer.buffer,
+            signedPdfBuffer.byteOffset,
+            signedPdfBuffer.byteLength
+          );
+
+      } else {
+
+        signedPdfBuffer =
+          Buffer.from(
+            signedPdfBuffer
+          );
+      }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Verify Signed PDF
+    |--------------------------------------------------------------------------
+    */
+
+    console.log(
+      "[SIGNATURE] Signed Notice PDF:",
+      {
+        isBuffer:
+          Buffer.isBuffer(
+            signedPdfBuffer
+          ),
+
+        length:
+          signedPdfBuffer?.length,
+
+        signerName:
+          signedResult.signerName,
+
+        pageNumber:
+          signedResult.pageNumber,
+
+        widgetRect:
+          signedResult.widgetRect,
+      }
     );
-  }
 
-  return Buffer.from(
-    signedPdf
-  );
+    if (
+      !Buffer.isBuffer(
+        signedPdfBuffer
+      )
+    ) {
+      throw new Error(
+        "PDF signing failed: result is not a Buffer"
+      );
+    }
+
+    if (
+      signedPdfBuffer.length === 0
+    ) {
+      throw new Error(
+        "PDF signing failed: empty signed PDF"
+      );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Return Signed PDF
+    |--------------------------------------------------------------------------
+    */
+
+    return signedPdfBuffer;
+
+  } finally {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Close Browser AFTER signing
+    |--------------------------------------------------------------------------
+    */
+
+    if (browser) {
+
+      try {
+
+        await browser.close();
+
+        console.log(
+          "[PUPPETEER] Browser closed."
+        );
+
+      } catch (
+        closeError
+      ) {
+
+        console.error(
+          "[PUPPETEER] Browser close error:",
+          closeError.message
+        );
+      }
+    }
+  }
 }
 
 /*
 |--------------------------------------------------------------------------
-| Exports
+| Module Exports
 |--------------------------------------------------------------------------
 */
 

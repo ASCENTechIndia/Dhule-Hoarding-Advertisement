@@ -355,11 +355,11 @@ export default function Login() {
     className="m-auto"
   />
 
-  <div>
+  {/* <div>
     <strong>
       माझी कानबाई, पर्यावरणपूरक कानबाई स्पर्धा
     </strong>
-  </div>
+  </div> */}
 </div>
               <form
                 className="needs-validation"

@@ -53,12 +53,12 @@ const BillList = () => {
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [selectedParticipant, setSelectedParticipant] = useState(null);
     const [selectedPanchanamaDetails, setSelectedPanchanamaDetails] =
-    useState(null);
+        useState(null);
     const [detailsLoading, setDetailsLoading] = useState(false);
     const [noticeHtml, setNoticeHtml] = useState("");
     const [activeModalTab, setActiveModalTab] = useState("notice");
     const [generatingNoticeId, setGeneratingNoticeId] = useState(null);
-    
+
     // Payments Modal
     const [showPaymentModal, setShowPaymentModal] = useState(false);
 
@@ -1343,15 +1343,37 @@ const BillList = () => {
         setShowPaymentModal(true);
 
     }
-    
+
     const handlePaymentModalClose = () => {
         setShowPaymentModal(false);
     }
 
     const handlePayment = async (data) => {
-        console.log("Payment Data:", data);
+        try {
+            console.log("Payment Data:", data);
 
-        
+            const payload = {};
+
+            const response = await apiClient.post("", payload);
+
+            if (response.success && response.data.errorCode === 9999) {
+                setModalType("success");
+                setModalTitle("Success");
+                setModalMessage(response.data.message);
+                setIsModalOpen(true);
+            } else {
+                setModalType("error");
+                setModalTitle("Error");
+                setModalMessage("Something went wrong");
+                setIsModalOpen(true);
+            }
+        } catch (error) {
+            setModalType("error");
+            setModalTitle("Error");
+            setModalMessage(error.message || "Something went wrong");
+            setIsModalOpen(true);
+        }
+
     };
 
     // =========================================================

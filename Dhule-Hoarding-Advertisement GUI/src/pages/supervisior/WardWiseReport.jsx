@@ -775,7 +775,7 @@ const WardWiseReport = () => {
           <div>
             <h2 className="h5 mb-1 section-title">
               <i className="bi bi-people me-2" aria-hidden="true"></i>
-              <span>पंचानाम निर्मिती अहवाल ({totalRecords})</span>
+              <span>प्रभागनिहाय अहवाल ({totalRecords})</span>
             </h2>
             <p className="text-muted mb-0">संपूर्ण यादी पहा</p>
           </div>

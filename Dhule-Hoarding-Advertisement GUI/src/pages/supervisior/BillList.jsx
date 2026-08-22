@@ -1352,21 +1352,21 @@ const BillList = () => {
         try {
             console.log("Payment Data:", data);
 
-            const payload = {};
+            // const payload = {};
 
-            const response = await apiClient.post("", payload);
+            // const response = await apiClient.post("", payload);
 
-            if (response.success && response.data.errorCode === 9999) {
-                setModalType("success");
-                setModalTitle("Success");
-                setModalMessage(response.data.message);
-                setIsModalOpen(true);
-            } else {
-                setModalType("error");
-                setModalTitle("Error");
-                setModalMessage("Something went wrong");
-                setIsModalOpen(true);
-            }
+            // if (response.success && response.data.errorCode === 9999) {
+            //     setModalType("success");
+            //     setModalTitle("Success");
+            //     setModalMessage(response.data.message);
+            //     setIsModalOpen(true);
+            // } else {
+            //     setModalType("error");
+            //     setModalTitle("Error");
+            //     setModalMessage("Something went wrong");
+            //     setIsModalOpen(true);
+            // }
         } catch (error) {
             setModalType("error");
             setModalTitle("Error");

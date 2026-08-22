@@ -1336,12 +1336,14 @@ const BillList = () => {
         );
     };
 
+    // PAYMENTS MODAL
+
     const renderPaymentModal = async (panchanama) => {
 
         setShowPaymentModal(true);
 
     }
-
+    
     const handlePaymentModalClose = () => {
         setShowPaymentModal(false);
     }
@@ -1349,7 +1351,7 @@ const BillList = () => {
     const handlePayment = async (data) => {
         console.log("Payment Data:", data);
 
-        // API call here
+        
     };
 
     // =========================================================

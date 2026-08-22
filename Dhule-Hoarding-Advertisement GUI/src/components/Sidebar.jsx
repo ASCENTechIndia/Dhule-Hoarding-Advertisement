@@ -22,6 +22,11 @@ export default function Sidebar() {
   icon: "bi-file-earmark-check",
   label: "नोटिस यादी",
 },
+{
+  path: "/bill-list",
+  icon: "bi-wallet",
+  label: "शुल्क भरणा यादी"
+}
   ];
 
   return (

@@ -41,6 +41,7 @@ import AssignComplaint from './pages/SI/AssignComplaint';
 import ResolvedComplaint from './pages/SI/ResolvedComplaint';
 import HomeRedirect from './pages/HomeRedirect';
 import FineList from './pages/SI/FineList';
+import BillList from './pages/supervisior/BillList';
 
 // Dashboard
 import Dashboard2 from './pages/dashboard/Dashboard';
@@ -156,6 +157,15 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <NoticeList />
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route 
+                  path='/bill-list'
+                  element={
+                    <ProtectedRoute>
+                      <BillList />
                     </ProtectedRoute>
                   }
                 />

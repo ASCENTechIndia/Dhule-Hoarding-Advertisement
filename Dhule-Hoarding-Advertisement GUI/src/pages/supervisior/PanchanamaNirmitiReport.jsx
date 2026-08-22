@@ -1,6 +1,5 @@
 import Layout from "../../components/Layout";
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
 import apiClient from "../../services/apiClient";
 import { useLoader } from "../../context/LoaderContext";
 import ResponseModal from "../../components/ResponseModal";
@@ -10,21 +9,15 @@ import { useAuth } from "../../context/AuthContext";
 
 const getToday = () => {
   const d = new Date();
-
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
-
   return `${year}-${month}-${day}`;
 };
 
-const BillList = () => {
+const PanchanamaNirmitiReport = () => {
   const { user } = useAuth();
   const { setLoader } = useLoader();
-
-  // =========================================================
-  // STATE
-  // =========================================================
 
   const [participants, setParticipants] = useState([]);
   const [error, setError] = useState(null);
@@ -39,6 +32,9 @@ const BillList = () => {
   const [filters, setFilters] = useState({
     fromDate: getToday(),
     toDate: getToday(),
+    regionalOffice: "",
+    ward: "",
+    paymentStatus: "",
   });
 
   // Image modal
@@ -46,10 +42,7 @@ const BillList = () => {
   const [selectedImages, setSelectedImages] = useState([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
-  // =========================================================
-  // DETAILS MODAL
-  // =========================================================
-
+  // Details modal
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedParticipant, setSelectedParticipant] = useState(null);
   const [selectedPanchanamaDetails, setSelectedPanchanamaDetails] =
@@ -59,15 +52,13 @@ const BillList = () => {
   const [activeModalTab, setActiveModalTab] = useState("notice");
   const [generatingNoticeId, setGeneratingNoticeId] = useState(null);
 
-  // Payments Modal
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-
   // Response modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState("info");
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
 
+  // Excel export
   const [excelData, setExcelData] = useState([]);
   const tableHeaders = [
     "अनुक्र.",
@@ -88,77 +79,51 @@ const BillList = () => {
     प्रभाग: "ward",
   };
 
-  // =========================================================
-  // PAYMENT FORM VALUES
-  // =========================================================
-  const { register, handleSubmit, watch, setValue, reset } = useForm({
-    defaultValues: {
-      noticeNumber: "",
-      paymentType: "",
-      amount: "",
-      bankName: "",
-      branch: "",
-      chequeNumber: "",
-      chequeDate: "",
-      remarks: "",
-      micrCode: "",
-      chequeType: "",
-      transactionId: "",
-      mobileNumber: "",
-      email: "",
-      address: "",
-      name: "",
-      recoveryAmount: "",
-    },
-  });
-
-  const paymentType = watch("paymentType");
-
-  // =========================================================
-  // DATE FILTER CHANGE
-  // =========================================================
-
   const handleDateChangeFilter = (e) => {
     const { name, value } = e.target;
-
-    setFilters((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFilters((prev) => ({ ...prev, [name]: value }));
   };
 
-  // =========================================================
-  // CLEAR FILTERS
-  // =========================================================
+  // Generic handler for dropdowns
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleClearFilters = () => {
     setFilters({
       fromDate: "",
       toDate: "",
+      regionalOffice: "",
+      ward: "",
+      paymentStatus: "",
     });
   };
 
-  // =========================================================
-  // FETCH PARTICIPANTS
-  // =========================================================
-
-  const fetchPanchanamalist = async (dataPage = 1) => {
+  const fetchReportData = async (dataPage = 1) => {
     try {
       setLoader(true);
       setError(null);
 
-      let url = `/payment/getIllegalHoardPaymentList?page=${dataPage}&limit=${pageSize}&ulbId=${import.meta.env.VITE_ULBID}&userId=${user.userId}`;
+      let url = `/?page=${dataPage}&limit=${pageSize}&ulbId=${import.meta.env.VITE_ULBID}&userId=${user.userId}`;
 
       if (filters.fromDate) {
         url += `&fromDate=${encodeURIComponent(filters.fromDate)}`;
       }
-
       if (filters.toDate) {
         url += `&toDate=${encodeURIComponent(filters.toDate)}`;
       }
+      if (filters.regionalOffice) {
+        url += `&select=${encodeURIComponent(filters.regionalOffice)}`;
+      }
+      if (filters.ward) {
+        url += `&ward=${encodeURIComponent(filters.ward)}`;
+      }
+      if (filters.paymentStatus) {
+        url += `&paymentStatus=${encodeURIComponent(filters.paymentStatus)}`;
+      }
 
       const response = await apiClient.get(url);
-      console.log("resp :", response);
 
       if (response?.success && response?.data) {
         const participantData = response.data.data || [];
@@ -185,58 +150,37 @@ const BillList = () => {
         setTotalRecords(0);
       }
     } catch (err) {
-      console.error("Error fetching participants:", err);
-
+      console.error("Error fetching report data:", err);
       setExcelData([]);
       setParticipants([]);
       setCurrentPage(1);
       setTotalPages(1);
       setTotalRecords(0);
-
-      setError(err?.message || "Failed to fetch participant list");
+      setError(err?.message || "Failed to fetch report data");
     } finally {
       setLoader(false);
     }
   };
 
-  // =========================================================
-  // INITIAL API / FILTER CHANGE
-  // =========================================================
-
   useEffect(() => {
-    fetchPanchanamalist(1);
+    fetchReportData(1);
   }, [filters, pageSize]);
 
-  // =========================================================
-  // PAGINATION
-  // =========================================================
-
   const formatDateTime = (dateString, timeString) => {
-    if (!dateString) {
-      return "-";
-    }
-
+    if (!dateString) return "-";
     const date = new Date(dateString);
-
-    if (isNaN(date.getTime())) {
-      return "-";
-    }
-
+    if (isNaN(date.getTime())) return "-";
     const formattedDate = date.toLocaleDateString("en-IN", {
       timeZone: "Asia/Kolkata",
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
     });
-
     let formattedTime = "";
-
     if (timeString) {
       const [hours, minutes, seconds] = timeString.split(":").map(Number);
-
       const timeDate = new Date();
       timeDate.setHours(hours, minutes, seconds || 0);
-
       formattedTime = timeDate.toLocaleTimeString("en-IN", {
         hour: "2-digit",
         minute: "2-digit",
@@ -244,55 +188,35 @@ const BillList = () => {
         hour12: true,
       });
     }
-
     return formattedTime
       ? `${formattedDate} - ${formattedTime}`
       : formattedDate;
   };
+
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages && page !== currentPage) {
-      fetchPanchanamalist(page);
+      fetchReportData(page);
     }
   };
-
-  // =========================================================
-  // PAGINATION PAGE NUMBERS
-  // =========================================================
 
   const getPaginationPages = () => {
     const pages = [];
     const maxPagesToShow = 5;
-
     let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
-
     let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
-
     if (endPage - startPage + 1 < maxPagesToShow) {
       startPage = Math.max(1, endPage - maxPagesToShow + 1);
     }
-
     for (let i = startPage; i <= endPage; i++) {
       pages.push(i);
     }
-
     return pages;
   };
 
-  // =========================================================
-  // FORMAT DATE
-  // =========================================================
-
   const formatDate = (dateString) => {
-    if (!dateString) {
-      return "-";
-    }
-
+    if (!dateString) return "-";
     const date = new Date(dateString);
-
-    if (isNaN(date.getTime())) {
-      return "-";
-    }
-
+    if (isNaN(date.getTime())) return "-";
     return date
       .toLocaleString("en-IN", {
         timeZone: "Asia/Kolkata",
@@ -306,10 +230,6 @@ const BillList = () => {
       .replace(",", " - ");
   };
 
-  // =========================================================
-  // GET PARTICIPANT PHOTOS
-  // =========================================================
-
   const getPanchanamaPhotos = (panchanama) => {
     return [
       panchanama?.BLOB_NEAR_PHOTO,
@@ -318,34 +238,19 @@ const BillList = () => {
     ].filter((img) => img && typeof img === "string" && img.trim() !== "");
   };
 
-  // =========================================================
-  // OPEN IMAGE IN NEW TAB
-  // =========================================================
-
   const openImageInNewTab = (img) => {
     try {
-      if (!img) {
-        return;
-      }
-
+      if (!img) return;
       const binaryString = atob(img);
-
       const bytes = new Uint8Array(binaryString.length);
-
       for (let i = 0; i < binaryString.length; i++) {
         bytes[i] = binaryString.charCodeAt(i);
       }
-
-      const blob = new Blob([bytes], {
-        type: "image/png",
-      });
-
+      const blob = new Blob([bytes], { type: "image/png" });
       const blobUrl = URL.createObjectURL(blob);
-
       window.open(blobUrl, "_blank");
     } catch (err) {
       console.error("Error opening image:", err);
-
       setModalType("error");
       setModalTitle("Error");
       setModalMessage("Unable to open image. Please try again.");
@@ -353,21 +258,12 @@ const BillList = () => {
     }
   };
 
-  // =========================================================
-  // OPEN IMAGE MODAL
-  // =========================================================
-
   const handleImageClick = (panchanama, index) => {
     const images = getPanchanamaPhotos(panchanama);
-
     setSelectedImages(images);
     setSelectedImageIndex(index);
     setShowImageModal(true);
   };
-
-  // =========================================================
-  // NEXT IMAGE
-  // =========================================================
 
   const nextImage = () => {
     if (selectedImageIndex < selectedImages.length - 1) {
@@ -375,19 +271,11 @@ const BillList = () => {
     }
   };
 
-  // =========================================================
-  // PREVIOUS IMAGE
-  // =========================================================
-
   const prevImage = () => {
     if (selectedImageIndex > 0) {
       setSelectedImageIndex(selectedImageIndex - 1);
     }
   };
-
-  // =========================================================
-  // VIEW PARTICIPANT DETAILS
-  // =========================================================
 
   const formatDateOnly = (dateStr) => {
     if (!dateStr) return "-";
@@ -402,22 +290,11 @@ const BillList = () => {
 
   const fetchNoticeHtml = async (masterData, demolitionDetails) => {
     try {
-      // =====================================================
-      // GET ADVERTISER NAMES FROM DEMOLITION DETAILS
-      // =====================================================
-
       const advertiserNames =
         demolitionDetails
           ?.map((item) => item?.VAR_DEMONSTARTED_NAME)
-          .filter(
-            (name) =>
-              name !== null && name !== undefined && String(name).trim() !== "",
-          )
+          .filter((name) => name && String(name).trim() !== "")
           .join(", ") || "जाहिरातदार";
-
-      // =====================================================
-      // NOTICE PAYLOAD
-      // =====================================================
 
       const noticePayload = {
         corporationId:
@@ -425,68 +302,43 @@ const BillList = () => {
           masterData?.NUM_ULBID ||
           masterData?.ulbId ||
           4,
-
         corporationName:
           masterData?.VAR_CORPORATION_NAME || "धुळे महानगरपालिका",
-
         corporationLogo: dhuleLogo,
-
         REGIONAL_OFFICE_NO:
           masterData?.VAR_ILLEGALHOARD_WARD ||
           masterData?.NUM_REGIONAL_OFFICE_NO ||
           "-",
-
-        // 👇 From demolitionDetails
         ADVERTISER_NAME: advertiserNames,
-
         ADDRESS: masterData?.VAR_ILLEGALHOARD_ADD || "-",
-
         LATITUDE: masterData?.LATITUDE || masterData?.NUM_LAT || "-",
-
         LONGITUDE: masterData?.LONGITUDE || masterData?.NUM_LONG || "-",
-
         SIZE:
           masterData?.NUM_SIZE_LENGTH && masterData?.NUM_SIZE_WIDTH
             ? `${masterData.NUM_SIZE_LENGTH} x ${masterData.NUM_SIZE_WIDTH}`
             : masterData?.VAR_SIZE || masterData?.SIZE || "-",
-
         FROM_DATE: masterData?.DAT_FROM_DT
           ? formatDateOnly(masterData.DAT_FROM_DT)
           : masterData?.DAT_CAP_DT
             ? formatDateOnly(masterData.DAT_CAP_DT)
             : "-",
-
         TO_DATE: masterData?.DAT_TO_DT
           ? formatDateOnly(masterData.DAT_TO_DT)
           : masterData?.DAT_CAP_DT
             ? formatDateOnly(masterData.DAT_CAP_DT)
             : "-",
-
         AMOUNT:
           masterData?.NUM_HOARD_AMOUNT ||
           masterData?.NUM_AMOUNT ||
           masterData?.AMOUNT ||
           "0",
-
         OFFICER_NAME: masterData?.VAR_USER1 || "-",
-
         OFFICER_DESIGNATION: masterData?.VAR_USER1_POST || "-",
-
         REGIONAL_OFFICE: masterData?.VAR_ILLEGALHOARD_WARD || "-",
-
         ID: masterData.NUM_ILLEGALHOARD_ID,
       };
 
-      // =====================================================
-      // API CALL
-      // =====================================================
-
       const response = await apiClient.post("/notice/render", noticePayload);
-
-      // =====================================================
-      // RESPONSE
-      // =====================================================
-
       if (response?.success && response?.data?.html) {
         setNoticeHtml(response.data.html);
       } else {
@@ -494,7 +346,6 @@ const BillList = () => {
       }
     } catch (err) {
       console.error("Error fetching notice HTML:", err);
-
       setNoticeHtml("");
     }
   };
@@ -523,44 +374,31 @@ const BillList = () => {
 
   const handleGenerateNotice = async (panchanama) => {
     const id = panchanama?.NUM_ILLEGALHOARD_ID;
-
     if (!id) {
       setModalType("error");
       setModalTitle("Error");
       setModalMessage("Panchanama ID not found.");
       setIsModalOpen(true);
-
       return;
     }
 
     try {
       setGeneratingNoticeId(id);
 
-      // ===================================================
-      // MASTER DATA
-      // ===================================================
-
       let masterData = panchanama;
-
       let demolitionDetails = panchanama;
 
       try {
         const responseDetails = await apiClient.get(
           `/advertisement/getPanchanamaDetails?id=${id}`,
         );
-
         if (responseDetails?.success && responseDetails?.data?.master) {
           masterData = responseDetails.data.master;
-
           demolitionDetails = responseDetails.data.demolitionDetails;
         }
       } catch (err) {
         console.error("Could not fetch extra panchanama details:", err);
       }
-
-      // ===================================================
-      // ADVERTISER NAMES
-      // ===================================================
 
       const advertiserNames =
         demolitionDetails
@@ -568,12 +406,7 @@ const BillList = () => {
           .filter((name) => name && String(name).trim() !== "")
           .join(", ") || "जाहिरातदार";
 
-      // ===================================================
-      // LOGGED-IN USER
-      // ===================================================
-
       const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
-
       const userId =
         storedUser?.userId ||
         storedUser?.USER_ID ||
@@ -581,175 +414,91 @@ const BillList = () => {
         storedUser?.id ||
         null;
 
-      console.log("Logged-in user:", storedUser);
-
-      console.log("User ID:", userId);
-
       if (!userId) {
         throw new Error("Logged-in user ID not found. Please login again.");
       }
 
-      // ===================================================
-      // NOTICE PAYLOAD
-      // ===================================================
-
       const noticePayload = {
         id: masterData.NUM_ILLEGALHOARD_ID,
-
         userId: userId,
-
         corporationId:
           masterData?.NUM_ILLEGALHOARD_ULBID ||
           masterData?.NUM_ULBID ||
           masterData?.ulbId ||
           4,
-
         corporationName:
           masterData?.VAR_CORPORATION_NAME || "धुळे महानगरपालिका",
-
         corporationLogo: dhuleLogo,
-
         REGIONAL_OFFICE_NO:
           masterData.VAR_ILLEGALHOARD_WARD ||
           masterData.NUM_REGIONAL_OFFICE_NO ||
           "-",
-
         ADVERTISER_NAME: advertiserNames,
-
         ADDRESS: masterData.VAR_ILLEGALHOARD_ADD || "-",
-
         LATITUDE: masterData.LATITUDE || masterData.NUM_LAT || "-",
-
         LONGITUDE: masterData.LONGITUDE || masterData.NUM_LONG || "-",
-
         SIZE:
           masterData.NUM_SIZE_LENGTH && masterData.NUM_SIZE_WIDTH
             ? `${masterData.NUM_SIZE_LENGTH} x ${masterData.NUM_SIZE_WIDTH}`
             : masterData.VAR_SIZE || masterData.SIZE || "-",
-
         FROM_DATE: masterData.DAT_FROM_DT
           ? formatDateOnly(masterData.DAT_FROM_DT)
           : masterData.DAT_CAP_DT
             ? formatDateOnly(masterData.DAT_CAP_DT)
             : "-",
-
         TO_DATE: masterData.DAT_TO_DT
           ? formatDateOnly(masterData.DAT_TO_DT)
           : masterData.DAT_CAP_DT
             ? formatDateOnly(masterData.DAT_CAP_DT)
             : "-",
-
         AMOUNT:
           masterData.NUM_HOARD_AMOUNT ||
           masterData.NUM_AMOUNT ||
           masterData.AMOUNT ||
           "0",
-
         OFFICER_NAME: masterData.VAR_USER1 || "-",
-
         OFFICER_DESIGNATION: masterData.VAR_USER1_POST || "-",
-
         REGIONAL_OFFICE: masterData.VAR_ILLEGALHOARD_WARD || "-",
-
         PANCHANAMA_NO: masterData.VAR_ILLEGALHOARD_PANCHANAMA_NO || "-",
-
         ULB_ID: import.meta.env.VITE_ULBID,
       };
-
-      console.log("Notice payload:", noticePayload);
-
-      // ===================================================
-      // GENERATE + SIGN PDF
-      // ===================================================
 
       const response = await apiClient.post("/notice/generate", noticePayload, {
         responseType: "blob",
         timeout: 300000,
       });
 
-      // ===================================================
-      // CHECK RESPONSE
-      // ===================================================
-
-      console.log("API response:", response);
-
-      console.log("Response type:", typeof response);
-
-      console.log("Is Blob:", response instanceof Blob);
-
       if (!(response instanceof Blob)) {
         throw new Error("Invalid PDF response from server.");
       }
 
-      // ===================================================
-      // PDF BLOB
-      // ===================================================
-
-      const pdfBlob = new Blob([response], {
-        type: "application/pdf",
-      });
-
-      console.log("PDF size:", pdfBlob.size);
-
-      // ===================================================
-      // CREATE PDF URL
-      // ===================================================
+      const pdfBlob = new Blob([response], { type: "application/pdf" });
 
       const pdfUrl = window.URL.createObjectURL(pdfBlob);
-
-      // ===================================================
-      // OPEN PDF
-      // ===================================================
-
       const pdfWindow = window.open(pdfUrl, "_blank");
 
       if (!pdfWindow) {
-        // Browser blocked popup
-        // Provide download instead
-
         const link = document.createElement("a");
-
         link.href = pdfUrl;
-
-        link.download = `notice-${
-          masterData.VAR_ILLEGALHOARD_PANCHANAMA_NO || id
-        }.pdf`;
-
+        link.download = `notice-${masterData.VAR_ILLEGALHOARD_PANCHANAMA_NO || id}.pdf`;
         document.body.appendChild(link);
-
         link.click();
-
         document.body.removeChild(link);
       }
 
-      // ===================================================
-      // SUCCESS
-      // ===================================================
-
       setModalType("success");
-
       setModalTitle("Notice Generated");
-
       setModalMessage("Notice generated and digitally signed successfully.");
-
       setIsModalOpen(true);
-
-      // ===================================================
-      // CLEAN URL
-      // ===================================================
 
       setTimeout(() => {
         window.URL.revokeObjectURL(pdfUrl);
       }, 60000);
     } catch (err) {
       console.error("Error generating notice:", err);
-
       setModalType("error");
-
       setModalTitle("Error");
-
       setModalMessage(err?.message || "Failed to generate notice.");
-
       setIsModalOpen(true);
     } finally {
       setGeneratingNoticeId(null);
@@ -758,7 +507,6 @@ const BillList = () => {
 
   const handleViewDetails = async (panchanama) => {
     const id = panchanama?.NUM_ILLEGALHOARD_ID;
-
     if (!id) {
       setModalType("error");
       setModalTitle("Error");
@@ -769,7 +517,6 @@ const BillList = () => {
 
     try {
       setDetailsLoading(true);
-
       setSelectedParticipant(panchanama);
       setSelectedPanchanamaDetails(null);
       setNoticeHtml("");
@@ -779,7 +526,6 @@ const BillList = () => {
       const response = await apiClient.get(
         `/advertisement/getPanchanamaDetails?id=${id}`,
       );
-
       if (response?.success && response?.data) {
         setSelectedPanchanamaDetails(response.data);
         const masterData = response.data.master || panchanama;
@@ -807,17 +553,11 @@ const BillList = () => {
     setDetailsLoading(false);
   };
 
-  // =========================================================
-  // RENDER PARTICIPANT PHOTOS
-  // =========================================================
-
   const renderPanchanamaPhotos = (panchanama) => {
     const images = getPanchanamaPhotos(panchanama);
-
     if (images.length === 0) {
       return <span className="text-muted small">No photos</span>;
     }
-
     return (
       <div className="d-flex gap-2 flex-wrap">
         {images.map((img, idx) => (
@@ -840,49 +580,8 @@ const BillList = () => {
     );
   };
 
-  // =========================================================
-  // DETAILS MODAL VALUE FORMATTER
-  // =========================================================
-
-  const formatDetailValue = (key, value) => {
-    if (value === null || value === undefined || value === "") {
-      return "-";
-    }
-
-    // Date fields
-    if (key === "APPLICATION_DATE" || key.toLowerCase().includes("date")) {
-      return formatDate(value);
-    }
-
-    // Don't display huge Base64 strings as text
-    if (key.toUpperCase().startsWith("PHOTO_")) {
-      return null;
-    }
-
-    // Objects / Arrays
-    if (typeof value === "object") {
-      try {
-        return JSON.stringify(value, null, 2);
-      } catch {
-        return String(value);
-      }
-    }
-
-    return String(value);
-  };
-
-  // =========================================================
-  // DETAILS MODAL
-  // =========================================================
-
   const renderDetailsModal = () => {
-    if (!showDetailsModal) {
-      return null;
-    }
-
-    // =========================================================
-    // LOADING
-    // =========================================================
+    if (!showDetailsModal) return null;
 
     if (detailsLoading) {
       return (
@@ -890,10 +589,7 @@ const BillList = () => {
           className="modal show d-block"
           tabIndex="-1"
           role="dialog"
-          style={{
-            backgroundColor: "rgba(0,0,0,0.6)",
-            zIndex: 2100,
-          }}
+          style={{ backgroundColor: "rgba(0,0,0,0.6)", zIndex: 2100 }}
         >
           <div className="modal-dialog modal-dialog-centered" role="document">
             <div className="modal-content">
@@ -902,19 +598,16 @@ const BillList = () => {
                   <i className="bi bi-file-earmark-text me-2"></i>
                   Panchanama Details
                 </h5>
-
                 <button
                   type="button"
                   className="btn-close"
                   onClick={handleCloseDetailsModal}
                 ></button>
               </div>
-
               <div className="modal-body text-center py-5">
                 <div className="spinner-border text-primary mb-3" role="status">
                   <span className="visually-hidden">Loading...</span>
                 </div>
-
                 <div className="text-muted">Loading Panchanama details...</div>
               </div>
             </div>
@@ -923,26 +616,11 @@ const BillList = () => {
       );
     }
 
-    // =========================================================
-    // DATA
-    // =========================================================
-
     const master = selectedPanchanamaDetails?.master || selectedParticipant;
-
-    const details = selectedPanchanamaDetails?.details || [];
-
-    const demolitionDetails =
-      selectedPanchanamaDetails?.demolitionDetails || [];
-
-    if (!master) {
-      return null;
-    }
+    if (!master) return null;
 
     const photos = getPanchanamaPhotos(master);
 
-    // =========================================================
-    // FORMAT LABEL
-    // =========================================================
     const fieldLabels = {
       NUM_ILLEGALHOARD_ID: "Panchanama ID",
       NUM_ILLEGALHOARD_ULBID: "ULB ID",
@@ -973,28 +651,15 @@ const BillList = () => {
       );
     };
 
-    // =========================================================
-    // FORMAT VALUE
-    // =========================================================
-
     const formatDetailValue = (key, value) => {
-      if (value === null || value === undefined || value === "") {
-        return "-";
-      }
-
-      // Don't display BLOB as text
-      if (key.toUpperCase().startsWith("BLOB_")) {
-        return null;
-      }
-
-      // Date fields
+      if (value === null || value === undefined || value === "") return "-";
+      if (key.toUpperCase().startsWith("BLOB_")) return null;
       if (
         key.toUpperCase().includes("DAT_") ||
         key.toUpperCase().includes("DATE")
       ) {
         return formatDate(value);
       }
-
       if (typeof value === "object") {
         try {
           return JSON.stringify(value);
@@ -1002,71 +667,39 @@ const BillList = () => {
           return String(value);
         }
       }
-
       return String(value);
     };
-
-
-    useEffect(() => {
-        setValue("bankName", "");
-        setValue("branch", "");
-        setValue("chequeNumber", "");
-        setValue("chequeDate", "");
-        setValue("micrCode", "");
-        setValue("chequeType", "");
-        setValue("transactionId", "")
-    }, [paymentType])
-    // =========================================================
-    // MASTER FIELDS
-    // =========================================================
-
-    const masterEntries = Object.entries(master);
 
     return (
       <div
         className="modal show d-block"
         tabIndex="-1"
         role="dialog"
-        style={{
-          backgroundColor: "rgba(0,0,0,0.6)",
-          zIndex: 2100,
-        }}
+        style={{ backgroundColor: "rgba(0,0,0,0.6)", zIndex: 2100 }}
       >
         <div
           className="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable"
           role="document"
-          style={{
-            maxWidth: "1000px",
-          }}
+          style={{ maxWidth: "1000px" }}
         >
           <div className="modal-content">
-            {/* ================================================= */}
-            {/* HEADER */}
-            {/* ================================================= */}
-
             <div className="modal-header d-flex justify-content-between align-items-center">
               <div>
                 <h5 className="modal-title mb-1">
                   <i className="bi bi-file-earmark-text me-2"></i>
                   Notice Preview / नोटीस
                 </h5>
-
                 <small className="text-muted">
                   Panchanama ID:{" "}
                   <strong>{master.NUM_ILLEGALHOARD_ID || "-"}</strong>
                 </small>
               </div>
-
               <button
                 type="button"
                 className="btn-close"
                 onClick={handleCloseDetailsModal}
               ></button>
             </div>
-
-            {/* ================================================= */}
-            {/* BODY */}
-            {/* ================================================= */}
 
             <div className="modal-body">
               <div>
@@ -1126,10 +759,6 @@ const BillList = () => {
               </div>
             </div>
 
-            {/* ================================================= */}
-            {/* FOOTER */}
-            {/* ================================================= */}
-
             <div className="modal-footer">
               <button
                 type="button"
@@ -1146,136 +775,104 @@ const BillList = () => {
     );
   };
 
-  // PAYMENTS MODAL
-
-  const renderPaymentModal = async (amount, noticeNo) => {
-    setValue("amount", amount);
-    setValue("noticeNumber", noticeNo);
-    setShowPaymentModal(true);
-  };
-
-  const handlePaymentModalClose = () => {
-    setShowPaymentModal(false);
-  };
-
-  const handlePayment = async (data) => {
-    try {
-      console.log("Payment Data:", data);
-
-      const payload = {
-        userId: user.userId,
-        ulbId: import.meta.env.VITE_ULBID || "",
-        noticeNo: data.noticeNumber || null,
-        paymentMode: data.paymentType || null,
-        bankName: data.bankName || null,
-        bankBranch: data.branch || null,
-        chequeNo: data.chequeNumber || null,
-        chequeDate: data.chequeDate || null,
-        remark: data.remarks || null,
-        micrCode: data.micrCode || null,
-        chequeType: data.chequeType || null,
-        transactionId: data.transactionId || null,
-        mobileNo: data.mobileNumber || null,
-        email: data.email || null,
-        address: data.address || null,
-        name: data.name || null,
-        collectionAmount: data.recoveryAmount || null,
-      };
-
-      console.log("payload :", payload);
-
-      const response = await apiClient.post("/payment/add-payment", payload);
-
-      if (response.success && response.data.errorCode === 9999) {
-        setModalType("success");
-        setModalTitle("Success");
-        setModalMessage(response.data.message);
-        setIsModalOpen(true);
-      } else {
-        setModalType("error");
-        setModalTitle("Error");
-        setModalMessage("Something went wrong");
-        setIsModalOpen(true);
-      }
-    } catch (error) {
-      setModalType("error");
-      setModalTitle("Error");
-      setModalMessage(error.message || "Something went wrong");
-      setIsModalOpen(true);
-    }
-  };
-
-  // =========================================================
-  // RENDER
-  // =========================================================
-
   return (
     <Layout>
       <div className="panel">
         {/* HEADER */}
-
         <div className="panel-header d-flex justify-content-between align-items-center">
           <div>
             <h2 className="h5 mb-1 section-title">
               <i className="bi bi-people me-2" aria-hidden="true"></i>
-
-              <span>शुल्क भरणा यादी ({totalRecords})</span>
+              <span>पंचानाम निर्मिती अहवाल ({totalRecords})</span>
             </h2>
-
             <p className="text-muted mb-0">संपूर्ण यादी पहा</p>
           </div>
 
-          {/* FILTERS */}
-
           <div>
-            <div className="filter-bar">
-              {/* FROM DATE */}
-
-              <div className="filter-group">
-                <label htmlFor="fromDate">From Date</label>
-
+            <div className="row g-2 align-items-end justify-content-end">
+              {/* From Date */}
+              <div className="col-auto">
+                <label htmlFor="fromDate" className="form-label mb-0 small">
+                  From Date
+                </label>
                 <input
                   type="date"
                   id="fromDate"
                   name="fromDate"
-                  className="filter-input"
-                  style={{
-                    width: "150px",
-                  }}
+                  className="form-control form-control-sm"
+                  style={{ width: "150px" }}
                   value={filters.fromDate}
                   onChange={handleDateChangeFilter}
                 />
               </div>
 
-              {/* TO DATE */}
-
-              <div className="filter-group">
-                <label htmlFor="toDate">To Date</label>
-
+              {/* To Date */}
+              <div className="col-auto">
+                <label htmlFor="toDate" className="form-label mb-0 small">
+                  To Date
+                </label>
                 <input
                   type="date"
                   id="toDate"
                   name="toDate"
-                  className="filter-input"
-                  style={{
-                    width: "150px",
-                  }}
+                  className="form-control form-control-sm"
+                  style={{ width: "150px" }}
                   value={filters.toDate}
                   onChange={handleDateChangeFilter}
                 />
               </div>
 
-              {/* CLEAR */}
+              {/* Regional Office */}
+              <div className="col-auto">
+                <label className="form-label mb-0 small">Select</label>
+                <select
+                  name="select"
+                  className="form-select form-select-sm"
+                  style={{ width: "100px" }}
+                  value={filters.regionalOffice}
+                  onChange={handleFilterChange}
+                >
+                  <option value="">Select</option>
+                  <option value="1">1</option>
+                </select>
+              </div>
 
-              <div
-                className="filter-group"
-                style={{
-                  justifyContent: "flex-end",
-                }}
-              >
+              {/* Ward */}
+              <div className="col-auto">
+                <label className="form-label mb-0 small">Select Ward</label>
+                <select
+                  name="ward"
+                  className="form-select form-select-sm"
+                  style={{ width: "130px" }}
+                  value={filters.ward}
+                  onChange={handleFilterChange}
+                >
+                  <option value="">Select Ward</option>
+                  <option value="1">Ward 1</option>
+                </select>
+              </div>
+
+              {/* Payment Status */}
+              <div className="col-auto">
+                <label className="form-label mb-0 small">Payment Status</label>
+                <select
+                  name="paymentStatus"
+                  className="form-select form-select-sm"
+                  style={{ width: "140px" }}
+                  value={filters.paymentStatus}
+                  onChange={handleFilterChange}
+                >
+                  <option value="">Payment Status</option>
+                  <option value="P">Paid</option>
+                  <option value="U">Un Paid</option>
+                </select>
+              </div>
+
+              {/* Clear Button */}
+              <div className="col-auto">
                 <button
                   type="button"
-                  className="btn-clear-filters"
+                  className="btn btn-outline-secondary btn-sm"
                   onClick={handleClearFilters}
                 >
                   <i className="bi bi-x-lg me-1"></i>
@@ -1283,20 +880,22 @@ const BillList = () => {
                 </button>
               </div>
 
-              <ExcelExportButton
-                tableHeaders={tableHeaders}
-                data={excelData}
-                keyMapping={keyMapping}
-                fileName="NoticeList.xlsx"
-                buttonText="Excel"
-                className="btn btn-sm btn-success"
-              />
+              {/* Excel Export */}
+              <div className="col-auto">
+                <ExcelExportButton
+                  tableHeaders={tableHeaders}
+                  data={excelData}
+                  keyMapping={keyMapping}
+                  fileName="NoticeNirmitiReport.xlsx"
+                  buttonText="Excel"
+                  className="btn btn-sm btn-success"
+                />
+              </div>
             </div>
           </div>
         </div>
 
         {/* ERROR */}
-
         {error && (
           <div className="alert alert-danger m-3">
             <i className="bi bi-exclamation-triangle me-2"></i>
@@ -1305,82 +904,35 @@ const BillList = () => {
         )}
 
         {/* TABLE */}
-
         <div className="table-responsive">
           <table className="table align-middle mb-0">
             <thead>
               <tr>
-                <th>अनुक्रमांक</th>
+                <th>अ क्र</th>
+                <th>पंचानाम क्र.</th>
+                <th>पंचानाम दिनांक</th>
+                <th>वेळ</th>
                 <th>नोटीस क्र.</th>
-                <th>पंचनामा क्र.</th>
                 <th>नाव</th>
-                <th>पद</th>
-                <th>पंचनामा दिनांक व वेळ</th>
-                <th>जाहिरातीचा पत्ता</th>
-                <th>प्रभाग</th>
-                <th>शुल्क रक्कम</th>
-                <th>शुल्क स्थिती</th>
+                <td>ठिकाण</td>
+                <td>प्रभाग</td>
                 <th>क्रिया</th>
               </tr>
             </thead>
-
             <tbody>
               {participants.length > 0 ? (
                 participants.map((panchanama, index) => (
                   <tr key={panchanama.NUM_ILLEGALHOARD_ID || index}>
-                    {/* ID */}
-                    <td>
-                      <strong>{panchanama.NUM_ILLEGALHOARD_ID || "-"}</strong>
-                    </td>
-                    <td>{panchanama.VAR_NOTGEN_NO || "-"}</td>
-
-                    {/* PANCHANAMA NO */}
-                    <td>{panchanama.VAR_ILLEGALHOARD_PANCHANAMA_NO || "-"}</td>
-
-                    {/* USER NAME */}
-                    <td>
-                      <div className="fw-semibold">
-                        {panchanama.VAR_USER1 || "-"}
-                      </div>
-                    </td>
-
-                    {/* USER POST */}
-                    <td>{panchanama.VAR_USER1_POST || "-"}</td>
-
-                    {/* CAPTURE DATE + TIME */}
-                    <td>
-                      {formatDateTime(
-                        panchanama.DAT_CAP_DT,
-                        panchanama.VAR_CAP_TIME,
-                      )}
-                    </td>
-
-                    {/* ADDRESS */}
-                    <td>{panchanama.VAR_ILLEGALHOARD_ADD || "-"}</td>
-
-                    {/* WARD */}
-                    <td>{panchanama.VAR_ILLEGALHOARD_WARD || "-"}</td>
-
-                    {/* shulk rakkam */}
-                    <td>{panchanama.NUM_NOTGEN_AMT || "-"}</td>
-                    {/* shulk sthithi */}
-                    <td>{panchanama.VAR_NOTGEN_PAYMENTSTATUS || "-"}</td>
-
-                    {/* ACTION */}
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
                     <td>
                       <div className="d-flex gap-1 align-items-center">
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-primary"
-                          onClick={() => {
-                            renderPaymentModal(
-                              panchanama.NUM_NOTGEN_AMT,
-                              panchanama.VAR_NOTGEN_NO,
-                            );
-                          }}
-                        >
-                          Pay
-                        </button>
                         <button
                           type="button"
                           className="btn btn-sm btn-primary"
@@ -1388,6 +940,32 @@ const BillList = () => {
                         >
                           <i className="bi bi-eye me-1"></i>
                           View
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-success"
+                          onClick={() => handleGenerateNotice(panchanama)}
+                          disabled={
+                            generatingNoticeId ===
+                            panchanama.NUM_ILLEGALHOARD_ID
+                          }
+                        >
+                          {generatingNoticeId ===
+                          panchanama.NUM_ILLEGALHOARD_ID ? (
+                            <>
+                              <span
+                                className="spinner-border spinner-border-sm me-1"
+                                role="status"
+                                aria-hidden="true"
+                              ></span>
+                              Generating...
+                            </>
+                          ) : (
+                            <>
+                              <i className="bi bi-file-earmark-pdf me-1"></i>
+                              Generate
+                            </>
+                          )}
                         </button>
                       </div>
                     </td>
@@ -1401,8 +979,9 @@ const BillList = () => {
                         className="bi bi-inbox"
                         style={{ fontSize: "2rem" }}
                       ></i>
-
-                      <div className="mt-2">No Panchanama records found</div>
+                      <div className="mt-2">
+                        No notice nirmiti records found
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -1412,10 +991,7 @@ const BillList = () => {
         </div>
 
         {/* PAGINATION */}
-
         <div className="d-flex align-items-center justify-content-between mt-4 px-3 pb-3">
-          {/* RECORD COUNT */}
-
           <div className="text-muted small">
             Showing{" "}
             <strong>
@@ -1425,16 +1001,11 @@ const BillList = () => {
             of <strong>{totalRecords}</strong> participants
           </div>
 
-          {/* PAGE SIZE */}
-
           <div className="d-flex align-items-center gap-2">
             <span className="text-muted small">Show</span>
-
             <select
               className="form-select form-select-sm"
-              style={{
-                width: "75px",
-              }}
+              style={{ width: "75px" }}
               value={pageSize}
               onChange={(e) => {
                 setPageSize(Number(e.target.value));
@@ -1442,21 +1013,14 @@ const BillList = () => {
               }}
             >
               <option value={5}>5</option>
-
               <option value={10}>10</option>
-
               <option value={20}>20</option>
-
               <option value={50}>50</option>
             </select>
           </div>
 
-          {/* PAGINATION */}
-
           <nav aria-label="Page navigation">
             <ul className="pagination mb-0">
-              {/* FIRST */}
-
               <li
                 className={`page-item ${currentPage === 1 ? "disabled" : ""}`}
               >
@@ -1468,9 +1032,6 @@ const BillList = () => {
                   <i className="bi bi-chevron-double-left"></i>
                 </button>
               </li>
-
-              {/* PREVIOUS */}
-
               <li
                 className={`page-item ${currentPage === 1 ? "disabled" : ""}`}
               >
@@ -1482,15 +1043,10 @@ const BillList = () => {
                   <i className="bi bi-chevron-left"></i>
                 </button>
               </li>
-
-              {/* PAGE NUMBERS */}
-
               {getPaginationPages().map((page) => (
                 <li
                   key={page}
-                  className={`page-item ${
-                    currentPage === page ? "active" : ""
-                  }`}
+                  className={`page-item ${currentPage === page ? "active" : ""}`}
                 >
                   <button
                     className="page-link"
@@ -1500,13 +1056,8 @@ const BillList = () => {
                   </button>
                 </li>
               ))}
-
-              {/* NEXT */}
-
               <li
-                className={`page-item ${
-                  currentPage === totalPages ? "disabled" : ""
-                }`}
+                className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}
               >
                 <button
                   className="page-link"
@@ -1516,13 +1067,8 @@ const BillList = () => {
                   <i className="bi bi-chevron-right"></i>
                 </button>
               </li>
-
-              {/* LAST */}
-
               <li
-                className={`page-item ${
-                  currentPage === totalPages ? "disabled" : ""
-                }`}
+                className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}
               >
                 <button
                   className="page-link"
@@ -1537,19 +1083,13 @@ const BillList = () => {
         </div>
       </div>
 
-      {/* ================================================= */}
-      {/* FULL IMAGE MODAL */}
-      {/* ================================================= */}
-
+      {/* IMAGE MODAL */}
       {showImageModal && selectedImages.length > 0 && (
         <div
           className="modal show d-block"
           tabIndex="-1"
           role="dialog"
-          style={{
-            backgroundColor: "rgba(0,0,0,0.8)",
-            zIndex: 2200,
-          }}
+          style={{ backgroundColor: "rgba(0,0,0,0.8)", zIndex: 2200 }}
         >
           <div
             className="modal-dialog"
@@ -1560,33 +1100,20 @@ const BillList = () => {
               alignItems: "center",
             }}
           >
-            <div
-              className="modal-content bg-dark"
-              style={{
-                border: "none",
-              }}
-            >
-              {/* HEADER */}
-
+            <div className="modal-content bg-dark" style={{ border: "none" }}>
               <div className="modal-header bg-dark border-secondary">
                 <h5 className="modal-title text-white">
                   Photo {selectedImageIndex + 1} of {selectedImages.length}
                 </h5>
-
                 <button
                   type="button"
                   className="btn-close btn-close-white"
                   onClick={() => setShowImageModal(false)}
                 ></button>
               </div>
-
-              {/* IMAGE */}
-
               <div
                 className="modal-body p-0 d-flex align-items-center justify-content-center"
-                style={{
-                  minHeight: "60vh",
-                }}
+                style={{ minHeight: "60vh" }}
               >
                 <img
                   src={`data:image/jpeg;base64,${selectedImages[selectedImageIndex]}`}
@@ -1598,9 +1125,6 @@ const BillList = () => {
                   }}
                 />
               </div>
-
-              {/* FOOTER */}
-
               <div className="modal-footer bg-dark border-secondary justify-content-between">
                 <button
                   type="button"
@@ -1611,7 +1135,6 @@ const BillList = () => {
                   <i className="bi bi-chevron-left me-1"></i>
                   Previous
                 </button>
-
                 <button
                   type="button"
                   className="btn btn-outline-light"
@@ -1627,256 +1150,10 @@ const BillList = () => {
         </div>
       )}
 
-      {/* ================================================= */}
-      {/* PARTICIPANT DETAILS MODAL */}
-      {/* ================================================= */}
-
+      {/* DETAILS MODAL */}
       {showDetailsModal && renderDetailsModal()}
 
-      {/* ================================================= */}
-      {/* PAYMENT MODAL */}
-      {/* ================================================= */}
-
-      {showPaymentModal && (
-        <div
-          className="modal show d-flex"
-          tabIndex="-1"
-          role="dialog"
-          style={{
-            backgroundColor: "rgba(0,0,0,0.8)",
-            zIndex: 2200,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <div
-            className="modal-dialog"
-            style={{
-              width: "70vw",
-              maxWidth: "90vw",
-              height: "90vh",
-              margin: 0,
-            }}
-          >
-            <div
-              className="modal-content"
-              style={{
-                border: "none",
-                height: "100%",
-              }}
-            >
-              <div className="modal-header">
-                <h5 className="modal-title">वसुली</h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  aria-label="Close"
-                  onClick={handlePaymentModalClose}
-                ></button>
-              </div>
-
-              <div
-                className="modal-body"
-                style={{
-                  overflowY: "auto",
-                }}
-              >
-                <form onSubmit={handleSubmit(handlePayment)}>
-                  <div className="row g-3">
-                    <div className="col-12 col-md-6">
-                      <label className="form-label">नोटीस क्रमांक</label>
-                      <div className="d-flex gap-2">
-                        <input
-                          type="text"
-                          className="form-control"
-                          {...register("noticeNumber")}
-                        />
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-primary"
-                          onClick={() => {
-                            // handleNoticeSearch();
-                          }}
-                        >
-                          शोधा
-                        </button>
-                      </div>
-                    </div>
-                    <div className="col-12 col-md-6">
-                      <label className="form-label">देयक प्रकार</label>
-                      <select
-                        className="form-select"
-                        {...register("paymentType")}
-                      >
-                        <option value="">--SELECT--</option>
-                        <option value="Cash">Cash</option>
-                        <option value="Cheque">Cheque</option>
-                        <option value="Online">Online</option>
-                        <option value="UPI">UPI</option>
-                      </select>
-                    </div>
-                    <div className="col-12 col-md-6">
-                      <label className="form-label">
-                        रक्कम
-                        <span className="required">*</span>
-                      </label>
-                      <div className="d-flex gap-2">
-                        <input
-                          type="text"
-                          className="form-control"
-                          {...register("amount")}
-                        />
-                      </div>
-                    </div>
-                    <div className="col-12 col-md-6">
-                      <label className="form-label">
-                        बँकेचे नाव
-                        {/* <span className="required">*</span> */}
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        {...register("bankName")}
-                        disabled={
-                          paymentType === "Cash" ||
-                          paymentType === "UPI" ||
-                          paymentType === ""
-                        }
-                      />
-                    </div>
-                    <div className="col-12 col-md-6">
-                      <label className="form-label">
-                        शाखा
-                        {/* <span className="required">*</span> */}
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        {...register("branch")}
-                        disabled={
-                          paymentType === "Cash" ||
-                          paymentType === "UPI" ||
-                          paymentType === ""
-                        }
-                      />
-                    </div>
-                    <div className="col-12 col-md-6">
-                      <label className="form-label">धनादेश क्र.</label>
-                      <div className="d-flex gap-2">
-                        <input
-                          type="text"
-                          className="form-control"
-                          {...register("chequeNumber")}
-                        />
-                      </div>
-                    </div>
-                    <div className="col-12 col-md-6">
-                      <label className="form-label">धनादेश दिनांक</label>
-                      <input
-                        type="date"
-                        className="form-control"
-                        {...register("chequeDate")}
-                      />
-                    </div>
-                    <div className="col-12 col-md-6">
-                      <label className="form-label">शेरा</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        {...register("remarks")}
-                      />
-                    </div>
-                    <div className="col-12 col-md-6">
-                      <label className="form-label">MICR Code</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        {...register("micrCode")}
-                      />
-                    </div>
-                    <div className="col-12 col-md-6">
-                      <label className="form-label">धनादेश प्रकार</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        {...register("chequeType")}
-                      />
-                    </div>
-                    <div className="col-12 col-md-6">
-                      <label className="form-label">Transation ID</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        {...register("transactionId")}
-                      />
-                    </div>
-                    <div className="col-12 col-md-6">
-                      <label className="form-label">मोबाईल क्र.</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        {...register("mobileNumber")}
-                      />
-                    </div>
-                    <div className="col-12 col-md-6">
-                      <label className="form-label">ईमेल</label>
-                      <input
-                        type="email"
-                        className="form-control"
-                        {...register("email")}
-                      />
-                    </div>
-                    <div className="col-12 col-md-6">
-                      <label className="form-label">पत्ता</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        {...register("address")}
-                      />
-                    </div>
-                    <div className="col-12 col-md-6">
-                      <label className="form-label">नाव</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        {...register("name")}
-                      />
-                    </div>
-                    <div className="col-12 col-md-6">
-                      <label className="form-label">वसुली रक्कम</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        {...register("recoveryAmount")}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="my-4 justify-content-center d-flex gap-2">
-                    <button type="button" className="btn btn-primary">
-                      Pay
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      onClick={() => {
-                        handlePaymentModalClose();
-                      }}
-                    >
-                      Close
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ================================================= */}
       {/* RESPONSE MODAL */}
-      {/* ================================================= */}
-
       <ResponseModal
         isOpen={isModalOpen}
         type={modalType}
@@ -1888,4 +1165,4 @@ const BillList = () => {
   );
 };
 
-export default BillList;
+export default PanchanamaNirmitiReport;

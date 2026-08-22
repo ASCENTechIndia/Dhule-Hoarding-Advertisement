@@ -46,6 +46,11 @@ import BillList from './pages/supervisior/BillList';
 // Dashboard
 import Dashboard2 from './pages/dashboard/Dashboard';
 import ComplaintDashboard from './pages/complaintDashboard/ComplaintDashboard';
+import NoticeNirmitiReport from './pages/supervisior/NoticeNirmitiReport';
+import PanchanamaNirmitiReport from './pages/supervisior/PanchanamaNirmitiReport';
+import NoticePaymentReport from './pages/supervisior/NoticePaymentReport';
+import WardWiseReport from './pages/supervisior/WardWiseReport';
+import MonthlyWiseReport from './pages/supervisior/MonthlyWiseReport';
 
 function App() {
   return (
@@ -157,6 +162,51 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <NoticeList />
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/notice-nirmiti-report"
+                  element={
+                    <ProtectedRoute>
+                      <NoticeNirmitiReport />
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/panchanama-nirmiti-report"
+                  element={
+                    <ProtectedRoute>
+                      <PanchanamaNirmitiReport />
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/notice-payment-report"
+                  element={
+                    <ProtectedRoute>
+                      <NoticePaymentReport />
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/ward-wise-report"
+                  element={
+                    <ProtectedRoute>
+                      <WardWiseReport />
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/monthly-wise-report"
+                  element={
+                    <ProtectedRoute>
+                      <MonthlyWiseReport />
                     </ProtectedRoute>
                   }
                 />

@@ -1340,6 +1340,13 @@ html[data-theme="dark"] .auth-body {
   box-shadow: var(--admin-ring);
 }
 
+.form-text-input{
+  outline: none;
+  border-radius: 4px;
+  border: 1px solid var(--admin-border);
+  padding: 5px 10px;
+}
+
 .form-control::placeholder {
   color: var(--admin-muted);
 }

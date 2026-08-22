@@ -411,7 +411,9 @@ async function getPanchanamalistRepo(
   fromDate,
   toDate,
   page = 1,
-  limit = 10
+  limit = 10,
+  ulbId,
+  userId
 ) {
   const pageNumber = Number(page) || 1;
   const limitNumber = Number(limit) || 10;
@@ -424,10 +426,10 @@ async function getPanchanamalistRepo(
 
   let sql = `
     SELECT num_illegalhoard_id, var_illegalhoard_panchanama_no, var_user1, var_user1_post, dat_cap_dt, var_cap_time, var_illegalhoard_add, var_illegalhoard_ward
-    FROM VW_ILLEGALHOARDING a
+    FROM VW_ILLEGALHOARDING a where a.num_illegalhoard_ulbid = :ulbId and a.var_userid = :userId
   `;
 
-  const binds = {};
+  const binds = {ulbId:ulbId,userId:userId};
 
   // =========================================================
   // DATE FILTER
@@ -435,7 +437,7 @@ async function getPanchanamalistRepo(
 
   if (fromDate && toDate) {
     sql += `
-      WHERE TRUNC(a.DAT_CAP_DT) BETWEEN
+      AND TRUNC(a.DAT_CAP_DT) BETWEEN
         TO_DATE(:fromDate, 'YYYY-MM-DD')
         AND TO_DATE(:toDate, 'YYYY-MM-DD')
     `;
@@ -449,7 +451,7 @@ async function getPanchanamalistRepo(
   // =========================================================
 
   sql += `
-    ORDER BY a.DAT_CAP_DT DESC
+    ORDER BY a.num_illegalhoard_id DESC
     OFFSET :offset ROWS
     FETCH NEXT :limit ROWS ONLY
   `;
@@ -467,14 +469,15 @@ async function getPanchanamalistRepo(
 
   let countSql = `
     SELECT COUNT(*) AS TOTAL
-    FROM VW_ILLEGALHOARDING a
+    FROM VW_ILLEGALHOARDING a where a.num_illegalhoard_ulbid = :ulbId and a.var_userid = :userId
   `;
 
-  const countBinds = {};
+  const countBinds = {ulbId:ulbId,userId:userId};
+
 
   if (fromDate && toDate) {
     countSql += `
-      WHERE TRUNC(a.DAT_CAP_DT) BETWEEN
+      AND TRUNC(a.DAT_CAP_DT) BETWEEN
         TO_DATE(:fromDate, 'YYYY-MM-DD')
         AND TO_DATE(:toDate, 'YYYY-MM-DD')
     `;

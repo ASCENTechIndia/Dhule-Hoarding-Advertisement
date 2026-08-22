@@ -6,6 +6,7 @@ import ResponseModal from "../../components/ResponseModal";
 import axios from 'axios';
 import { generatePDF } from "../../utils/pdfHelper.jsx";
 import ExcelExportButton from "../../components/ExcelExportButton.jsx";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 const getToday = () => {
   const d = new Date();
@@ -18,6 +19,7 @@ const getToday = () => {
 };
 
 const PanchanamaList = () => {
+  const { user } = useAuth();
   const { setLoader } = useLoader();
 
   // =========================================================
@@ -112,7 +114,7 @@ const PanchanamaList = () => {
       setLoader(true);
       setError(null);
 
-      let url = `/advertisement/getPanchanamalist?page=${dataPage}&limit=${pageSize}`;
+      let url = `/advertisement/getPanchanamalist?page=${dataPage}&limit=${pageSize}&ulbId=${import.meta.env.VITE_ULBID}&userId=${user.userId}`;
 
       if (filters.fromDate) {
         url += `&fromDate=${encodeURIComponent(filters.fromDate)}`;
@@ -230,29 +232,24 @@ const PanchanamaList = () => {
     return pages;
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) {
-      return "-";
-    }
+ const formatDate = (dateString) => {
+  if (!dateString) {
+    return "-";
+  }
 
-    const date = new Date(dateString);
+  const date = new Date(dateString);
 
-    if (isNaN(date.getTime())) {
-      return "-";
-    }
+  if (isNaN(date.getTime())) {
+    return "-";
+  }
 
-    return date
-      .toLocaleString("en-IN", {
-        timeZone: "Asia/Kolkata",
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-      })
-      .replace(",", " - ");
-  };
+  return date.toLocaleDateString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+};
 
   const getPanchanamaPhotos = (panchanama) => {
     return [
@@ -394,47 +391,146 @@ const PanchanamaList = () => {
 
   // add at top of file
 
-  const handlePrintFromRow = async (id) => {
-    try {
-      setLoader(true);
+const handlePrintFromRow = async (id) => {
+  try {
+    setLoader(true);
 
-      // Use axios directly (or your apiClient if it works)
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/advertisement/generatePanchnamaPdf`,
-        { id },
-        {
-          responseType: "blob",
-          headers: {
-            "Content-Type": "application/json",
-            // Add any auth headers if needed
-          },
+    const response = await axios.post(
+      `${import.meta.env.VITE_API_BASE_URL}/advertisement/generatePanchnamaPdf`,
+      { id },
+      {
+        responseType: "blob",
+        headers: {
+          "Content-Type": "application/json",
         },
+      }
+    );
+
+    const contentType = response.headers["content-type"] || "";
+
+    // ==========================================
+    // Check whether response is PDF
+    // ==========================================
+    if (!contentType.includes("application/pdf")) {
+      const text = await response.data.text();
+
+      let errorMessage = "Unable to generate PDF.";
+
+      try {
+        const errorData = JSON.parse(text);
+
+        errorMessage =
+          errorData.message ||
+          errorData.error ||
+          errorMessage;
+      } catch {
+        if (text) {
+          errorMessage = text;
+        }
+      }
+
+      showError(errorMessage);
+      return;
+    }
+
+    // ==========================================
+    // Create PDF Blob
+    // ==========================================
+    const pdfBlob = new Blob([response.data], {
+      type: "application/pdf",
+    });
+
+    const pdfUrl = URL.createObjectURL(pdfBlob);
+
+    // ==========================================
+    // Open PDF after generation is completed
+    // ==========================================
+    const printWin = window.open(
+      pdfUrl,
+      "_blank",
+      `width=${screen.availWidth},height=${screen.availHeight},left=0,top=0`
+    );
+
+    // Popup blocked
+    if (!printWin) {
+      URL.revokeObjectURL(pdfUrl);
+
+      showError(
+        "Please allow pop-ups to open and print the PDF."
       );
 
-      // Check if the response is an error (JSON) or PDF
-      const blob = response.data;
-      const contentType = response.headers["content-type"]; // now should exist with axios
-
-      if (contentType && contentType.includes("application/json")) {
-        const text = await blob.text();
-        const json = JSON.parse(text);
-        console.error("PDF error:", json.message || "Failed to generate PDF.");
-        return;
-      }
-
-      // It's a PDF – create a blob URL and open in new tab
-      const url = URL.createObjectURL(blob);
-      const newTab = window.open(url, "_blank");
-      if (!newTab) {
-        console.error("Popup blocked. Please allow pop-ups to open the PDF.");
-      }
-      setTimeout(() => URL.revokeObjectURL(url), 60000);
-    } catch (err) {
-      console.error("PDF generation failed:", err);
-    } finally {
-      setLoader(false);
+      return;
     }
-  };
+
+    // ==========================================
+    // Print after PDF viewer loads
+    // ==========================================
+    setTimeout(() => {
+      try {
+        if (!printWin.closed) {
+          printWin.focus();
+          printWin.print();
+        }
+      } catch (error) {
+        console.error("Print failed:", error);
+      }
+    }, 2500);
+
+    // ==========================================
+    // Cleanup Blob URL
+    // ==========================================
+    setTimeout(() => {
+      URL.revokeObjectURL(pdfUrl);
+    }, 60000);
+
+  } catch (err) {
+    console.error("PDF generation failed:", err);
+
+    // ==========================================
+    // Handle Blob error response
+    // ==========================================
+    if (err.response?.data instanceof Blob) {
+      try {
+        const text = await err.response.data.text();
+
+        let errorMessage =
+          "Unable to generate Panchnama PDF.";
+
+        try {
+          const errorData = JSON.parse(text);
+
+          errorMessage =
+            errorData.message ||
+            errorData.error ||
+            errorMessage;
+        } catch {
+          if (text) {
+            errorMessage = text;
+          }
+        }
+
+        showError(errorMessage);
+      } catch (blobError) {
+        console.error(
+          "Error reading API error response:",
+          blobError
+        );
+
+        showError(
+          "Unable to generate Panchnama PDF."
+        );
+      }
+    } else {
+      showError(
+        err.response?.data?.message ||
+          err.message ||
+          "Unable to generate Panchnama PDF."
+      );
+    }
+  } finally {
+    setLoader(false);
+  }
+};
 
   // =========================================================
   // CLOSE DETAILS MODAL
@@ -582,8 +678,8 @@ const PanchanamaList = () => {
     // =========================================================
     const fieldLabels = {
       VAR_ILLEGALHOARD_PANCHANAMA_NO: "पंचनामा क्रमांक",
-      DAT_CAP_DT: "वेळ",
-      VAR_CAP_TIME: "दिनांक",
+      DAT_CAP_DT: "दिनांक",
+      VAR_CAP_TIME: "वेळ",
       VAR_USER1: "पंचनामा करणाऱ्याचे नाव",
       VAR_USER1_POST: "पंचनामा करणाऱ्याचे पद",
       VAR_ILLEGALHOARD_ADD: "अनधिकृत जाहिरात लावलेल्या ठिकाणाचा संपूर्ण पत्ता",

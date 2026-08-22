@@ -1151,7 +1151,7 @@ function AdvertisementPanchnama() {
             <div className="row g-3 mb-4">
               <div className="col-md-6">
                 <label className="form-label">
-                  अनधिकृत जाहिरात लावलेल्या ठिकाणाचा संपूर्ण पत्ता
+                  अनधिकृत जाहिरात फलक लावलेल्या ठिकाणाचा संपूर्ण पत्ता
                   <span className="required">*</span>
                 </label>
 

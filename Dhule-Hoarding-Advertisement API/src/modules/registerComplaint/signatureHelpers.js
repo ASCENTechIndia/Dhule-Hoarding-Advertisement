@@ -7,8 +7,7 @@ const forge = require("node-forge");
 
 /**
  * Adds a visible digital signature widget to the PDF.
- * Appearance: yellow question mark with shadow (original design).
- * No border, no date, no name text – just the question mark.
+ * Appearance: yellow question mark with shadow and black signer details.
  */
 async function createVisibleSignature(
   pdfBuffer,
@@ -143,10 +142,10 @@ async function createVisibleSignature(
     Resources: { Font: fontDictRef },
   });
 
-  // Calculate scale to fit the 100x100 question mark drawing into the widget box
-  const size = Math.min(width, height);
+  // Use the icon as a translucent background watermark for the text.
+  const size = Math.min(100, height);
   const scale = size / 100; // original coordinates are in 0–100 space
-  const dx = (width - size) / 2;
+  const dx = width - size;
   const dy = (height - size) / 2;
 
   // Original question mark drawing (with shadow)
@@ -207,7 +206,21 @@ Q
     BBox: [0, 0, width, height],
     Resources: { Font: fontDictRef },
   });
-  const n4Stream = pdfDoc.context.stream("", n4Dict);
+  const escapePdfText = (value) =>
+    String(value).replace(/([\\()])/g, "\\$1");
+  const displayName = signerName || "DS Dhule Municipal Corporation";
+  const signingDate = new Date().toISOString().slice(0, 19).replace("T", " ");
+  const n4Path = `
+BT
+/Helv 5 Tf
+0 0 0 rg
+88 ${height - 25} Td
+(Digitally signed by ${escapePdfText(displayName)}) Tj
+0 -11 Td
+(Date and time: ${escapePdfText(signingDate)}) Tj
+ET
+`;
+  const n4Stream = pdfDoc.context.stream(n4Path, n4Dict);
   const n4Ref = pdfDoc.context.register(n4Stream);
 
   // --- Normal appearance ---
@@ -235,6 +248,14 @@ Q
     Type: "Sig",
     Filter: "Adobe.PPKLite",
     SubFilter: "adbe.pkcs7.detached",
+    Name: PDFString.of(signerName || "DS Dhule Municipal Corporation"),
+    M: PDFString.of(
+      `D:${new Date()
+        .toISOString()
+        .replace(/[-:]/g, "")
+        .replace(/\.\d{3}Z$/, "Z")
+        .replace("T", "")}`
+    ),
     ByteRange: [0, PDFName.of("**********"), PDFName.of("**********"), PDFName.of("**********")],
     Contents: PDFHexString.of("A".repeat(15000)),
   });
@@ -256,7 +277,7 @@ Q
       BG: [1, 1, 1],
       BC: [1, 1, 1],
     },
-    DA: PDFString.of("/Helv 0 Tf 1 1 1 rg"),
+    DA: PDFString.of("/Helv 0 Tf 0 0 0 rg"),
   });
   const widgetRef = pdfDoc.context.register(widgetDict);
 

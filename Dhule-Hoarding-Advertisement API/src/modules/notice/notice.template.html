@@ -8,6 +8,7 @@
   <title>Notice / नोटीस</title>
 
   <style>
+
     /* =====================================================
        A4 PAGE
     ===================================================== */
@@ -23,99 +24,136 @@
 
     html,
     body {
-      margin: 0;
-      padding: 0;
       width: 210mm;
       height: 297mm;
+
+      margin: 0;
+      padding: 0;
     }
 
     body {
-      font-family: 'Noto Sans Devanagari', Arial, sans-serif;
+      font-family: "Noto Sans Devanagari", Arial, sans-serif;
+
       font-size: 12px;
+
+      background: #fff;
+
+      overflow: hidden;
     }
 
+
     /* =====================================================
-       MAIN CONTAINER
+       A4 CONTAINER
     ===================================================== */
 
     .container {
-      width: 210mm;
-      height: 297mm;
 
-      border: 1px solid #000;
+      width: 194mm;
+      height: 281mm;
 
-      padding: 12mm 15mm;
+      margin: 8mm;
 
-      margin: 0;
+      border: 1.5px solid #000;
 
-      overflow: hidden;
+      padding: 7mm 11mm;
 
       position: relative;
+
+      background: #fff;
+
+      overflow: hidden;
     }
+
 
     /* =====================================================
        HEADER
     ===================================================== */
 
     .header {
+
+      width: 100%;
+
       text-align: center;
-      margin-bottom: 18px;
+
+      margin: 0 0 8px 0;
+
+      padding: 0;
     }
+
 
     .corporation-brand {
+
       display: flex;
+
       align-items: center;
+
       justify-content: center;
 
-      gap: 12px;
+      gap: 10px;
 
-      margin-top: 5px;
+      margin: 0;
+
+      padding: 0;
     }
+
 
     .logo {
-      width: 60px;
-      height: 60px;
+
+      width: 68px;
+      height: 68px;
 
       object-fit: contain;
+
+      flex-shrink: 0;
     }
 
+
     .corporation-name {
-      font-size: 24px;
+
+      font-size: 28px;
 
       font-weight: bold;
 
       color: #0b68af;
 
-      line-height: 1.2;
+      line-height: 1.15;
     }
 
+
     /* =====================================================
-       ZONAL OFFICE
+       OFFICE SECTION
     ===================================================== */
 
+    .office-section {
+
+      width: 100%;
+
+      margin: 0 0 12px 0;
+
+      padding: 0;
+    }
+
+
     .zonal-office {
+
       text-align: center;
 
       font-size: 13px;
 
       font-weight: bold;
 
-      margin-top: 8px;
+      margin: 0 0 8px 0;
 
-      margin-bottom: 20px;
+      padding: 0;
     }
+
 
     /* =====================================================
-       OFFICE / NOTICE DETAILS
+       NOTICE NUMBER / DATE
     ===================================================== */
 
-    .office-section {
-      margin-top: 5px;
-
-      margin-bottom: 25px;
-    }
-
     .notice-number-row {
+
       width: 100%;
 
       display: flex;
@@ -124,175 +162,331 @@
 
       align-items: center;
 
-      font-size: 12px;
+      font-size: 11.5px;
+
+      margin: 0;
+
+      padding: 0;
     }
+
 
     .notice-number {
       text-align: left;
     }
 
+
     .notice-date {
       text-align: right;
     }
+
 
     /* =====================================================
        RECEIVER
     ===================================================== */
 
     .receiver-section {
-      margin-top: 20px;
 
-      line-height: 1.9;
+      margin-top: 15px;
+
+      line-height: 1.7;
+
+      font-size: 12px;
+    }
+
+
+    .office-label {
+
+      font-weight: bold;
+
+      margin-bottom: 4px;
 
       font-size: 12.5px;
     }
 
-    .office-label {
-      font-weight: bold;
-
-      margin-bottom: 6px;
-
-      font-size: 13px;
-    }
 
     .dotted-line {
-      display: inline-block;
 
-      min-width: 180px;
+      display: inline;
 
-      border-bottom: 1px dotted #000;
+      border-bottom: none;
     }
+
 
     /* =====================================================
        SUBJECT
     ===================================================== */
 
     .subject {
+
+      width: 100%;
+
       text-align: center;
 
       font-weight: bold;
 
-      margin: 22px 0;
+      margin: 11px 0;
 
-      font-size: 13px;
+      font-size: 12.5px;
 
-      line-height: 1.7;
+      line-height: 1.4;
     }
+
 
     /* =====================================================
        NOTICE HEADING
     ===================================================== */
 
     .notice-heading {
+
+      width: 100%;
+
       font-weight: bold;
 
-      font-size: 16px;
+      font-size: 17px;
 
-      margin-bottom: 15px;
+      margin: 0 0 8px 0;
 
       text-align: center;
     }
+
 
     /* =====================================================
        NOTICE CONTENT
     ===================================================== */
 
     .notice-content {
+
+      width: 100%;
+
       text-align: justify;
 
-      line-height: 2;
+      line-height: 1.6;
 
-      font-size: 13px;
+      font-size: 12.5px;
     }
+
+
+    .notice-content p {
+
+      margin: 0 0 7px 0;
+
+      padding: 0;
+
+      text-indent: 30px;
+    }
+
 
     /* =====================================================
        DYNAMIC VALUES
     ===================================================== */
 
     .dynamic {
+
       font-weight: bold;
 
-      font-size: 13px;
+      font-size: 12.5px;
     }
 
+
     /* =====================================================
-       PLACE AND DATE AT END
+       NOTICE END DETAILS
     ===================================================== */
 
     .notice-end-details {
-      margin-top: 30px;
 
-      font-size: 12.5px;
+      width: 100%;
 
-      line-height: 2;
+      margin-top: 14px;
+
+      margin-bottom: 6px;
+
+      padding: 0;
+
+      font-size: 12px;
+
+      line-height: 1.7;
 
       text-align: left;
+
+      page-break-inside: avoid;
+
+      break-inside: avoid;
     }
 
+
+    .notice-end-details div {
+
+      margin: 0;
+
+      padding: 0;
+    }
+
+
     /* =====================================================
-       DIGITAL SIGNATURE
+       DIGITAL SIGNATURE SECTION
+
+       IMPORTANT:
+
+       This is NORMAL document flow.
+
+       It will appear immediately after:
+
+       .notice-end-details
     ===================================================== */
 
-    .digital-signature {
-      width: 190px;
+    .footer-two-fields {
 
-      margin-left: auto;
+      width: 100%;
 
-      margin-top: 25px;
+      display: flex;
 
-      margin-bottom: 12px;
+      flex-direction: column;
+
+      align-items: flex-end;
+
+      margin: 4px 0 0 0;
+
+      padding: 0;
+
+      page-break-inside: avoid;
+
+      break-inside: avoid;
+    }
+
+
+    /* =====================================================
+       SIGNATURE ANCHOR
+    ===================================================== */
+
+    #signature-anchor {
+
+      width: 240px;
+
+      height: 72px;
+
+      margin: 0 0 2px 0;
+
+      padding: 0;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
 
       text-align: center;
 
+      flex-shrink: 0;
+
+      page-break-inside: avoid;
+
+      break-inside: avoid;
+
+      overflow: hidden;
+    }
+
+
+    /* =====================================================
+       SIGNATURE TEXT
+    ===================================================== */
+
+    .signature-anchor-text {
+
+      width: 100%;
+
+      text-align: center;
+
+      font-family: Arial, sans-serif;
+
+      line-height: 1.25;
+
+      color: #000;
+    }
+
+
+    .digital-signed-by {
+
+      font-size: 10px;
+
+      margin: 0;
+
+      padding: 0;
+    }
+
+
+    .digital-corporation {
+
       font-size: 9px;
+
+      margin: 0;
+
+      padding: 0;
     }
 
-    .signature-check {
-      width: 24px;
-      height: 24px;
 
-      margin: 0 auto 4px auto;
-
-      border: 2px solid #168a3b;
-
-      border-radius: 50%;
-
-      color: #168a3b;
-
-      font-size: 17px;
-
-      font-weight: bold;
-
-      line-height: 20px;
-    }
-
-    .signature-title {
-      font-size: 11px;
-
-      font-weight: bold;
-
-      color: #168a3b;
-    }
-
-    .signature-text {
-      margin-top: 2px;
+    .digital-date {
 
       font-size: 8px;
+
+      margin-top: 1px;
+
+      padding: 0;
     }
 
-    .signature-name {
-      margin-top: 3px;
+
+    .digital-officer {
 
       font-size: 9px;
 
       font-weight: bold;
+
+      margin-top: 1px;
+
+      padding: 0;
     }
 
-    .signature-designation {
-      margin-top: 2px;
 
-      font-size: 9px;
+    /* =====================================================
+       OFFICER DETAILS
+    ===================================================== */
+
+    .signature-details {
+
+      width: 240px;
+
+      font-size: 11px;
+
+      line-height: 1.3;
+
+      text-align: center;
+
+      margin: 0;
+
+      padding: 0;
+
+      page-break-inside: avoid;
+
+      break-inside: avoid;
     }
+
+
+    .signature-details p {
+
+      margin: 0;
+
+      padding: 0;
+    }
+
+
+    .signature-details p:first-child {
+
+      font-size: 12px;
+
+      font-weight: bold;
+
+      margin-bottom: 1px;
+    }
+
 
     /* =====================================================
        PRINT
@@ -301,13 +495,16 @@
     @media print {
 
       @page {
+
         size: A4;
 
         margin: 0;
       }
 
+
       html,
       body {
+
         width: 210mm;
 
         height: 297mm;
@@ -315,22 +512,69 @@
         margin: 0;
 
         padding: 0;
-      }
-
-      .container {
-        width: 210mm;
-
-        height: 297mm;
-
-        border: 1px solid #000;
-
-        padding: 12mm 15mm;
-
-        margin: 0;
 
         overflow: hidden;
       }
+
+
+      body {
+
+        background: #fff;
+      }
+
+
+      .container {
+
+        width: 194mm;
+
+        height: 281mm;
+
+        margin: 8mm;
+
+        padding: 7mm 11mm;
+
+        border: 1.5px solid #000;
+
+        position: relative;
+
+        overflow: hidden;
+      }
+
+
+      .footer-two-fields {
+
+        width: 100%;
+
+        display: flex;
+
+        flex-direction: column;
+
+        align-items: flex-end;
+
+        margin-top: 4px;
+
+        page-break-inside: avoid;
+
+        break-inside: avoid;
+      }
+
+
+      #signature-anchor {
+
+        page-break-inside: avoid;
+
+        break-inside: avoid;
+      }
+
+
+      .signature-details {
+
+        page-break-inside: avoid;
+
+        break-inside: avoid;
+      }
     }
+
   </style>
 </head>
 
@@ -338,6 +582,7 @@
 <body>
 
   <div class="container">
+
 
     <!-- =================================================
          HEADER
@@ -368,20 +613,17 @@
 
     <div class="office-section">
 
-      <!-- Zonal Office -->
-
       <div class="zonal-office">
-        क्षेत्रीय कार्यालय क्र, {{ZONAL_NAME}}
+        क्षेत्रीय कार्यालय क्र {{ZONAL_NAME}}
       </div>
 
-
-      <!-- Notice Number + Date -->
 
       <div class="notice-number-row">
 
         <div class="notice-number">
           नोटीस क्रमांक : {{NOTICE_NO}}
         </div>
+
 
         <div class="notice-date">
           दिनांक : {{NOTICE_DATE}}
@@ -401,6 +643,7 @@
       <div class="office-label">
         प्रति
       </div>
+
 
       <div>
 
@@ -440,84 +683,89 @@
 
     <div class="notice-content">
 
-      धुळे महानगरपालिका क्षेत्रात कार्यालयीन कामकाजानिमित्त
-      आज पाहणी केली असता आपण
 
-      <span class="dynamic">
-        {{ADDRESS}}
-      </span>
+      <p>
 
-      येथे
+        धुळे महानगरपालिका क्षेत्रात कार्यालयीन कामकाजानिमित्त आज पाहणी केली असता आपण
 
-      <span class="dynamic">
-        {{LATITUDE}}
-      </span>
+        <span class="dynamic">
+          {{ADDRESS}}
+        </span>
 
-      ,
+        येथे
 
-      <span class="dynamic">
-        {{LONGITUDE}}
-      </span>
+        <span class="dynamic">
+          {{LATITUDE}}
+        </span>,
 
-      या ठिकाणी
+        <span class="dynamic">
+          {{LONGITUDE}}
+        </span>
 
-      <span class="dynamic">
-        {{SIZE}}
-      </span>
+        या ठिकाणी
 
-      आकाराचा अनधिकृत जाहिरात फलक
+        <span class="dynamic">
+          {{SIZE}}
+        </span>
 
-      <span class="dynamic">
-        {{TO_DATE}}
-      </span>
+        आकाराचा अनधिकृत जाहिरात फलक
 
-         पासून
+        <span class="dynamic">
+          {{TO_DATE}}
+        </span>
 
-      <span class="dynamic">
-        {{FROM_DATE}}
-      </span>
+        पासून
 
-   
+        <span class="dynamic">
+          {{FROM_DATE}}
+        </span>
 
-      
+        पर्यंत प्रदर्शित केलेला आढळून आला आहे.
 
-      पर्यंत प्रदर्शित केलेला आढळून आला आहे.
+      </p>
 
 
-      <br>
-      <br>
+      <p>
+
+        धुळे महानगरपालिकेच्या अनधिकृत जाहिरात फलक शुल्क धोरणानुसार या जाहिरात
+        फलकाचे शुल्क रु.
+
+        <span class="dynamic">
+          {{AMOUNT}}
+        </span>
+
+        इतके निश्चित करण्यात आले आहे.
+
+        आपण महानगरपालिकेची पूर्वपरवानगी न घेता सदर जाहिरात फलक प्रसिद्ध केला
+        असल्याने आपण हि नोटीस प्राप्त झाल्यापासून ७ (सात) दिवसांच्या आत
+        वरीलप्रमाणे निश्चित केलेल्या शुल्काचा भरणा धुळे महानगरपालिकेकडे करावा.
+
+      </p>
 
 
-      महानगरपालिकेच्या अनधिकृत जाहिरात फलक शुल्क धोरणानुसार
-      या जाहिरात फलकाचे शुल्क रु.
+      <p>
 
-      <span class="dynamic">
-        {{AMOUNT}}
-      </span>
+        आपण या शुल्काचा भरणा विहित मुदतीत न केल्यास,
 
-      इतके निश्चित करण्यात आले आहे.
+        हि रक्कम मालमत्ता कराची थकबाकी म्हणून आपल्याकडून वसूल करण्यात येईल.
 
+        तसेच आपल्या विरुद्ध
 
-      आपण महानगरपालिकेची पूर्वपरवानगी न घेता सदर जाहिरात फलक
-      प्रसिद्ध केला असल्याने आपण हि नोटीस प्राप्त झाल्यापासून ७ (सात)
-      दिवसांच्या आत वरीलप्रमाणे निश्चित केलेल्या शुल्काचा भरणा धुळे 
-      महानगरपालिकेकडे करावा.
+        <strong>
 
+          महाराष्ट्र मालमत्तेच्या विरुपणास प्रतिबंध करण्यासाठी अधिनियम १९९५
+          अन्वये गुन्हा दाखल करण्यात येईल याची नोंद घ्यावी.
 
-      आपण या शुल्काचा भरणा विहित मुदतीत न केल्यास, हि रक्कम
-      मालमत्ता कराची थकबाकी म्हणून आपल्याकडून वसूल
-      करण्यात येईल.
+        </strong>
 
+      </p>
 
-      तसेच आपल्या विरुद्ध <strong>महाराष्ट्र मालमत्तेच्या विरुपणास
-      प्रतिबंध करण्यासाठी अधिनियम १९९५ अन्वये गुन्हा दाखल
-      करण्यात येईल याची नोंद घ्यावी.</strong>
 
     </div>
 
 
     <!-- =================================================
-         PLACE AND DATE
+         NOTICE END DETAILS
     ================================================== -->
 
     <div class="notice-end-details">
@@ -535,45 +783,76 @@
 
     <!-- =================================================
          DIGITAL SIGNATURE
+
+         IMPORTANT:
+
+         This comes DIRECTLY after notice-end-details.
+
+         It is NOT fixed at the bottom.
     ================================================== -->
 
-    <div class="digital-signature">
-
-      <!-- Green verification indicator -->
-
-      <div class="signature-check">
-        ✓
-      </div>
+    <div class="footer-two-fields">
 
 
-      <div class="signature-title">
-        Digitally Signed
-      </div>
+      <!-- =================================================
+           DIGITAL SIGNATURE ANCHOR
+      ================================================== -->
+
+      <div id="signature-anchor">
+
+        <div class="signature-anchor-text">
 
 
-      <div class="signature-text">
-        This document is digitally signed
-      </div>
+          <div class="digital-signed-by">
+            Digitally signed by DS
+          </div>
 
 
-      <div class="signature-name">
-        {{OFFICER_NAME}}
-      </div>
+          <div class="digital-corporation">
+            Dhule Municipal Corporation
+          </div>
 
 
-      <div class="signature-designation">
-        {{OFFICER_DESIGNATION}}
-      </div>
+          <div class="digital-date">
+            {{CURRENT_DATE_TIME}}
+          </div>
 
 
- <div class="footer-row">
-        <div class="footer-value">
-          क्षेत्रीय कार्यालय क्र, {{ZONAL_NAME}}
+          <div class="digital-officer">
+            {{OFFICER_NAME}}
+          </div>
+
+
         </div>
-         </div>
+
+      </div>
+
+
+      <!-- =================================================
+           OFFICER DETAILS
+      ================================================== -->
+
+      <div class="signature-details">
+
+        <p>
+          {{OFFICER_NAME}}
+        </p>
+
+
+        <p>
+          {{OFFICER_DESIGNATION}}
+        </p>
+
+
+        <p>
+          क्षेत्रीय कार्यालय क्र {{ZONAL_NAME}}
+        </p>
+
+      </div>
 
 
     </div>
+
 
   </div>
 

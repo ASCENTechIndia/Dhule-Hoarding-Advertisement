@@ -29,28 +29,28 @@ export default function Sidebar() {
     },
     {
       path: "/notice-nirmiti-report",
-      icon: "bi-wallet",
-      label: "Notice Nirmiti Report",
+      icon: "bi-file-earmark-bar-graph", 
+      label: "नोटीस निर्मिती अहवाल",
     },
     {
       path: "/panchanama-nirmiti-report",
-      icon: "bi-wallet",
-      label: "Panchanama Nirmiti Report",
+      icon: "bi-file-earmark-bar-graph",
+      label: "पंचनामा निर्मिती अहवाल",
     },
     {
       path: "/notice-payment-report",
-      icon: "bi-wallet",
-      label: "Notice Payment Report",
+      icon: "bi-credit-card", 
+      label: "नोटीस भरणा अहवाल",
     },
     {
       path: "/ward-wise-report",
-      icon: "bi-wallet",
-      label: "Ward Wise Report",
+      icon: "bi-geo-alt", 
+      label: "प्रभागनिहाय अहवाल",
     },
     {
       path: "/monthly-wise-report",
-      icon: "bi-wallet",
-      label: "Monthly Wise Report",
+      icon: "bi-calendar3", 
+      label: "महिनानिहाय अहवाल",
     },
   ];
 
@@ -64,8 +64,6 @@ export default function Sidebar() {
         transition: "transform 0.2s ease",
       }}
     >
-      {/* SIDEBAR HEADER */}
-
       <div className="sidebar-header">
         <img
           src={logo}
@@ -73,8 +71,6 @@ export default function Sidebar() {
           className="m-auto d-lg-block d-none"
         />
       </div>
-
-      {/* SIDEBAR NAVIGATION */}
 
       <nav className="sidebar-nav mt-lg-0 mt-4">
         {navLinks.map((link) => {
@@ -95,7 +91,6 @@ export default function Sidebar() {
               <span className="nav-icon">
                 <i className={`bi ${link.icon}`} aria-hidden="true"></i>
               </span>
-
               <span className="nav-text">{link.label}</span>
             </Link>
           );

@@ -2,7 +2,17 @@ const {
 illegalHoardPaymentService,getIllegalHoardPaymentListService
 } = require('./payment.service');
 
+const { auditLog } = require('../../utils/audit-log');
+
 const { logApiSuccess, logApiError } = require('../../utils/log');
+
+function requestMeta(req) {
+  return {
+    ip: req.ip,
+    method: req.method,
+    path: req.originalUrl,
+  };
+}
 
 async function illegalHoardPayment(req, res, next) {
   try {

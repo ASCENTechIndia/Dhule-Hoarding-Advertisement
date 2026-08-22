@@ -1342,9 +1342,7 @@ const BillList = () => {
     // PAYMENTS MODAL
 
     const renderPaymentModal = async (panchanama) => {
-        console.log(panchanama);
         setShowPaymentModal(true);
-
     }
 
     const handlePaymentModalClose = () => {
@@ -1354,8 +1352,6 @@ const BillList = () => {
 
     const handlePayment = async (data) => {
         try {
-
-
 
             if (paymentType === "Cheque" && (data.bankName === "" || data.branch === "" || data.chequeNumber === "" || data.chequeDate === "")) {
                 setModalType("Warning");

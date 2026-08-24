@@ -127,7 +127,6 @@ const NoticePaymentReport = () => {
       }
 
       const response = await apiClient.get(url);
-      console.log("response :", response);
 
       if (response?.success && response?.data) {
         const participantData = response.data.data || [];

@@ -32,11 +32,11 @@ export default function Sidebar() {
       icon: "bi-file-earmark-bar-graph", 
       label: "नोटीस निर्मिती अहवाल",
     },
-    // {
-    //   path: "/panchanama-nirmiti-report",
-    //   icon: "bi-file-earmark-bar-graph",
-    //   label: "पंचनामा निर्मिती अहवाल",
-    // },
+    {
+      path: "/panchanama-nirmiti-report",
+      icon: "bi-file-earmark-bar-graph",
+      label: "पंचनामा निर्मिती अहवाल",
+    },
     {
       path: "/notice-payment-report",
       icon: "bi-credit-card", 

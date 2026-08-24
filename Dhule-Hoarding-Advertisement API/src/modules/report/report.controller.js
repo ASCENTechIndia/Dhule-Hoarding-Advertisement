@@ -1,4 +1,5 @@
-const {getNoticeNirmitiReportService,getNoticePaymentReportService
+const {getNoticeNirmitiReportService,getNoticePaymentReportService,
+  getPanchanamaNirmitiReportService
 } = require('./report.service');
 
 const { auditLog } = require('../../utils/audit-log');
@@ -107,8 +108,54 @@ async function getNoticePaymentReport(req, res, next) {
   }
 }
 
+async function getPanchanamaNirmitiReport(req, res, next) {
+  try {
+    const {
+      ulbId,
+      officerDivision = null,
+      ward = null,
+      fromDate = null,
+      toDate = null,
+      page = 1,
+      limit = 10,
+    } = req.query;
+
+    const rows = await getPanchanamaNirmitiReportService(
+      ulbId,
+      officerDivision,
+      ward,
+      fromDate,
+      toDate,
+      page,
+      limit
+    );
+
+    logApiSuccess(
+      req,
+      200,
+      {
+        count: rows?.data?.length || 0,
+      },
+      "Panchanama Nirmiti Report completed"
+    );
+
+    return res.ok(rows);
+
+  } catch (error) {
+    logApiError(
+      req,
+      500,
+      error.message,
+      "Panchanama Nirmiti Report search error"
+    );
+
+    return next(error);
+  }
+}
+
 
 module.exports = {
   getNoticeNirmitiReport,
-  getNoticePaymentReport
+  getNoticePaymentReport,
+  getPanchanamaNirmitiReport
 };

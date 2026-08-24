@@ -1,6 +1,6 @@
 const express = require('express');
 const {
-  getNoticeNirmitiReport
+  getNoticeNirmitiReport,getNoticePaymentReport
 } = require('./report.controller');
 
 const router = express.Router();
@@ -8,6 +8,11 @@ const router = express.Router();
 router.get(
   "/getNoticeNirmitiReport",
   getNoticeNirmitiReport
+);
+
+router.get(
+  "/getNoticePaymentReport",
+  getNoticePaymentReport
 );
 
 module.exports = router;

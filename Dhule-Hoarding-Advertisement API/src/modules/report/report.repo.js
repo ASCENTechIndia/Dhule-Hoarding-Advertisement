@@ -207,7 +207,197 @@ async function getNoticeNirmitiReportRepo(
   };
 }
 
+
+async function getNoticePaymentReportRepo(
+  ulbId,
+  payMode,
+  ward,
+  notgenNo,
+  fromDate,
+  toDate,
+  page = 1,
+  limit = 10
+) {
+  const pageNumber = Number(page) || 1;
+  const limitNumber = Number(limit) || 10;
+  const offset = (pageNumber - 1) * limitNumber;
+
+  let sql = `
+    SELECT
+      num_notgen_id,
+      var_notgen_no,
+      var_notgen_detail,
+      num_notgen_ward,
+      num_illegalhoard_coll_amt,
+      var_notgen_paymentstatus,
+      TO_CHAR(payment_date, 'YYYY-MM-DD') AS payment_date,
+      num_illegalhoard_paymode,
+      var_illegalhoard_tranid,
+      num_illegalhoard_notgen_ulbid
+    FROM VW_NOTICE_PAYMENT_REPORT
+    WHERE num_illegalhoard_notgen_ulbid = :ulbId
+  `;
+
+  const binds = {
+    ulbId,
+  };
+
+  // Payment Mode
+  if (payMode) {
+    sql += `
+      AND num_illegalhoard_paymode = :payMode
+    `;
+
+    binds.payMode = payMode;
+  }
+
+  // Ward
+  if (ward) {
+    sql += `
+      AND num_notgen_ward = :ward
+    `;
+
+    binds.ward = ward;
+  }
+
+  // Notice Number
+  if (notgenNo) {
+    sql += `
+      AND var_notgen_no = :notgenNo
+    `;
+
+    binds.notgenNo = notgenNo;
+  }
+
+  // Payment Date Range
+  if (fromDate && toDate) {
+    sql += `
+      AND TRUNC(payment_date) BETWEEN
+        TO_DATE(:fromDate, 'YYYY-MM-DD')
+        AND TO_DATE(:toDate, 'YYYY-MM-DD')
+    `;
+
+    binds.fromDate = fromDate;
+    binds.toDate = toDate;
+  } else if (fromDate) {
+    sql += `
+      AND TRUNC(payment_date) >=
+        TO_DATE(:fromDate, 'YYYY-MM-DD')
+    `;
+
+    binds.fromDate = fromDate;
+  } else if (toDate) {
+    sql += `
+      AND TRUNC(payment_date) <=
+        TO_DATE(:toDate, 'YYYY-MM-DD')
+    `;
+
+    binds.toDate = toDate;
+  }
+
+  sql += `
+    ORDER BY num_notgen_id DESC
+    OFFSET :offset ROWS
+    FETCH NEXT :limit ROWS ONLY
+  `;
+
+  binds.offset = offset;
+  binds.limit = limitNumber;
+
+  const result = await executeQuery(
+    sql,
+    binds,
+    { dbName: "db3" }
+  );
+
+  const rows = result.rows || [];
+
+  // ============================
+  // Count Query
+  // ============================
+
+  let countSql = `
+    SELECT COUNT(*) AS TOTAL
+    FROM VW_NOTICE_PAYMENT_REPORT
+    WHERE num_illegalhoard_notgen_ulbid = :ulbId
+  `;
+
+  const countBinds = {
+    ulbId,
+  };
+
+  if (payMode) {
+    countSql += `
+      AND num_illegalhoard_paymode = :payMode
+    `;
+
+    countBinds.payMode = payMode;
+  }
+
+  if (ward) {
+    countSql += `
+      AND num_notgen_ward = :ward
+    `;
+
+    countBinds.ward = ward;
+  }
+
+  if (notgenNo) {
+    countSql += `
+      AND var_notgen_no = :notgenNo
+    `;
+
+    countBinds.notgenNo = notgenNo;
+  }
+
+  if (fromDate && toDate) {
+    countSql += `
+      AND TRUNC(payment_date) BETWEEN
+        TO_DATE(:fromDate, 'YYYY-MM-DD')
+        AND TO_DATE(:toDate, 'YYYY-MM-DD')
+    `;
+
+    countBinds.fromDate = fromDate;
+    countBinds.toDate = toDate;
+  } else if (fromDate) {
+    countSql += `
+      AND TRUNC(payment_date) >=
+        TO_DATE(:fromDate, 'YYYY-MM-DD')
+    `;
+
+    countBinds.fromDate = fromDate;
+  } else if (toDate) {
+    countSql += `
+      AND TRUNC(payment_date) <=
+        TO_DATE(:toDate, 'YYYY-MM-DD')
+    `;
+
+    countBinds.toDate = toDate;
+  }
+
+  const countResult = await executeQuery(
+    countSql,
+    countBinds,
+    { dbName: "db3" }
+  );
+
+  const total =
+    Number(countResult.rows?.[0]?.TOTAL) || 0;
+
+  return {
+    data: rows,
+
+    pagination: {
+      page: pageNumber,
+      limit: limitNumber,
+      total,
+      totalPages: Math.ceil(total / limitNumber),
+    },
+  };
+}
+
 module.exports = {
-  getNoticeNirmitiReportRepo
+  getNoticeNirmitiReportRepo,
+  getNoticePaymentReportRepo
   
 };

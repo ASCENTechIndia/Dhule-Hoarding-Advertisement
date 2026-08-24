@@ -1,5 +1,6 @@
 ﻿const {
- getNoticeNirmitiReportRepo
+ getNoticeNirmitiReportRepo,
+ getNoticePaymentReportRepo
 } = require("./report.repo");
 
 async function getNoticeNirmitiReportService(
@@ -24,7 +25,30 @@ async function getNoticeNirmitiReportService(
   );
 }
 
+async function getNoticePaymentReportService(
+  ulbId,
+  payMode,
+  ward,
+  notgenNo,
+  fromDate,
+  toDate,
+  page,
+  limit
+) {
+  return getNoticePaymentReportRepo(
+    ulbId,
+    payMode,
+    ward,
+    notgenNo,
+    fromDate,
+    toDate,
+    page,
+    limit
+  );
+}
+
 
 module.exports = {
-  getNoticeNirmitiReportService
+  getNoticeNirmitiReportService,
+  getNoticePaymentReportService
 };

@@ -973,10 +973,10 @@ const BillList = () => {
                 <th>अनुक्रमांक</th>
                 <th>नोटीस क्र.</th>
                 <th>पंचनामा क्र.</th>
-                <th>नाव</th>
-                <th>पद</th>
+                {/* <th>नाव</th> */}
+                {/* <th>पद</th> */}
                 <th>पंचनामा दिनांक व वेळ</th>
-                <th>जाहिरातीचा पत्ता</th>
+                {/* <th>जाहिरातीचा पत्ता</th> */}
                 <th>प्रभाग</th>
                 <th>शुल्क रक्कम</th>
                 <th>शुल्क स्थिती</th>
@@ -998,14 +998,14 @@ const BillList = () => {
                     <td>{panchanama.VAR_ILLEGALHOARD_PANCHANAMA_NO || "-"}</td>
 
                     {/* USER NAME */}
-                    <td>
+                    {/* <td>
                       <div className="fw-semibold">
                         {panchanama.VAR_USER1 || "-"}
                       </div>
-                    </td>
+                    </td> */}
 
                     {/* USER POST */}
-                    <td>{panchanama.VAR_USER1_POST || "-"}</td>
+                    {/* <td>{panchanama.VAR_USER1_POST || "-"}</td> */}
 
                     {/* CAPTURE DATE + TIME */}
                     <td>
@@ -1016,7 +1016,7 @@ const BillList = () => {
                     </td>
 
                     {/* ADDRESS */}
-                    <td>{panchanama.VAR_ILLEGALHOARD_ADD || "-"}</td>
+                    {/* <td>{panchanama.VAR_ILLEGALHOARD_ADD || "-"}</td> */}
 
                     {/* WARD */}
                     <td>{panchanama.VAR_ILLEGALHOARD_WARD || "-"}</td>
@@ -1029,26 +1029,31 @@ const BillList = () => {
                     {/* ACTION */}
                     <td>
                       <div className="d-flex gap-1 align-items-center">
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-primary"
-                          onClick={() => {
-                            renderPaymentModal(
-                              panchanama.NUM_NOTGEN_AMT,
-                              panchanama.VAR_NOTGEN_NO,
-                            );
-                          }}
-                        >
-                          Pay
-                        </button>
-                        <button
+                       <button
+                        type="button"
+                        className={
+    panchanama.VAR_NOTGEN_PAYMENTSTATUS?.trim().toLowerCase() === "paid"
+      ? "btn btn-sm btn-secondary"
+      : "btn btn-sm btn-primary"
+  }
+                        disabled={panchanama.VAR_NOTGEN_PAYMENTSTATUS === "Paid"}
+                        onClick={() => {
+                          renderPaymentModal(
+                            panchanama.NUM_NOTGEN_AMT,
+                            panchanama.VAR_NOTGEN_NO
+                          );
+                        }}
+                      >
+                        Pay
+                      </button>
+                        {/* <button
                           type="button"
                           className="btn btn-sm btn-primary"
                           onClick={() => handleViewDetails(panchanama)}
                         >
                           <i className="bi bi-eye me-1"></i>
                           View
-                        </button>
+                        </button> */}
                       </div>
                     </td>
                   </tr>

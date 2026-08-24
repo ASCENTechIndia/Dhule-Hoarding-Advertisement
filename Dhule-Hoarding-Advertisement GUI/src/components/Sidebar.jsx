@@ -27,31 +27,31 @@ export default function Sidebar() {
       icon: "bi-wallet",
       label: "शुल्क भरणा यादी",
     },
-    {
-      path: "/notice-nirmiti-report",
-      icon: "bi-file-earmark-bar-graph", 
-      label: "नोटीस निर्मिती अहवाल",
-    },
-    {
-      path: "/panchanama-nirmiti-report",
-      icon: "bi-file-earmark-bar-graph",
-      label: "पंचनामा निर्मिती अहवाल",
-    },
-    {
-      path: "/notice-payment-report",
-      icon: "bi-credit-card", 
-      label: "नोटीस भरणा अहवाल",
-    },
-    {
-      path: "/ward-wise-report",
-      icon: "bi-geo-alt", 
-      label: "प्रभागनिहाय अहवाल",
-    },
-    {
-      path: "/monthly-wise-report",
-      icon: "bi-calendar3", 
-      label: "महिनानिहाय अहवाल",
-    },
+    // {
+    //   path: "/notice-nirmiti-report",
+    //   icon: "bi-file-earmark-bar-graph", 
+    //   label: "नोटीस निर्मिती अहवाल",
+    // },
+    // {
+    //   path: "/panchanama-nirmiti-report",
+    //   icon: "bi-file-earmark-bar-graph",
+    //   label: "पंचनामा निर्मिती अहवाल",
+    // },
+    // {
+    //   path: "/notice-payment-report",
+    //   icon: "bi-credit-card", 
+    //   label: "नोटीस भरणा अहवाल",
+    // },
+    // {
+    //   path: "/ward-wise-report",
+    //   icon: "bi-geo-alt", 
+    //   label: "प्रभागनिहाय अहवाल",
+    // },
+    // {
+    //   path: "/monthly-wise-report",
+    //   icon: "bi-calendar3", 
+    //   label: "महिनानिहाय अहवाल",
+    // },
   ];
 
   return (

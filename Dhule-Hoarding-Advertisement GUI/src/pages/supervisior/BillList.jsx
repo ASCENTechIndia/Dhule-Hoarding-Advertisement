@@ -1338,7 +1338,7 @@ const BillList = () => {
                           className="form-control"
                           {...register("noticeNumber")}
                         />
-                        <button
+                        {/* <button
                           type="button"
                           className="btn btn-sm btn-primary"
                           onClick={() => {
@@ -1346,7 +1346,7 @@ const BillList = () => {
                           }}
                         >
                           शोधा
-                        </button>
+                        </button> */}
                       </div>
                       {errors.noticeNumber && (
                         <div className="field-error">

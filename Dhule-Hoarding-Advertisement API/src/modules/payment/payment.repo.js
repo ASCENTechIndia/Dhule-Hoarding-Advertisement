@@ -2,6 +2,23 @@ const oracledb = require('oracledb');
 const { executeQuery } = require('../../db/queryExecutor');
 const { executeProcedure } = require('../../db/procedureExecutor');
 
+function parseOracleDate(dateValue) {
+  if (!dateValue) return null;
+
+  if (dateValue instanceof Date) {
+    return dateValue;
+  }
+
+  // Expected input: YYYY-MM-DD
+  const [year, month, day] = String(dateValue).split("-").map(Number);
+
+  if (!year || !month || !day) {
+    throw new Error(`Invalid cheque date: ${dateValue}`);
+  }
+
+  return new Date(year, month - 1, day);
+}
+
 async function illegalHoardPaymentRepo(payload) {
 
   const statement = `
@@ -67,7 +84,7 @@ async function illegalHoardPaymentRepo(payload) {
 
     // Cheque Date
     in_chequedate:
-      payload.chequeDate || null,
+  parseOracleDate(payload.chequeDate),
 
     // Remark
     in_remark:

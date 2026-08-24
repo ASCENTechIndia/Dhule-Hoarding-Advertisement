@@ -25,7 +25,7 @@ export default function Sidebar() {
     {
       path: "/bill-list",
       icon: "bi-wallet",
-      label: "शुल्क भरणा यादी",
+      label: "शुल्क भरणा यादी",  
     },
     {
       path: "/notice-nirmiti-report",

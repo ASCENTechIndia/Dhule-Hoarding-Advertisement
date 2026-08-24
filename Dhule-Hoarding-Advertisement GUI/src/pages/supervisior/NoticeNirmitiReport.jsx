@@ -232,7 +232,7 @@ const NoticeNirmitiReport = () => {
               <div className="col-auto">
                 <label className="form-label mb-0 small">Regiona Office</label>
                 <select
-                  name="select"
+                  name="regionalOffice"
                   className="form-select form-select-sm"
                   style={{ width: "100px" }}
                   value={filters.regionalOffice}

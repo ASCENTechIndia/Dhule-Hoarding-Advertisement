@@ -31,9 +31,11 @@ const MonthlyWiseReport = () => {
   // Filters
   const [noticeNoInput, setNoticeNoInput] = useState("");
   const [filters, setFilters] = useState({
-    fromDate: getToday(),
-    toDate: getToday(),
-    ward: "",
+    // fromDate: getToday(),
+    // toDate: getToday(),
+    // ward: "",
+    month: "",
+    year: "",
   });
 
   // Image modal
@@ -92,31 +94,44 @@ const MonthlyWiseReport = () => {
   const handleClearFilters = () => {
     setNoticeNoInput("");
     setFilters({
-      fromDate: "",
-      toDate: "",
-      ward: "",
+      // fromDate: "",
+      // toDate: "",
+      // ward: "",
+      monthYear: ""
     });
   };
+
+
 
   const fetchReportData = async (dataPage = 1) => {
     try {
       setLoader(true);
       setError(null);
 
-      let url = `/?page=${dataPage}&limit=${pageSize}&ulbId=${import.meta.env.VITE_ULBID}&userId=${user.userId}`;
+      // console.log(filters);
+      // return;
+      // let url = `/?page=${dataPage}&limit=${pageSize}&ulbId=${import.meta.env.VITE_ULBID}&userId=${user.userId}`;
 
-      if (filters.fromDate) {
-        url += `&fromDate=${encodeURIComponent(filters.fromDate)}`;
-      }
-      if (filters.toDate) {
-        url += `&toDate=${encodeURIComponent(filters.toDate)}`;
-      }
-      if (filters.ward) {
-        url += `&ward=${encodeURIComponent(filters.ward)}`;
-      }
+      // if (filters.fromDate) {
+      //   url += `&fromDate=${encodeURIComponent(filters.fromDate)}`;
+      // }
+      // if (filters.toDate) {
+      //   url += `&toDate=${encodeURIComponent(filters.toDate)}`;
+      // }
+      // if (filters.ward) {
+      //   url += `&ward=${encodeURIComponent(filters.ward)}`;
+      // }
 
+      let url = `/report/getIllegalHoardMonthwiseReport?ulbId=${import.meta.env.VITE_ULBID}`
+
+      if (filters.month) {
+        url += `&month=${encodeURIComponent(filters.month)}`;
+      } 
+      if (filters.year) {
+        url += `&year=${encodeURIComponent(filters.year)}`
+      }
       const response = await apiClient.get(url);
-
+      console.log(response);
       if (response?.success && response?.data) {
         const participantData = response.data.data || [];
         const pagination = response.data.pagination || {};
@@ -767,6 +782,32 @@ const MonthlyWiseReport = () => {
     );
   };
 
+
+ const currentYear = new Date().getFullYear();
+
+  const years = [];
+
+  for (let year = currentYear - 10; year <= currentYear; year++) {
+    years.push({
+      label: year,
+      value: year
+    });
+  }
+
+  const months = [
+    { value: "1", label: "January" },
+    { value: "2", label: "February" },
+    { value: "3", label: "March" },
+    { value: "4", label: "April" },
+    { value: "5", label: "May" },
+    { value: "6", label: "June" },
+    { value: "7", label: "July" },
+    { value: "8", label: "August" },
+    { value: "9", label: "September" },
+    { value: "10", label: "October" },
+    { value: "11", label: "November" },
+    { value: "12", label: "December" },
+  ];
   return (
     <Layout>
       <div className="panel">
@@ -783,38 +824,42 @@ const MonthlyWiseReport = () => {
             <div className="row g-2 align-items-end justify-content-end">
               {/* From Date */}
               <div className="col-auto">
-                <label htmlFor="fromDate" className="form-label mb-0 small">
-                  From Date
+                <label htmlFor="month" className="form-label mb-0 small">
+                  Month
                 </label>
-                <input
-                  type="date"
-                  id="fromDate"
-                  name="fromDate"
-                  className="form-control form-control-sm"
-                  style={{ width: "150px" }}
-                  value={filters.fromDate}
-                  onChange={handleDateChangeFilter}
-                />
+                <select
+                  name="month"
+                  className="form-select form-select-sm"
+                  style={{ width: "130px" }}
+                  value={filters.month}
+                  onChange={handleFilterChange}
+                >
+                  {months.map(item => (
+                    <option value={item.value}>{item.label}</option>
+                  ))}
+                </select>
               </div>
 
               {/* To Date */}
               <div className="col-auto">
-                <label htmlFor="toDate" className="form-label mb-0 small">
-                  To Date
+                <label htmlFor="year" className="form-label mb-0 small">
+                  Year
                 </label>
-                <input
-                  type="date"
-                  id="toDate"
-                  name="toDate"
-                  className="form-control form-control-sm"
-                  style={{ width: "150px" }}
-                  value={filters.toDate}
-                  onChange={handleDateChangeFilter}
-                />
+                <select
+                  name="year"
+                  className="form-select form-select-sm"
+                  style={{ width: "130px" }}
+                  value={filters.year}
+                  onChange={handleFilterChange}
+                >
+                  {years.map(item => (
+                    <option value={item.value}>{item.label}</option>
+                  ))}
+                </select>
               </div>
 
               {/* Ward */}
-              <div className="col-auto">
+              {/* <div className="col-auto">
                 <label className="form-label mb-0 small">Select Ward</label>
                 <select
                   name="ward"
@@ -826,7 +871,32 @@ const MonthlyWiseReport = () => {
                   <option value="">Select Ward</option>
                   <option value="1">Ward 1</option>
                 </select>
-              </div>
+              </div>  */}
+
+              {/* <div className="col-auto">
+                <div className="input-group">
+                  <span className="input-group-text">
+                    Month & Year
+                  </span>
+
+                  <select
+                    className="form-select"
+                    // {...register("monthYear", {
+                    //   required: "Month and Year is required",
+                    // })}
+                    value={filters.monthYear}
+                    onChange={handleFilterChange}
+                  >
+                    <option value="">-- Select Month & Year --</option>
+
+                    {monthYearOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div> */}
 
               {/* Clear Button */}
               <div className="col-auto">

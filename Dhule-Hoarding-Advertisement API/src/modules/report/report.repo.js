@@ -704,10 +704,128 @@ async function getIllegalHoardWardwiseReportRepo(
   };
 }
 
+async function getIllegalHoardMonthwiseReportRepo(
+  ulbId,
+  year,
+  monthNo,
+  page = 1,
+  limit = 10
+) {
+  const pageNumber = Number(page) || 1;
+  const limitNumber = Number(limit) || 10;
+  const offset = (pageNumber - 1) * limitNumber;
+
+  let sql = `
+    SELECT
+      panchanama_month,
+      total_notice,
+      total_panchanama,
+      total_no_pay,
+      total_no_notpay,
+      notice_amount,
+      collected_amount,
+      remaining_amount,
+      panchanama_month_no,
+      panchanama_year,
+      num_illegalhoard_ulbid
+    FROM VW_ILLEGALHOARD_MONTHWISE_REPORT
+    WHERE num_illegalhoard_ulbid = :ulbId
+  `;
+
+  const binds = {
+    ulbId,
+  };
+
+  // Year Filter
+  if (year) {
+    sql += `
+      AND panchanama_year = :year
+    `;
+
+    binds.year = year;
+  }
+
+  // Month Filter
+  if (monthNo) {
+    sql += `
+      AND panchanama_month_no = :monthNo
+    `;
+
+    binds.monthNo = monthNo;
+  }
+
+  sql += `
+    ORDER BY panchanama_year DESC, panchanama_month_no DESC
+    OFFSET :offset ROWS
+    FETCH NEXT :limit ROWS ONLY
+  `;
+
+  binds.offset = offset;
+  binds.limit = limitNumber;
+
+  const result = await executeQuery(
+    sql,
+    binds,
+    { dbName: "db3" }
+  );
+
+  const rows = result.rows || [];
+
+  // ============================
+  // Count Query
+  // ============================
+
+  let countSql = `
+    SELECT COUNT(*) AS TOTAL
+    FROM VW_ILLEGALHOARD_MONTHWISE_REPORT
+    WHERE num_illegalhoard_ulbid = :ulbId
+  `;
+
+  const countBinds = {
+    ulbId,
+  };
+
+  if (year) {
+    countSql += `
+      AND panchanama_year = :year
+    `;
+
+    countBinds.year = year;
+  }
+
+  if (monthNo) {
+    countSql += `
+      AND panchanama_month_no = :monthNo
+    `;
+
+    countBinds.monthNo = monthNo;
+  }
+
+  const countResult = await executeQuery(
+    countSql,
+    countBinds,
+    { dbName: "db3" }
+  );
+
+  const total =
+    Number(countResult.rows?.[0]?.TOTAL) || 0;
+
+  return {
+    data: rows,
+
+    pagination: {
+      page: pageNumber,
+      limit: limitNumber,
+      total,
+      totalPages: Math.ceil(total / limitNumber),
+    },
+  };
+}
+
 module.exports = {
   getNoticeNirmitiReportRepo,
   getNoticePaymentReportRepo,
   getPanchanamaNirmitiReportRepo,
-  getIllegalHoardWardwiseReportRepo
-  
+  getIllegalHoardWardwiseReportRepo,
+  getIllegalHoardMonthwiseReportRepo
 };

@@ -47,11 +47,11 @@ export default function Sidebar() {
       icon: "bi-geo-alt", 
       label: "प्रभागनिहाय अहवाल",
     },
-    // {
-    //   path: "/monthly-wise-report",
-    //   icon: "bi-calendar3", 
-    //   label: "महिनानिहाय अहवाल",
-    // },
+    {
+      path: "/monthly-wise-report",
+      icon: "bi-calendar3", 
+      label: "महिनानिहाय अहवाल",
+    },
   ];
 
   return (

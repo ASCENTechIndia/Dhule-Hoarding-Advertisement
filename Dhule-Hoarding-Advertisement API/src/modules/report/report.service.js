@@ -2,7 +2,8 @@
  getNoticeNirmitiReportRepo,
  getNoticePaymentReportRepo,
  getPanchanamaNirmitiReportRepo,
- getIllegalHoardWardwiseReportRepo
+ getIllegalHoardWardwiseReportRepo,
+ getIllegalHoardMonthwiseReportRepo
 } = require("./report.repo");
 
 async function getNoticeNirmitiReportService(
@@ -87,10 +88,27 @@ async function getIllegalHoardWardwiseReportService(
   );
 }
 
+async function getIllegalHoardMonthwiseReportService(
+  ulbId,
+  year,
+  monthNo,
+  page,
+  limit
+) {
+  return getIllegalHoardMonthwiseReportRepo(
+    ulbId,
+    year,
+    monthNo,
+    page,
+    limit
+  );
+}
+
 
 module.exports = {
   getNoticeNirmitiReportService,
   getNoticePaymentReportService,
   getPanchanamaNirmitiReportService,
-  getIllegalHoardWardwiseReportService
+  getIllegalHoardWardwiseReportService,
+  getIllegalHoardMonthwiseReportService
 };

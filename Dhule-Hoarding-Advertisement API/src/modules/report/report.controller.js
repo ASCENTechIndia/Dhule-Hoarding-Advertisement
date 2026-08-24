@@ -1,5 +1,6 @@
 const {getNoticeNirmitiReportService,getNoticePaymentReportService,
-  getPanchanamaNirmitiReportService,getIllegalHoardWardwiseReportService
+  getPanchanamaNirmitiReportService,getIllegalHoardWardwiseReportService,
+  getIllegalHoardMonthwiseReportService
 } = require('./report.service');
 
 const { auditLog } = require('../../utils/audit-log');
@@ -196,9 +197,51 @@ async function getIllegalHoardWardwiseReport(req, res, next) {
   }
 }
 
+async function getIllegalHoardMonthwiseReport(req, res, next) {
+  try {
+    const {
+      ulbId,
+      year = null,
+      monthNo = null,
+      page = 1,
+      limit = 10,
+    } = req.query;
+
+    const rows = await getIllegalHoardMonthwiseReportService(
+      ulbId,
+      year,
+      monthNo,
+      page,
+      limit
+    );
+
+    logApiSuccess(
+      req,
+      200,
+      {
+        count: rows?.data?.length || 0,
+      },
+      "Illegal Hoard Monthwise Report completed"
+    );
+
+    return res.ok(rows);
+
+  } catch (error) {
+    logApiError(
+      req,
+      500,
+      error.message,
+      "Illegal Hoard Monthwise Report search error"
+    );
+
+    return next(error);
+  }
+}
+
 module.exports = {
   getNoticeNirmitiReport,
   getNoticePaymentReport,
   getPanchanamaNirmitiReport,
-  getIllegalHoardWardwiseReport
+  getIllegalHoardWardwiseReport,
+  getIllegalHoardMonthwiseReport
 };

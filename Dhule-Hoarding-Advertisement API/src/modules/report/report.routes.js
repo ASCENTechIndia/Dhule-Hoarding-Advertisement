@@ -1,7 +1,8 @@
 const express = require('express');
 const {
   getNoticeNirmitiReport,getNoticePaymentReport,
-  getPanchanamaNirmitiReport,getIllegalHoardWardwiseReport
+  getPanchanamaNirmitiReport,getIllegalHoardWardwiseReport,
+  getIllegalHoardMonthwiseReport
 } = require('./report.controller');
 
 const router = express.Router();
@@ -24,6 +25,11 @@ router.get(
 router.get(
   "/getIllegalHoardWardwiseReport",
   getIllegalHoardWardwiseReport
+);
+
+router.get(
+  "/getIllegalHoardMonthwiseReport",
+  getIllegalHoardMonthwiseReport
 );
 
 module.exports = router;

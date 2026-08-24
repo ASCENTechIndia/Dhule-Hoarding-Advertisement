@@ -25,7 +25,7 @@ export default function Sidebar() {
     {
       path: "/bill-list",
       icon: "bi-wallet",
-      label: "शुल्क भरणा यादी",
+      label: "शुल्क भरणा यादी",  
     },
     {
       path: "/notice-nirmiti-report",
@@ -37,11 +37,11 @@ export default function Sidebar() {
     //   icon: "bi-file-earmark-bar-graph",
     //   label: "पंचनामा निर्मिती अहवाल",
     // },
-    // {
-    //   path: "/notice-payment-report",
-    //   icon: "bi-credit-card", 
-    //   label: "नोटीस भरणा अहवाल",
-    // },
+    {
+      path: "/notice-payment-report",
+      icon: "bi-credit-card", 
+      label: "नोटीस भरणा अहवाल",
+    },
     // {
     //   path: "/ward-wise-report",
     //   icon: "bi-geo-alt", 

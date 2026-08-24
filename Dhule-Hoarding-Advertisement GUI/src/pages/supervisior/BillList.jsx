@@ -91,7 +91,14 @@ const BillList = () => {
   // =========================================================
   // PAYMENT FORM VALUES
   // =========================================================
-  const { register, handleSubmit, watch, setValue, reset } = useForm({
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    reset,
+    formState: { errors },
+  } = useForm({
     defaultValues: {
       noticeNumber: "",
       paymentType: "",
@@ -1006,16 +1013,15 @@ const BillList = () => {
       return String(value);
     };
 
-
     useEffect(() => {
-        setValue("bankName", "");
-        setValue("branch", "");
-        setValue("chequeNumber", "");
-        setValue("chequeDate", "");
-        setValue("micrCode", "");
-        setValue("chequeType", "");
-        setValue("transactionId", "")
-    }, [paymentType])
+      setValue("bankName", "");
+      setValue("branch", "");
+      setValue("chequeNumber", "");
+      setValue("chequeDate", "");
+      setValue("micrCode", "");
+      setValue("chequeType", "");
+      setValue("transactionId", "");
+    }, [paymentType]);
     // =========================================================
     // MASTER FIELDS
     // =========================================================
@@ -1160,11 +1166,56 @@ const BillList = () => {
 
   const handlePayment = async (data) => {
     try {
-      console.log("Payment Data:", data);
+
+      if (
+        paymentType === "Cheque" &&
+        (data.bankName === "" ||
+          data.branch === "" ||
+          data.chequeNumber === "" ||
+          data.chequeDate === "")
+      ) {
+        setModalType("Warning");
+        setModalTitle("Warning");
+        setModalMessage(
+          "Bank Name, Branch, Cheque Number and Cheque Date is required",
+        );
+        setIsModalOpen(true);
+        return;
+      }
+
+      if (
+        paymentType === "Online" &&
+        (data.transactionId === "" ||
+          data.bankName === "" ||
+          data.branch === "")
+      ) {
+        setModalType("Warning");
+        setModalTitle("Warning");
+        setModalMessage("Bank Name, Branch and Transaction ID is required");
+        setIsModalOpen(true);
+        return;
+      }
+
+      if (paymentType === "UPI" && data.transactionId === "") {
+        setModalType("Warning");
+        setModalTitle("Warning");
+        setModalMessage("Transaction ID is required");
+        setIsModalOpen(true);
+        return;
+      }
+
+      if (data.amount < data.recoveryAmount) {
+        setModalType("Warning");
+        setModalTitle("Warning");
+        setModalMessage("Amount cannot be lesser than Recovery Amount");
+        setIsModalOpen(true);
+        return;
+      }
+      setLoader(true)
 
       const payload = {
-        userId: user.userId,
-        ulbId: import.meta.env.VITE_ULBID || "",
+        userId: user.userId || null,
+        ulbId: Number(import.meta.env.VITE_ULBID) || null,
         noticeNo: data.noticeNumber || null,
         paymentMode: data.paymentType || null,
         bankName: data.bankName || null,
@@ -1175,14 +1226,12 @@ const BillList = () => {
         micrCode: data.micrCode || null,
         chequeType: data.chequeType || null,
         transactionId: data.transactionId || null,
-        mobileNo: data.mobileNumber || null,
+        mobileNo: Number(data.mobileNumber) || null,
         email: data.email || null,
         address: data.address || null,
         name: data.name || null,
-        collectionAmount: data.recoveryAmount || null,
+        collectionAmount: Number(data.recoveryAmount) || null,
       };
-
-      console.log("payload :", payload);
 
       const response = await apiClient.post("/payment/add-payment", payload);
 
@@ -1191,6 +1240,9 @@ const BillList = () => {
         setModalTitle("Success");
         setModalMessage(response.data.message);
         setIsModalOpen(true);
+        reset();
+        setShowPaymentModal(false);
+        fetchPanchanamalist();
       } else {
         setModalType("error");
         setModalTitle("Error");
@@ -1202,13 +1254,10 @@ const BillList = () => {
       setModalTitle("Error");
       setModalMessage(error.message || "Something went wrong");
       setIsModalOpen(true);
+    } finally{
+      setLoader(false)
     }
   };
-
-  // =========================================================
-  // RENDER
-  // =========================================================
-
   return (
     <Layout>
       <div className="panel">
@@ -1701,6 +1750,11 @@ const BillList = () => {
                           शोधा
                         </button>
                       </div>
+                      {errors.noticeNumber && (
+                        <div className="field-error">
+                          {errors.noticeNumber.message}
+                        </div>
+                      )}
                     </div>
                     <div className="col-12 col-md-6">
                       <label className="form-label">देयक प्रकार</label>
@@ -1714,19 +1768,32 @@ const BillList = () => {
                         <option value="Online">Online</option>
                         <option value="UPI">UPI</option>
                       </select>
+                      {errors.paymentType && (
+                        <div className="field-error">
+                          {errors.paymentType.message}
+                        </div>
+                      )}
                     </div>
                     <div className="col-12 col-md-6">
                       <label className="form-label">
                         रक्कम
                         <span className="required">*</span>
                       </label>
-                      <div className="d-flex gap-2">
-                        <input
-                          type="text"
-                          className="form-control"
-                          {...register("amount")}
-                        />
-                      </div>
+                      <input
+                        type="text"
+                        className={`form-control ${errors.amount ? "is-invalid" : ""}`}
+                        onInput={(e) => {
+                          e.target.value = e.target.value.replace(/\D/g, "");
+                        }}
+                        {...register("amount", {
+                          required: "Amount is required",
+                        })}
+                      />
+                      {errors.amount && (
+                        <div className="field-error">
+                          {errors.amount.message}
+                        </div>
+                      )}
                     </div>
                     <div className="col-12 col-md-6">
                       <label className="form-label">
@@ -1745,10 +1812,7 @@ const BillList = () => {
                       />
                     </div>
                     <div className="col-12 col-md-6">
-                      <label className="form-label">
-                        शाखा
-                        {/* <span className="required">*</span> */}
-                      </label>
+                      <label className="form-label">शाखा</label>
                       <input
                         type="text"
                         className="form-control"
@@ -1767,6 +1831,15 @@ const BillList = () => {
                           type="text"
                           className="form-control"
                           {...register("chequeNumber")}
+                          onInput={(e) => {
+                            e.target.value = e.target.value.replace(/\D/g, "");
+                          }}
+                          disabled={
+                            paymentType === "Cash" ||
+                            paymentType === "Online" ||
+                            paymentType === "UPI" ||
+                            paymentType === ""
+                          }
                         />
                       </div>
                     </div>
@@ -1776,6 +1849,12 @@ const BillList = () => {
                         type="date"
                         className="form-control"
                         {...register("chequeDate")}
+                        disabled={
+                          paymentType === "Cash" ||
+                          paymentType === "Online" ||
+                          paymentType === "UPI" ||
+                          paymentType === ""
+                        }
                       />
                     </div>
                     <div className="col-12 col-md-6">
@@ -1792,6 +1871,15 @@ const BillList = () => {
                         type="text"
                         className="form-control"
                         {...register("micrCode")}
+                        onInput={(e) => {
+                          e.target.value = e.target.value.replace(/\D/g, "");
+                        }}
+                        disabled={
+                          paymentType === "Cash" ||
+                          paymentType === "Online" ||
+                          paymentType === "UPI" ||
+                          paymentType === ""
+                        }
                       />
                     </div>
                     <div className="col-12 col-md-6">
@@ -1800,6 +1888,12 @@ const BillList = () => {
                         type="text"
                         className="form-control"
                         {...register("chequeType")}
+                        disabled={
+                          paymentType === "Cash" ||
+                          paymentType === "Online" ||
+                          paymentType === "UPI" ||
+                          paymentType === ""
+                        }
                       />
                     </div>
                     <div className="col-12 col-md-6">
@@ -1808,52 +1902,105 @@ const BillList = () => {
                         type="text"
                         className="form-control"
                         {...register("transactionId")}
+                        disabled={
+                          paymentType === "Cash" ||
+                          paymentType === "Cheque" ||
+                          paymentType === ""
+                        }
                       />
                     </div>
                     <div className="col-12 col-md-6">
-                      <label className="form-label">मोबाईल क्र.</label>
+                      <label className="form-label">
+                        मोबाईल क्र.<span className="required">*</span>
+                      </label>
                       <input
                         type="text"
-                        className="form-control"
-                        {...register("mobileNumber")}
+                        maxLength={10}
+                        className={`form-control ${errors.mobileNumber ? "is-invalid" : ""}`}
+                        onInput={(e) => {
+                          e.target.value = e.target.value.replace(/\D/g, "");
+                        }}
+                        {...register("mobileNumber", {
+                          required: "Mobile Number is required",
+                        })}
                       />
+                      {errors.mobileNumber && (
+                        <div className="field-error">
+                          {errors.mobileNumber.message}
+                        </div>
+                      )}
                     </div>
                     <div className="col-12 col-md-6">
-                      <label className="form-label">ईमेल</label>
+                      <label className="form-label">
+                        ईमेल<span className="required">*</span>
+                      </label>
                       <input
                         type="email"
-                        className="form-control"
-                        {...register("email")}
+                        className={`form-control ${errors.email ? "is-invalid" : ""}`}
+                        {...register("email", {
+                          required: "Email is required",
+                        })}
                       />
+                      {errors.email && (
+                        <div className="field-error">
+                          {errors.email.message}
+                        </div>
+                      )}
                     </div>
                     <div className="col-12 col-md-6">
-                      <label className="form-label">पत्ता</label>
+                      <label className="form-label">
+                        पत्ता<span className="required">*</span>
+                      </label>
                       <input
                         type="text"
-                        className="form-control"
-                        {...register("address")}
+                        className={`form-control ${errors.address ? "is-invalid" : ""}`}
+                        {...register("address", {
+                          required: "Address is required",
+                        })}
                       />
+                      {errors.address && (
+                        <div className="field-error">
+                          {errors.address.message}
+                        </div>
+                      )}
                     </div>
                     <div className="col-12 col-md-6">
-                      <label className="form-label">नाव</label>
+                      <label className="form-label">
+                        नाव<span className="required">*</span>
+                      </label>
                       <input
                         type="text"
-                        className="form-control"
-                        {...register("name")}
+                        className={`form-control ${errors.name ? "is-invalid" : ""}`}
+                        {...register("name", {
+                          required: "Name is required",
+                        })}
                       />
+                      {errors.name && (
+                        <div className="field-error">{errors.name.message}</div>
+                      )}
                     </div>
                     <div className="col-12 col-md-6">
                       <label className="form-label">वसुली रक्कम</label>
                       <input
                         type="text"
-                        className="form-control"
-                        {...register("recoveryAmount")}
+                        className={`form-control ${errors.recoveryAmount ? "is-invalid" : ""}`}
+                        {...register("recoveryAmount", {
+                          required: "Recovery Amount is required",
+                        })}
+                        onInput={(e) => {
+                          e.target.value = e.target.value.replace(/\D/g, "");
+                        }}
                       />
+                      {errors.recoveryAmount && (
+                        <div className="field-error">
+                          {errors.recoveryAmount.message}
+                        </div>
+                      )}
                     </div>
                   </div>
 
                   <div className="my-4 justify-content-center d-flex gap-2">
-                    <button type="button" className="btn btn-primary">
+                    <button type="submit" className="btn btn-primary">
                       Pay
                     </button>
                     <button

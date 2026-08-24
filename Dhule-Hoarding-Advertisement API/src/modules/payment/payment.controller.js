@@ -20,8 +20,6 @@ async function illegalHoardPayment(req, res, next) {
 
     const out = await illegalHoardPaymentService(payload);
 
-    console.log("Illegal Hoard Payment OUT:", out);
-
     const isSuccess =
       String(out.errorCode) === "9999";
 

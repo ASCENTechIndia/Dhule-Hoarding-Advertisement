@@ -22,10 +22,6 @@ const BillList = () => {
   const { user } = useAuth();
   const { setLoader } = useLoader();
 
-  // =========================================================
-  // STATE
-  // =========================================================
-
   const [participants, setParticipants] = useState([]);
   const [error, setError] = useState(null);
 
@@ -45,10 +41,6 @@ const BillList = () => {
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImages, setSelectedImages] = useState([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-
-  // =========================================================
-  // DETAILS MODAL
-  // =========================================================
 
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedParticipant, setSelectedParticipant] = useState(null);
@@ -88,9 +80,6 @@ const BillList = () => {
     प्रभाग: "ward",
   };
 
-  // =========================================================
-  // PAYMENT FORM VALUES
-  // =========================================================
   const {
     register,
     handleSubmit,
@@ -121,10 +110,6 @@ const BillList = () => {
 
   const paymentType = watch("paymentType");
 
-  // =========================================================
-  // DATE FILTER CHANGE
-  // =========================================================
-
   const handleDateChangeFilter = (e) => {
     const { name, value } = e.target;
 
@@ -134,20 +119,12 @@ const BillList = () => {
     }));
   };
 
-  // =========================================================
-  // CLEAR FILTERS
-  // =========================================================
-
   const handleClearFilters = () => {
     setFilters({
       fromDate: "",
       toDate: "",
     });
   };
-
-  // =========================================================
-  // FETCH PARTICIPANTS
-  // =========================================================
 
   const fetchPanchanamalist = async (dataPage = 1) => {
     try {
@@ -165,7 +142,6 @@ const BillList = () => {
       }
 
       const response = await apiClient.get(url);
-      console.log("resp :", response);
 
       if (response?.success && response?.data) {
         const participantData = response.data.data || [];
@@ -206,17 +182,9 @@ const BillList = () => {
     }
   };
 
-  // =========================================================
-  // INITIAL API / FILTER CHANGE
-  // =========================================================
-
   useEffect(() => {
     fetchPanchanamalist(1);
   }, [filters, pageSize]);
-
-  // =========================================================
-  // PAGINATION
-  // =========================================================
 
   const formatDateTime = (dateString, timeString) => {
     if (!dateString) {
@@ -262,10 +230,6 @@ const BillList = () => {
     }
   };
 
-  // =========================================================
-  // PAGINATION PAGE NUMBERS
-  // =========================================================
-
   const getPaginationPages = () => {
     const pages = [];
     const maxPagesToShow = 5;
@@ -284,10 +248,6 @@ const BillList = () => {
 
     return pages;
   };
-
-  // =========================================================
-  // FORMAT DATE
-  // =========================================================
 
   const formatDate = (dateString) => {
     if (!dateString) {
@@ -313,10 +273,6 @@ const BillList = () => {
       .replace(",", " - ");
   };
 
-  // =========================================================
-  // GET PARTICIPANT PHOTOS
-  // =========================================================
-
   const getPanchanamaPhotos = (panchanama) => {
     return [
       panchanama?.BLOB_NEAR_PHOTO,
@@ -325,76 +281,17 @@ const BillList = () => {
     ].filter((img) => img && typeof img === "string" && img.trim() !== "");
   };
 
-  // =========================================================
-  // OPEN IMAGE IN NEW TAB
-  // =========================================================
-
-  const openImageInNewTab = (img) => {
-    try {
-      if (!img) {
-        return;
-      }
-
-      const binaryString = atob(img);
-
-      const bytes = new Uint8Array(binaryString.length);
-
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
-
-      const blob = new Blob([bytes], {
-        type: "image/png",
-      });
-
-      const blobUrl = URL.createObjectURL(blob);
-
-      window.open(blobUrl, "_blank");
-    } catch (err) {
-      console.error("Error opening image:", err);
-
-      setModalType("error");
-      setModalTitle("Error");
-      setModalMessage("Unable to open image. Please try again.");
-      setIsModalOpen(true);
-    }
-  };
-
-  // =========================================================
-  // OPEN IMAGE MODAL
-  // =========================================================
-
-  const handleImageClick = (panchanama, index) => {
-    const images = getPanchanamaPhotos(panchanama);
-
-    setSelectedImages(images);
-    setSelectedImageIndex(index);
-    setShowImageModal(true);
-  };
-
-  // =========================================================
-  // NEXT IMAGE
-  // =========================================================
-
   const nextImage = () => {
     if (selectedImageIndex < selectedImages.length - 1) {
       setSelectedImageIndex(selectedImageIndex + 1);
     }
   };
 
-  // =========================================================
-  // PREVIOUS IMAGE
-  // =========================================================
-
   const prevImage = () => {
     if (selectedImageIndex > 0) {
       setSelectedImageIndex(selectedImageIndex - 1);
     }
   };
-
-  // =========================================================
-  // VIEW PARTICIPANT DETAILS
-  // =========================================================
 
   const formatDateOnly = (dateStr) => {
     if (!dateStr) return "-";
@@ -409,10 +306,6 @@ const BillList = () => {
 
   const fetchNoticeHtml = async (masterData, demolitionDetails) => {
     try {
-      // =====================================================
-      // GET ADVERTISER NAMES FROM DEMOLITION DETAILS
-      // =====================================================
-
       const advertiserNames =
         demolitionDetails
           ?.map((item) => item?.VAR_DEMONSTARTED_NAME)
@@ -421,10 +314,6 @@ const BillList = () => {
               name !== null && name !== undefined && String(name).trim() !== "",
           )
           .join(", ") || "जाहिरातदार";
-
-      // =====================================================
-      // NOTICE PAYLOAD
-      // =====================================================
 
       const noticePayload = {
         corporationId:
@@ -443,7 +332,6 @@ const BillList = () => {
           masterData?.NUM_REGIONAL_OFFICE_NO ||
           "-",
 
-        // 👇 From demolitionDetails
         ADVERTISER_NAME: advertiserNames,
 
         ADDRESS: masterData?.VAR_ILLEGALHOARD_ADD || "-",
@@ -484,15 +372,7 @@ const BillList = () => {
         ID: masterData.NUM_ILLEGALHOARD_ID,
       };
 
-      // =====================================================
-      // API CALL
-      // =====================================================
-
       const response = await apiClient.post("/notice/render", noticePayload);
-
-      // =====================================================
-      // RESPONSE
-      // =====================================================
 
       if (response?.success && response?.data?.html) {
         setNoticeHtml(response.data.html);
@@ -525,241 +405,6 @@ const BillList = () => {
     if (win) {
       win.document.write(noticeHtml);
       win.document.close();
-    }
-  };
-
-  const handleGenerateNotice = async (panchanama) => {
-    const id = panchanama?.NUM_ILLEGALHOARD_ID;
-
-    if (!id) {
-      setModalType("error");
-      setModalTitle("Error");
-      setModalMessage("Panchanama ID not found.");
-      setIsModalOpen(true);
-
-      return;
-    }
-
-    try {
-      setGeneratingNoticeId(id);
-
-      // ===================================================
-      // MASTER DATA
-      // ===================================================
-
-      let masterData = panchanama;
-
-      let demolitionDetails = panchanama;
-
-      try {
-        const responseDetails = await apiClient.get(
-          `/advertisement/getPanchanamaDetails?id=${id}`,
-        );
-
-        if (responseDetails?.success && responseDetails?.data?.master) {
-          masterData = responseDetails.data.master;
-
-          demolitionDetails = responseDetails.data.demolitionDetails;
-        }
-      } catch (err) {
-        console.error("Could not fetch extra panchanama details:", err);
-      }
-
-      // ===================================================
-      // ADVERTISER NAMES
-      // ===================================================
-
-      const advertiserNames =
-        demolitionDetails
-          ?.map((item) => item?.VAR_DEMONSTARTED_NAME)
-          .filter((name) => name && String(name).trim() !== "")
-          .join(", ") || "जाहिरातदार";
-
-      // ===================================================
-      // LOGGED-IN USER
-      // ===================================================
-
-      const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
-
-      const userId =
-        storedUser?.userId ||
-        storedUser?.USER_ID ||
-        storedUser?.NUM_USER_ID ||
-        storedUser?.id ||
-        null;
-
-      console.log("Logged-in user:", storedUser);
-
-      console.log("User ID:", userId);
-
-      if (!userId) {
-        throw new Error("Logged-in user ID not found. Please login again.");
-      }
-
-      // ===================================================
-      // NOTICE PAYLOAD
-      // ===================================================
-
-      const noticePayload = {
-        id: masterData.NUM_ILLEGALHOARD_ID,
-
-        userId: userId,
-
-        corporationId:
-          masterData?.NUM_ILLEGALHOARD_ULBID ||
-          masterData?.NUM_ULBID ||
-          masterData?.ulbId ||
-          4,
-
-        corporationName:
-          masterData?.VAR_CORPORATION_NAME || "धुळे महानगरपालिका",
-
-        corporationLogo: dhuleLogo,
-
-        REGIONAL_OFFICE_NO:
-          masterData.VAR_ILLEGALHOARD_WARD ||
-          masterData.NUM_REGIONAL_OFFICE_NO ||
-          "-",
-
-        ADVERTISER_NAME: advertiserNames,
-
-        ADDRESS: masterData.VAR_ILLEGALHOARD_ADD || "-",
-
-        LATITUDE: masterData.LATITUDE || masterData.NUM_LAT || "-",
-
-        LONGITUDE: masterData.LONGITUDE || masterData.NUM_LONG || "-",
-
-        SIZE:
-          masterData.NUM_SIZE_LENGTH && masterData.NUM_SIZE_WIDTH
-            ? `${masterData.NUM_SIZE_LENGTH} x ${masterData.NUM_SIZE_WIDTH}`
-            : masterData.VAR_SIZE || masterData.SIZE || "-",
-
-        FROM_DATE: masterData.DAT_FROM_DT
-          ? formatDateOnly(masterData.DAT_FROM_DT)
-          : masterData.DAT_CAP_DT
-            ? formatDateOnly(masterData.DAT_CAP_DT)
-            : "-",
-
-        TO_DATE: masterData.DAT_TO_DT
-          ? formatDateOnly(masterData.DAT_TO_DT)
-          : masterData.DAT_CAP_DT
-            ? formatDateOnly(masterData.DAT_CAP_DT)
-            : "-",
-
-        AMOUNT:
-          masterData.NUM_HOARD_AMOUNT ||
-          masterData.NUM_AMOUNT ||
-          masterData.AMOUNT ||
-          "0",
-
-        OFFICER_NAME: masterData.VAR_USER1 || "-",
-
-        OFFICER_DESIGNATION: masterData.VAR_USER1_POST || "-",
-
-        REGIONAL_OFFICE: masterData.VAR_ILLEGALHOARD_WARD || "-",
-
-        PANCHANAMA_NO: masterData.VAR_ILLEGALHOARD_PANCHANAMA_NO || "-",
-
-        ULB_ID: import.meta.env.VITE_ULBID,
-      };
-
-      console.log("Notice payload:", noticePayload);
-
-      // ===================================================
-      // GENERATE + SIGN PDF
-      // ===================================================
-
-      const response = await apiClient.post("/notice/generate", noticePayload, {
-        responseType: "blob",
-        timeout: 300000,
-      });
-
-      // ===================================================
-      // CHECK RESPONSE
-      // ===================================================
-
-      console.log("API response:", response);
-
-      console.log("Response type:", typeof response);
-
-      console.log("Is Blob:", response instanceof Blob);
-
-      if (!(response instanceof Blob)) {
-        throw new Error("Invalid PDF response from server.");
-      }
-
-      // ===================================================
-      // PDF BLOB
-      // ===================================================
-
-      const pdfBlob = new Blob([response], {
-        type: "application/pdf",
-      });
-
-      console.log("PDF size:", pdfBlob.size);
-
-      // ===================================================
-      // CREATE PDF URL
-      // ===================================================
-
-      const pdfUrl = window.URL.createObjectURL(pdfBlob);
-
-      // ===================================================
-      // OPEN PDF
-      // ===================================================
-
-      const pdfWindow = window.open(pdfUrl, "_blank");
-
-      if (!pdfWindow) {
-        // Browser blocked popup
-        // Provide download instead
-
-        const link = document.createElement("a");
-
-        link.href = pdfUrl;
-
-        link.download = `notice-${
-          masterData.VAR_ILLEGALHOARD_PANCHANAMA_NO || id
-        }.pdf`;
-
-        document.body.appendChild(link);
-
-        link.click();
-
-        document.body.removeChild(link);
-      }
-
-      // ===================================================
-      // SUCCESS
-      // ===================================================
-
-      setModalType("success");
-
-      setModalTitle("Notice Generated");
-
-      setModalMessage("Notice generated and digitally signed successfully.");
-
-      setIsModalOpen(true);
-
-      // ===================================================
-      // CLEAN URL
-      // ===================================================
-
-      setTimeout(() => {
-        window.URL.revokeObjectURL(pdfUrl);
-      }, 60000);
-    } catch (err) {
-      console.error("Error generating notice:", err);
-
-      setModalType("error");
-
-      setModalTitle("Error");
-
-      setModalMessage(err?.message || "Failed to generate notice.");
-
-      setIsModalOpen(true);
-    } finally {
-      setGeneratingNoticeId(null);
     }
   };
 
@@ -814,43 +459,6 @@ const BillList = () => {
     setDetailsLoading(false);
   };
 
-  // =========================================================
-  // RENDER PARTICIPANT PHOTOS
-  // =========================================================
-
-  const renderPanchanamaPhotos = (panchanama) => {
-    const images = getPanchanamaPhotos(panchanama);
-
-    if (images.length === 0) {
-      return <span className="text-muted small">No photos</span>;
-    }
-
-    return (
-      <div className="d-flex gap-2 flex-wrap">
-        {images.map((img, idx) => (
-          <img
-            key={idx}
-            src={`data:image/jpeg;base64,${img}`}
-            alt={`Panchanama ${idx + 1}`}
-            style={{
-              width: "65px",
-              height: "65px",
-              objectFit: "cover",
-              borderRadius: "8px",
-              border: "2px solid #dee2e6",
-              cursor: "pointer",
-            }}
-            onClick={() => handleImageClick(panchanama, idx)}
-          />
-        ))}
-      </div>
-    );
-  };
-
-  // =========================================================
-  // DETAILS MODAL VALUE FORMATTER
-  // =========================================================
-
   const formatDetailValue = (key, value) => {
     if (value === null || value === undefined || value === "") {
       return "-";
@@ -878,18 +486,10 @@ const BillList = () => {
     return String(value);
   };
 
-  // =========================================================
-  // DETAILS MODAL
-  // =========================================================
-
   const renderDetailsModal = () => {
     if (!showDetailsModal) {
       return null;
     }
-
-    // =========================================================
-    // LOADING
-    // =========================================================
 
     if (detailsLoading) {
       return (
@@ -929,10 +529,6 @@ const BillList = () => {
         </div>
       );
     }
-
-    // =========================================================
-    // DATA
-    // =========================================================
 
     const master = selectedPanchanamaDetails?.master || selectedParticipant;
 
@@ -979,10 +575,6 @@ const BillList = () => {
           .replace(/\b\w/g, (char) => char.toUpperCase())
       );
     };
-
-    // =========================================================
-    // FORMAT VALUE
-    // =========================================================
 
     const formatDetailValue = (key, value) => {
       if (value === null || value === undefined || value === "") {
@@ -1166,7 +758,13 @@ const BillList = () => {
 
   const handlePayment = async (data) => {
     try {
-
+      const obj = {
+        bankName: "Bank Name",
+        branch: "Branch",
+        chequeNumber: "Cheque Number",
+        chequeDate: "Cheque Date",
+        transactionId: "Transaction ID",
+      };
       if (
         paymentType === "Cheque" &&
         (data.bankName === "" ||
@@ -1174,11 +772,14 @@ const BillList = () => {
           data.chequeNumber === "" ||
           data.chequeDate === "")
       ) {
+        let fields = ["bankName", "branch", "chequeNumber", "chequeDate"];
+        let errorMessage = fields
+          .filter((field) => !data[field])
+          .map((key) => obj[key])
+          .join(", ");
         setModalType("Warning");
         setModalTitle("Warning");
-        setModalMessage(
-          "Bank Name, Branch, Cheque Number and Cheque Date is required",
-        );
+        setModalMessage(`${errorMessage} is required`);
         setIsModalOpen(true);
         return;
       }
@@ -1189,29 +790,39 @@ const BillList = () => {
           data.bankName === "" ||
           data.branch === "")
       ) {
+        let fields = ["bankName", "branch", "transactionId"];
+        let errorMessage = fields
+          .filter((field) => !data[field])
+          .map((key) => obj[key])
+          .join(", ");
         setModalType("Warning");
         setModalTitle("Warning");
-        setModalMessage("Bank Name, Branch and Transaction ID is required");
+        setModalMessage(`${errorMessage} is required`);
         setIsModalOpen(true);
         return;
       }
 
       if (paymentType === "UPI" && data.transactionId === "") {
+        let fields = ["transactionId"];
+        let errorMessage = fields
+          .filter((field) => !data[field])
+          .map((key) => obj[key])
+          .join(", ");
         setModalType("Warning");
         setModalTitle("Warning");
-        setModalMessage("Transaction ID is required");
+        setModalMessage(`${errorMessage} is required`);
         setIsModalOpen(true);
         return;
       }
 
-      if (data.amount < data.recoveryAmount) {
+      if (Number(data.amount) !== Number(data.recoveryAmount)) {
         setModalType("Warning");
         setModalTitle("Warning");
-        setModalMessage("Amount cannot be lesser than Recovery Amount");
+        setModalMessage("Amount should be equal to Recovery Amount");
         setIsModalOpen(true);
         return;
       }
-      setLoader(true)
+      setLoader(true);
 
       const payload = {
         userId: user.userId || null,
@@ -1254,8 +865,8 @@ const BillList = () => {
       setModalTitle("Error");
       setModalMessage(error.message || "Something went wrong");
       setIsModalOpen(true);
-    } finally{
-      setLoader(false)
+    } finally {
+      setLoader(false);
     }
   };
   return (
@@ -1586,10 +1197,6 @@ const BillList = () => {
         </div>
       </div>
 
-      {/* ================================================= */}
-      {/* FULL IMAGE MODAL */}
-      {/* ================================================= */}
-
       {showImageModal && selectedImages.length > 0 && (
         <div
           className="modal show d-block"
@@ -1676,15 +1283,7 @@ const BillList = () => {
         </div>
       )}
 
-      {/* ================================================= */}
-      {/* PARTICIPANT DETAILS MODAL */}
-      {/* ================================================= */}
-
       {showDetailsModal && renderDetailsModal()}
-
-      {/* ================================================= */}
-      {/* PAYMENT MODAL */}
-      {/* ================================================= */}
 
       {showPaymentModal && (
         <div
@@ -2019,10 +1618,6 @@ const BillList = () => {
           </div>
         </div>
       )}
-
-      {/* ================================================= */}
-      {/* RESPONSE MODAL */}
-      {/* ================================================= */}
 
       <ResponseModal
         isOpen={isModalOpen}

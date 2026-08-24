@@ -61,22 +61,24 @@ const NoticeNirmitiReport = () => {
   // Excel export
   const [excelData, setExcelData] = useState([]);
   const tableHeaders = [
-    "अनुक्र.",
-    "पंचनामा क्र.",
+    "अनुक्रमांक",
+    "नोटीस क्र.",
+    "नोटीस दिनांक",
     "नाव",
-    "पद",
-    "पंचनामा दिनांक व वेळ",
-    "जाहिरातीचा पत्ता",
     "प्रभाग",
+    "शुल्क",
+    "पायमेंट स्थिती",
+    "पायमेंट दिनांक",
   ];
   const keyMapping = {
-    "अनुक्र.": "id",
-    "पंचनामा क्र.": "panchanamaNo",
+    अनुक्रमांक: "noticeId",
+    "नोटीस क्र.": "noticeNumber",
+    "नोटीस दिनांक": "noticeDate",
     नाव: "name",
-    पद: "post",
-    "पंचनामा दिनांक व वेळ": "captureDateTime",
-    "जाहिरातीचा पत्ता": "address",
     प्रभाग: "ward",
+    शुल्क: "amount",
+    "पायमेंट स्थिती": "paymentStatus",
+    "पायमेंट दिनांक": "paymentDate",
   };
 
   const handleDateChangeFilter = (e) => {
@@ -105,7 +107,7 @@ const NoticeNirmitiReport = () => {
       setLoader(true);
       setError(null);
 
-      let url = `/?page=${dataPage}&limit=${pageSize}&ulbId=${import.meta.env.VITE_ULBID}&userId=${user.userId}`;
+      let url = `/report/getNoticeNirmitiReport?page=${dataPage}&limit=${pageSize}&ulbId=${import.meta.env.VITE_ULBID}&userId=${user.userId}`;
 
       if (filters.fromDate) {
         url += `&fromDate=${encodeURIComponent(filters.fromDate)}`;
@@ -129,13 +131,14 @@ const NoticeNirmitiReport = () => {
         const participantData = response.data.data || [];
         const pagination = response.data.pagination || {};
         const excelData = participantData.map((item) => ({
-          id: item.NUM_ILLEGALHOARD_ID,
-          panchanamaNo: item.VAR_ILLEGALHOARD_PANCHANAMA_NO,
-          name: item.VAR_USER1,
-          post: item.VAR_USER1_POST,
-          captureDateTime: formatDateTime(item.DAT_CAP_DT, item.VAR_CAP_TIME),
-          address: item.VAR_ILLEGALHOARD_ADD,
-          ward: item.VAR_ILLEGALHOARD_WARD,
+          noticeId: item.NUM_NOTGEN_ID,
+          noticeNumber: item.VAR_NOTGEN_NO,
+          noticeDate: formatDateIntoStr(item.DT_NOTGEN_DATE),
+          name: item.VAR_NOTGEN_DETAIL,
+          ward: item.NUM_NOTGEN_WARD,
+          amount: item.NUM_NOTGEN_AMT,
+          paymentStatus: item.VAR_NOTGEN_PAYMENTSTATUS,
+          paymentDate: item.PAYMENT_DATE,
         }));
         setExcelData(excelData);
         setParticipants(participantData);
@@ -506,11 +509,11 @@ const NoticeNirmitiReport = () => {
   };
 
   const handleViewDetails = async (panchanama) => {
-    const id = panchanama?.NUM_ILLEGALHOARD_ID;
+    const id = panchanama?.NUM_NOTGEN_ID;
     if (!id) {
       setModalType("error");
       setModalTitle("Error");
-      setModalMessage("Panchanama ID not found.");
+      setModalMessage("Notice ID not found.");
       setIsModalOpen(true);
       return;
     }
@@ -775,6 +778,15 @@ const NoticeNirmitiReport = () => {
     );
   };
 
+  const formatDateIntoStr = (dateStr) => {
+    if (!dateStr) {
+      return "";
+    }
+    const date = dateStr.split("T")[0].split("-").reverse().join("-");
+    const time = dateStr.split("T")[1].split(".")[0];
+    return `${date} ${time}`;
+  };
+
   return (
     <Layout>
       <div className="panel">
@@ -916,59 +928,22 @@ const NoticeNirmitiReport = () => {
                 <th>शुल्क</th>
                 <th>पायमेंट स्थिती</th>
                 <th>पायमेंट दिनांक</th>
-                <th>क्रिया</th>
               </tr>
             </thead>
             <tbody>
               {participants.length > 0 ? (
-                participants.map((panchanama, index) => (
-                  <tr key={panchanama.NUM_ILLEGALHOARD_ID || index}>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
+                participants.map((participants, index) => (
+                  <tr key={participants.NUM_NOTGEN_ID || index}>
+                    <td>{participants.NUM_NOTGEN_ID || "-"}</td>
+                    <td>{participants.VAR_NOTGEN_NO || "-"}</td>
                     <td>
-                      <div className="d-flex gap-1 align-items-center">
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-primary"
-                          onClick={() => handleViewDetails(panchanama)}
-                        >
-                          <i className="bi bi-eye me-1"></i>
-                          View
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-success"
-                          onClick={() => handleGenerateNotice(panchanama)}
-                          disabled={
-                            generatingNoticeId ===
-                            panchanama.NUM_ILLEGALHOARD_ID
-                          }
-                        >
-                          {generatingNoticeId ===
-                          panchanama.NUM_ILLEGALHOARD_ID ? (
-                            <>
-                              <span
-                                className="spinner-border spinner-border-sm me-1"
-                                role="status"
-                                aria-hidden="true"
-                              ></span>
-                              Generating...
-                            </>
-                          ) : (
-                            <>
-                              <i className="bi bi-file-earmark-pdf me-1"></i>
-                              Generate
-                            </>
-                          )}
-                        </button>
-                      </div>
+                      {formatDateIntoStr(participants.DT_NOTGEN_DATE) || ""}
                     </td>
+                    <td>{participants.VAR_NOTGEN_DETAIL || ""}</td>
+                    <td>{participants.NUM_NOTGEN_WARD || ""}</td>
+                    <td>{participants.NUM_NOTGEN_AMT || ""}</td>
+                    <td>{participants.VAR_NOTGEN_PAYMENTSTATUS || ""}</td>
+                    <td>{formatDateIntoStr(participants.PAYMENT_DATE)}</td>
                   </tr>
                 ))
               ) : (

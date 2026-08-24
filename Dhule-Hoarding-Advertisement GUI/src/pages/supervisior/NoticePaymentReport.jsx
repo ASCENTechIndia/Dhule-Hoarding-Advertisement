@@ -56,9 +56,9 @@ const NoticePaymentReport = () => {
     "नाव",
     "प्रभाग",
     "एकूण शुल्क",
-    "पायमेंट स्तिथी",
-    "पायमेंट दिनांक",
-    "पायमेंट पद्धत",
+    "पेमेंट स्तिथी",
+    "पेमेंट दिनांक",
+    "पेमेंट पद्धत",
     "Transaction ID",
   ];
   const keyMapping = {
@@ -67,9 +67,9 @@ const NoticePaymentReport = () => {
     नाव: "name",
     प्रभाग: "ward",
     "एकूण शुल्क": "amount",
-    "पायमेंट स्तिथी": "paymentStatus",
-    "पायमेंट दिनांक": "paymentDate",
-    "पायमेंट पद्धत": "paymentMethod",
+    "पेमेंट स्तिथी": "paymentStatus",
+    "पेमेंट दिनांक": "paymentDate",
+    "पेमेंट पद्धत": "paymentMethod",
     "Transaction ID": "transactionId",
   };
 
@@ -354,9 +354,9 @@ const NoticePaymentReport = () => {
                 <th>नाव</th>
                 <th>प्रभाग</th>
                 <th>एकूण शुल्क</th>
-                <th>पायमेंट स्तिथी</th>
-                <th>पायमेंट दिनांक</th>
-                <th>पायमेंट पद्धत</th>
+                <th>पेमेंट स्तिथी</th>
+                <th>पेमेंट दिनांक</th>
+                <th>पेमेंट पद्धत</th>
                 <th>Transaction ID</th>
               </tr>
             </thead>

@@ -50,8 +50,8 @@ const NoticeNirmitiReport = () => {
     "नाव",
     "प्रभाग",
     "शुल्क",
-    "पायमेंट स्थिती",
-    "पायमेंट दिनांक",
+    "पेमेंट स्थिती",
+    "पेमेंट दिनांक",
   ];
   const keyMapping = {
     अनुक्रमांक: "noticeId",
@@ -60,8 +60,8 @@ const NoticeNirmitiReport = () => {
     नाव: "name",
     प्रभाग: "ward",
     शुल्क: "amount",
-    "पायमेंट स्थिती": "paymentStatus",
-    "पायमेंट दिनांक": "paymentDate",
+    "पेमेंट स्थिती": "paymentStatus",
+    "पेमेंट दिनांक": "paymentDate",
   };
 
   const handleDateChangeFilter = (e) => {
@@ -327,8 +327,8 @@ const NoticeNirmitiReport = () => {
                 <th>नाव</th>
                 <th>प्रभाग</th>
                 <th>शुल्क</th>
-                <th>पायमेंट स्थिती</th>
-                <th>पायमेंट दिनांक</th>
+                <th>पेमेंट स्थिती</th>
+                <th>पेमेंट दिनांक</th>
               </tr>
             </thead>
             <tbody>

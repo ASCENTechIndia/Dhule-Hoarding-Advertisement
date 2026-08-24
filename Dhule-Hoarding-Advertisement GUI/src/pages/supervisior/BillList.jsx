@@ -843,7 +843,6 @@ const BillList = () => {
         name: data.name || null,
         collectionAmount: Number(data.recoveryAmount) || null,
       };
-
       const response = await apiClient.post("/payment/add-payment", payload);
 
       if (response.success && response.data.errorCode === 9999) {
@@ -1378,11 +1377,14 @@ const BillList = () => {
                         रक्कम
                         <span className="required">*</span>
                       </label>
-                      <input
+                     <input
                         type="text"
                         className={`form-control ${errors.amount ? "is-invalid" : ""}`}
                         onInput={(e) => {
-                          e.target.value = e.target.value.replace(/\D/g, "");
+                          e.target.value = e.target.value
+                            .replace(/[^0-9.]/g, "")       // Only numbers and decimal point
+                            .replace(/(\..*)\./g, "$1")    // Only one decimal point
+                            .replace(/^(\d+\.?\d{0,2}).*$/, "$1"); // Max 2 decimals
                         }}
                         {...register("amount", {
                           required: "Amount is required",
@@ -1587,7 +1589,10 @@ const BillList = () => {
                           required: "Recovery Amount is required",
                         })}
                         onInput={(e) => {
-                          e.target.value = e.target.value.replace(/\D/g, "");
+                          e.target.value = e.target.value
+                            .replace(/[^0-9.]/g, "")       // Only numbers and decimal point
+                            .replace(/(\..*)\./g, "$1")    // Only one decimal point
+                            .replace(/^(\d+\.?\d{0,2}).*$/, "$1"); // Max 2 decimals
                         }}
                       />
                       {errors.recoveryAmount && (

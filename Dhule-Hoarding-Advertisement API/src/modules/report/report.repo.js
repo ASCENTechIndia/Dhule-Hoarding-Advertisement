@@ -560,9 +560,154 @@ async function getPanchanamaNirmitiReportRepo(
   };
 }
 
+async function getIllegalHoardWardwiseReportRepo(
+  ulbId,
+  ward,
+  fromDate,
+  toDate,
+  page = 1,
+  limit = 10
+) {
+  const pageNumber = Number(page) || 1;
+  const limitNumber = Number(limit) || 10;
+  const offset = (pageNumber - 1) * limitNumber;
+
+  let sql = `
+    SELECT
+      var_illegalhoard_ward,
+      TO_CHAR(dat_cap_dt, 'YYYY-MM-DD') AS dat_cap_dt,
+      total_notice,
+      total_panchanama,
+      total_no_pay,
+      total_no_notpay,
+      total_notice_amt,
+      collected_amt,
+      num_illegalhoard_ulbid
+    FROM VW_ILLEGALHOARD_WARDWISE_REPORT
+    WHERE num_illegalhoard_ulbid = :ulbId
+  `;
+
+  const binds = {
+    ulbId,
+  };
+
+  // Ward Filter
+  if (ward) {
+    sql += `
+      AND var_illegalhoard_ward = :ward
+    `;
+
+    binds.ward = ward;
+  }
+
+  // Date Range Filter
+  if (fromDate && toDate) {
+    sql += `
+      AND dat_cap_dt >= TO_DATE(:fromDate, 'YYYY-MM-DD')
+      AND dat_cap_dt < TO_DATE(:toDate, 'YYYY-MM-DD') + 1
+    `;
+
+    binds.fromDate = fromDate;
+    binds.toDate = toDate;
+  } else if (fromDate) {
+    sql += `
+      AND dat_cap_dt >= TO_DATE(:fromDate, 'YYYY-MM-DD')
+    `;
+
+    binds.fromDate = fromDate;
+  } else if (toDate) {
+    sql += `
+      AND dat_cap_dt < TO_DATE(:toDate, 'YYYY-MM-DD') + 1
+    `;
+
+    binds.toDate = toDate;
+  }
+
+  sql += `
+    OFFSET :offset ROWS
+    FETCH NEXT :limit ROWS ONLY
+  `;
+
+  binds.offset = offset;
+  binds.limit = limitNumber;
+
+  const result = await executeQuery(
+    sql,
+    binds,
+    { dbName: "db3" }
+  );
+
+  const rows = result.rows || [];
+
+  // ============================
+  // Count Query
+  // ============================
+
+  let countSql = `
+    SELECT COUNT(*) AS TOTAL
+    FROM VW_ILLEGALHOARD_WARDWISE_REPORT
+    WHERE num_illegalhoard_ulbid = :ulbId
+  `;
+
+  const countBinds = {
+    ulbId,
+  };
+
+  if (ward) {
+    countSql += `
+      AND var_illegalhoard_ward = :ward
+    `;
+
+    countBinds.ward = ward;
+  }
+
+  if (fromDate && toDate) {
+    countSql += `
+      AND dat_cap_dt >= TO_DATE(:fromDate, 'YYYY-MM-DD')
+      AND dat_cap_dt < TO_DATE(:toDate, 'YYYY-MM-DD') + 1
+    `;
+
+    countBinds.fromDate = fromDate;
+    countBinds.toDate = toDate;
+  } else if (fromDate) {
+    countSql += `
+      AND dat_cap_dt >= TO_DATE(:fromDate, 'YYYY-MM-DD')
+    `;
+
+    countBinds.fromDate = fromDate;
+  } else if (toDate) {
+    countSql += `
+      AND dat_cap_dt < TO_DATE(:toDate, 'YYYY-MM-DD') + 1
+    `;
+
+    countBinds.toDate = toDate;
+  }
+
+  const countResult = await executeQuery(
+    countSql,
+    countBinds,
+    { dbName: "db3" }
+  );
+
+  const total =
+    Number(countResult.rows?.[0]?.TOTAL) || 0;
+
+  return {
+    data: rows,
+
+    pagination: {
+      page: pageNumber,
+      limit: limitNumber,
+      total,
+      totalPages: Math.ceil(total / limitNumber),
+    },
+  };
+}
+
 module.exports = {
   getNoticeNirmitiReportRepo,
   getNoticePaymentReportRepo,
-  getPanchanamaNirmitiReportRepo
+  getPanchanamaNirmitiReportRepo,
+  getIllegalHoardWardwiseReportRepo
   
 };

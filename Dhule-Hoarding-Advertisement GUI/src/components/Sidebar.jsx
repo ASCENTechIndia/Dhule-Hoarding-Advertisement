@@ -42,11 +42,11 @@ export default function Sidebar() {
       icon: "bi-credit-card", 
       label: "नोटीस भरणा अहवाल",
     },
-    // {
-    //   path: "/ward-wise-report",
-    //   icon: "bi-geo-alt", 
-    //   label: "प्रभागनिहाय अहवाल",
-    // },
+    {
+      path: "/ward-wise-report",
+      icon: "bi-geo-alt", 
+      label: "प्रभागनिहाय अहवाल",
+    },
     // {
     //   path: "/monthly-wise-report",
     //   icon: "bi-calendar3", 

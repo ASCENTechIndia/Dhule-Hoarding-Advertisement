@@ -27,11 +27,11 @@ export default function Sidebar() {
       icon: "bi-wallet",
       label: "शुल्क भरणा यादी",
     },
-    // {
-    //   path: "/notice-nirmiti-report",
-    //   icon: "bi-file-earmark-bar-graph", 
-    //   label: "नोटीस निर्मिती अहवाल",
-    // },
+    {
+      path: "/notice-nirmiti-report",
+      icon: "bi-file-earmark-bar-graph", 
+      label: "नोटीस निर्मिती अहवाल",
+    },
     // {
     //   path: "/panchanama-nirmiti-report",
     //   icon: "bi-file-earmark-bar-graph",

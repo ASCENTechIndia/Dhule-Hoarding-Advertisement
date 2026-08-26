@@ -99,7 +99,7 @@ const NoticeNirmitiReport = () => {
         url += `&toDate=${encodeURIComponent(filters.toDate)}`;
       }
       if (filters.regionalOffice) {
-        url += `&select=${encodeURIComponent(filters.regionalOffice)}`;
+        url += `&officerDivision=${encodeURIComponent(filters.regionalOffice)}`;
       }
       if (filters.ward) {
         url += `&ward=${encodeURIComponent(filters.ward)}`;
@@ -232,7 +232,7 @@ const NoticeNirmitiReport = () => {
               <div className="col-auto">
                 <label className="form-label mb-0 small">Regiona Office</label>
                 <select
-                  name="select"
+                  name="regionalOffice"
                   className="form-select form-select-sm"
                   style={{ width: "100px" }}
                   value={filters.regionalOffice}
@@ -276,8 +276,8 @@ const NoticeNirmitiReport = () => {
                   onChange={handleFilterChange}
                 >
                   <option value="">Payment Status</option>
-                  <option value="P">Paid</option>
-                  <option value="U">Un Paid</option>
+                  <option value="Paid">Paid</option>
+                  <option value="UnPaid">UnPaid</option>
                 </select>
               </div>
 

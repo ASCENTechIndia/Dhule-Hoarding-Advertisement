@@ -746,13 +746,13 @@ async function getIllegalHoardMonthwiseReportRepo(
   }
 
   // Month Filter
-  if (monthNo) {
-    sql += `
-      AND panchanama_month_no = :monthNo
-    `;
+ if (Number(monthNo) > 0) {
+  sql += `
+    AND panchanama_month_no = :monthNo
+  `;
 
-    binds.monthNo = monthNo;
-  }
+  binds.monthNo = Number(monthNo);
+}
 
   sql += `
     ORDER BY panchanama_year DESC, panchanama_month_no DESC

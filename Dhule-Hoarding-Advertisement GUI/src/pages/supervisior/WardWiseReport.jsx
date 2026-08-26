@@ -41,24 +41,40 @@ const WardWiseReport = () => {
 
   // Excel data
   const [excelData, setExcelData] = useState([]);
-  const tableHeaders = [
-    "प्रभाग",
-    "एकूण नोटीस",
-    "पंचनामे",
-    "शुल्क भरले",
-    "शुल्क ना भरले",
-    "एकूण शुल्क ₹",
-    "वसूल रक्कम ₹",
-  ];
-  const keyMapping = {
-    प्रभाग: "ward",
-    "एकूण नोटीस": "totalNotices",
-    पंचनामे: "totalPanchanama",
-    "शुल्क भरले": "paid",
-    "शुल्क ना भरले": "notPaid",
-    "एकूण शुल्क ₹": "totalAmount",
-    "वसूल रक्कम ₹": "collectedAmount",
-  };
+ const tableHeaders = [
+  "प्रभाग",
+  "दिनांक",
+  "एकूण नोटीस",
+  "पंचनामे",
+  "शुल्क भरले",
+  "शुल्क ना भरले",
+  "एकूण शुल्क ₹",
+  "वसूल रक्कम ₹",
+];
+ const keyMapping = {
+  "प्रभाग": "ward",
+  "दिनांक": "date",
+  "एकूण नोटीस": "totalNotices",
+  "पंचनामे": "totalPanchanama",
+  "शुल्क भरले": "paid",
+  "शुल्क ना भरले": "notPaid",
+  "एकूण शुल्क ₹": "totalAmount",
+  "वसूल रक्कम ₹": "collectedAmount",
+};
+
+const formatDate = (dateString) => {
+  if (!dateString) return "-";
+
+  const date = new Date(dateString);
+
+  if (isNaN(date.getTime())) return "-";
+
+  return date.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+};
 
   const fetchReportData = async (dataPage = 1) => {
     try {
@@ -79,15 +95,16 @@ const WardWiseReport = () => {
         const participantData = response.data.data || [];
         const pagination = response.data.pagination || {};
 
-        const excelData = participantData.map((item) => ({
-          ward: item.VAR_ILLEGALHOARD_WARD,
-          totalNotices: item.TOTAL_NOTICE,
-          totalPanchanama: item.TOTAL_PANCHANAMA,
-          paid: item.TOTAL_NO_PAY,
-          notPaid: item.TOTAL_NO_NOTPAY,
-          totalAmount: item.TOTAL_NOTICE_AMT,
-          collectedAmount: item.COLLECTED_AMT,
-        }));
+     const excelData = participantData.map((item) => ({
+  ward: item.VAR_ILLEGALHOARD_WARD,
+  date: formatDate(item.DAT_CAP_DT),
+  totalNotices: item.TOTAL_NOTICE,
+  totalPanchanama: item.TOTAL_PANCHANAMA,
+  paid: item.TOTAL_NO_PAY,
+  notPaid: item.TOTAL_NO_NOTPAY,
+  totalAmount: item.TOTAL_NOTICE_AMT,
+  collectedAmount: item.COLLECTED_AMT,
+}));
 
         setExcelData(excelData);
         setParticipants(participantData);
@@ -262,43 +279,54 @@ const WardWiseReport = () => {
         <div className="table-responsive">
           <table className="table align-middle mb-0">
             <thead>
-              <tr>
-                <th>प्रभाग</th>
-                <th>एकूण नोटीस</th>
-                <th>पंचनामे</th>
-                <th>शुल्क भरले</th>
-                <th>शुल्क ना भरले</th>
-                <th>एकूण शुल्क ₹</th>
-                <th>वसूल रक्कम ₹</th>
-              </tr>
-            </thead>
-            <tbody>
-              {participants.length > 0 ? (
-                participants.map((record, index) => (
-                  <tr key={index}>
-                    <td>{record.VAR_ILLEGALHOARD_WARD || ""}</td>
-                    <td>{record.TOTAL_NOTICE || 0}</td>
-                    <td>{record.TOTAL_PANCHANAMA || 0}</td>
-                    <td>{record.TOTAL_NO_PAY || 0}</td>
-                    <td>{record.TOTAL_NO_NOTPAY || 0}</td>
-                    <td>{record.TOTAL_NOTICE_AMT || 0}</td>
-                    <td>{record.COLLECTED_AMT || 0}</td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="7" className="text-center text-muted py-5">
-                    <div>
-                      <i
-                        className="bi bi-inbox"
-                        style={{ fontSize: "2rem" }}
-                      ></i>
-                      <div className="mt-2">No records found</div>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
+  <tr>
+    <th>प्रभाग</th>
+    <th>दिनांक</th>
+    <th>एकूण नोटीस</th>
+    <th>पंचनामे</th>
+    <th>शुल्क भरले</th>
+    <th>शुल्क ना भरले</th>
+    <th>एकूण शुल्क ₹</th>
+    <th>वसूल रक्कम ₹</th>
+  </tr>
+</thead>
+           <tbody>
+  {participants.length > 0 ? (
+    participants.map((record, index) => (
+      <tr key={index}>
+        <td>{record.VAR_ILLEGALHOARD_WARD || ""}</td>
+
+        <td>
+          {formatDate(record.DAT_CAP_DT)}
+        </td>
+
+        <td>{record.TOTAL_NOTICE || 0}</td>
+
+        <td>{record.TOTAL_PANCHANAMA || 0}</td>
+
+        <td>{record.TOTAL_NO_PAY || 0}</td>
+
+        <td>{record.TOTAL_NO_NOTPAY || 0}</td>
+
+        <td>{record.TOTAL_NOTICE_AMT || 0}</td>
+
+        <td>{record.COLLECTED_AMT || 0}</td>
+      </tr>
+    ))
+  ) : (
+    <tr>
+      <td colSpan="8" className="text-center text-muted py-5">
+        <div>
+          <i
+            className="bi bi-inbox"
+            style={{ fontSize: "2rem" }}
+          ></i>
+          <div className="mt-2">No records found</div>
+        </div>
+      </td>
+    </tr>
+  )}
+</tbody>
           </table>
         </div>
 

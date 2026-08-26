@@ -20,6 +20,8 @@ const PanchanamaNirmitiReport = () => {
   const [participants, setParticipants] = useState([]);
   const [error, setError] = useState(null);
 
+  const [isFetching, setIsFetching] = useState(false);
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -96,76 +98,132 @@ const PanchanamaNirmitiReport = () => {
       : formattedDate;
   };
 
-  const fetchReportData = async (dataPage = 1) => {
-    try {
-      setLoader(true);
-      setError(null);
+const fetchReportData = async (dataPage = 1) => {
+  try {
+    setIsFetching(true);
+    setLoader(true);
+    setError(null);
 
-      let url = `/report/getPanchanamaNirmitiReport?page=${dataPage}&limit=${pageSize}&ulbId=${import.meta.env.VITE_ULBID}&userId=${user.userId}`;
+    let url =
+      `/report/getPanchanamaNirmitiReport` +
+      `?page=${dataPage}` +
+      `&limit=${pageSize}` +
+      `&ulbId=${import.meta.env.VITE_ULBID}` +
+      `&userId=${user.userId}`;
 
-      if (filters.fromDate)
-        url += `&fromDate=${encodeURIComponent(filters.fromDate)}`;
-      if (filters.toDate)
-        url += `&toDate=${encodeURIComponent(filters.toDate)}`;
-      if (filters.officerDivision)
-        url += `&officerDivision=${encodeURIComponent(filters.officerDivision)}`;
-      if (filters.ward) url += `&ward=${encodeURIComponent(filters.ward)}`;
+    if (filters.fromDate) {
+      url += `&fromDate=${encodeURIComponent(filters.fromDate)}`;
+    }
 
-      const response = await apiClient.get(url);
+    if (filters.toDate) {
+      url += `&toDate=${encodeURIComponent(filters.toDate)}`;
+    }
 
-      if (response?.success && response?.data) {
-        const participantData = response.data.data || [];
-        const pagination = response.data.pagination || {};
+    if (filters.officerDivision) {
+      url += `&officerDivision=${encodeURIComponent(
+        filters.officerDivision
+      )}`;
+    }
 
-        const excelData = participantData.map((item) => ({
-          id: item.NUM_ILLEGALHOARD_ID,
-          panchanamaNo: item.VAR_ILLEGALHOARD_PANCHANAMA_NO,
-          panchanamaDate:
-            formatDateTime(item.DAT_CAP_DT, "").split(" - ")[0] || "",
-          panchanamaTime:
-            formatDateTime(item.DAT_CAP_DT, item.VAR_CAP_TIME).split(
-              " - ",
-            )[1] || "",
-          noticeNo: item.VAR_NOTGEN_NO,
-          name: item.VAR_USER1,
-          address: item.VAR_ILLEGALHOARD_ADD,
-          ward: item.VAR_ILLEGALHOARD_WARD,
-        }));
+    if (filters.ward) {
+      url += `&ward=${encodeURIComponent(filters.ward)}`;
+    }
 
-        setExcelData(excelData);
-        setParticipants(participantData);
-        setCurrentPage(Number(pagination.page) || dataPage);
-        setTotalPages(Number(pagination.totalPages) || 1);
-        setTotalRecords(Number(pagination.total) || 0);
-      } else {
-        setExcelData([]);
+    console.log("API URL:", url);
+
+    const response = await apiClient.get(url);
+
+    console.log("API RESPONSE:", response);
+
+    if (response?.success) {
+      const participantData = response?.data?.data || [];
+      const pagination = response?.data?.pagination || {};
+
+      /*
+       * IMPORTANT:
+       * API successfully returned [].
+       * Therefore clear the old data.
+       */
+      if (participantData.length === 0) {
         setParticipants([]);
+        setExcelData([]);
+
         setCurrentPage(1);
         setTotalPages(1);
         setTotalRecords(0);
+
+        return;
       }
-    } catch (err) {
-      console.error("Error fetching report data:", err);
-      setExcelData([]);
-      setParticipants([]);
-      setCurrentPage(1);
-      setTotalPages(1);
-      setTotalRecords(0);
-      setError(err?.message || "Failed to fetch report data");
-    } finally {
-      setLoader(false);
+
+      /*
+       * API returned new data.
+       * Replace old data only now.
+       */
+      const newExcelData = participantData.map((item) => ({
+        id: item.NUM_ILLEGALHOARD_ID,
+        panchanamaNo: item.VAR_ILLEGALHOARD_PANCHANAMA_NO,
+
+        panchanamaDate:
+          formatDateTime(item.DAT_CAP_DT, "").split(" - ")[0] || "",
+
+        panchanamaTime:
+          formatDateTime(
+            item.DAT_CAP_DT,
+            item.VAR_CAP_TIME
+          ).split(" - ")[1] || "",
+
+        noticeNo: item.VAR_NOTGEN_NO,
+        name: item.VAR_USER1,
+        address: item.VAR_ILLEGALHOARD_ADD,
+        ward: item.VAR_ILLEGALHOARD_WARD,
+      }));
+
+      setParticipants(participantData);
+      setExcelData(newExcelData);
+
+      setCurrentPage(Number(pagination.page) || dataPage);
+      setTotalPages(Number(pagination.totalPages) || 1);
+      setTotalRecords(Number(pagination.total) || 0);
+    } else {
+      /*
+       * API responded but failed.
+       * Keep old data.
+       */
+      setError(
+        response?.message || "Failed to fetch report data"
+      );
     }
-  };
+  } catch (err) {
+    console.error("Error fetching report data:", err);
+
+    /*
+     * API error.
+     * Keep old data.
+     */
+    setError(
+      err?.response?.data?.message ||
+      err?.message ||
+      "Failed to fetch report data"
+    );
+  } finally {
+    setIsFetching(false);
+    setLoader(false);
+  }
+};
 
   useEffect(() => {
     fetchReportData(1);
   }, [filters, pageSize]);
 
-  const handlePageChange = (page) => {
-    if (page >= 1 && page <= totalPages && page !== currentPage) {
-      fetchReportData(page);
-    }
-  };
+const handlePageChange = (page) => {
+  if (
+    page >= 1 &&
+    page <= totalPages &&
+    page !== currentPage
+  ) {
+    fetchReportData(page);
+  }
+};
 
   const getPaginationPages = () => {
     const pages = [];
@@ -181,24 +239,43 @@ const PanchanamaNirmitiReport = () => {
     return pages;
   };
 
-  const handleDateChangeFilter = (e) => {
-    const { name, value } = e.target;
-    setFilters((prev) => ({ ...prev, [name]: value }));
-  };
+const handleFilterChange = (e) => {
+  const { name, value } = e.target;
 
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters((prev) => ({ ...prev, [name]: value }));
-  };
+  // Clear old table data immediately
+  setParticipants([]);
+  setExcelData([]);
 
-  const handleClearFilters = () => {
-    setFilters({
-      fromDate: "",
-      toDate: "",
-      officerDivision: "",
-      ward: "",
-    });
-  };
+  // Reset pagination
+  setCurrentPage(1);
+  setTotalPages(1);
+  setTotalRecords(0);
+
+  // Update filter
+  setFilters((prev) => ({
+    ...prev,
+    [name]: value,
+  }));
+};
+
+const handleClearFilters = () => {
+  // Clear existing data immediately
+  setParticipants([]);
+  setExcelData([]);
+
+  // Reset pagination
+  setCurrentPage(1);
+  setTotalPages(1);
+  setTotalRecords(0);
+
+  // Clear filters
+  setFilters({
+    fromDate: "",
+    toDate: "",
+    officerDivision: "",
+    ward: "",
+  });
+};
 
   return (
     <Layout>
@@ -231,7 +308,7 @@ const PanchanamaNirmitiReport = () => {
                   className="form-control form-control-sm"
                   style={{ width: "150px" }}
                   value={filters.fromDate}
-                  onChange={handleDateChangeFilter}
+                  onChange={handleFilterChange}
                 />
               </div>
 
@@ -247,7 +324,7 @@ const PanchanamaNirmitiReport = () => {
                   className="form-control form-control-sm"
                   style={{ width: "150px" }}
                   value={filters.toDate}
-                  onChange={handleDateChangeFilter}
+                  onChange={handleFilterChange}
                 />
               </div>
 

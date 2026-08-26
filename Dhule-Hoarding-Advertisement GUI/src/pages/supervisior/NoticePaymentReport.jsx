@@ -20,6 +20,8 @@ const NoticePaymentReport = () => {
   const [participants, setParticipants] = useState([]);
   const [error, setError] = useState(null);
 
+  const [isFetching, setIsFetching] = useState(false);
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -64,8 +66,8 @@ const NoticePaymentReport = () => {
   const keyMapping = {
     "अ क्र": "noticeId",
     "नोटीस क्र.": "noticeNumber",
-    नाव: "name",
-    प्रभाग: "ward",
+    "नाव": "name",
+    "प्रभाग": "ward",
     "एकूण शुल्क": "amount",
     "पेमेंट स्तिथी": "paymentStatus",
     "पेमेंट दिनांक": "paymentDate",
@@ -79,21 +81,51 @@ const NoticePaymentReport = () => {
   };
 
   // Generic handler for dropdowns
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters((prev) => ({ ...prev, [name]: value }));
-  };
+ const handleFilterChange = (e) => {
+  const { name, value } = e.target;
 
-  const handleClearFilters = () => {
-    setNoticeNoInput("");
-    setFilters({
-      fromDate: "",
-      toDate: "",
-      noticeNo: "",
-      ward: "",
-      paymentStatus: "",
-    });
-  };
+  // Clear old table data immediately
+  setParticipants([]);
+  setExcelData([]);
+
+  // Reset pagination
+  setCurrentPage(1);
+  setTotalPages(1);
+  setTotalRecords(0);
+
+  // Clear previous error
+  setError(null);
+
+  // Update filter
+  setFilters((prev) => ({
+    ...prev,
+    [name]: value,
+  }));
+};
+ const handleClearFilters = () => {
+  // Clear old data immediately
+  setParticipants([]);
+  setExcelData([]);
+
+  // Reset pagination
+  setCurrentPage(1);
+  setTotalPages(1);
+  setTotalRecords(0);
+
+  // Clear notice input
+  setNoticeNoInput("");
+
+  // Clear filters
+  setFilters({
+    fromDate: "",
+    toDate: "",
+    noticeNo: "",
+    ward: "",
+    paymentStatus: "",
+  });
+
+  setError(null);
+};
 
   const formatDateIntoStr = (dateStr) => {
     if (!dateStr) {
@@ -104,79 +136,132 @@ const NoticePaymentReport = () => {
   };
 
   const fetchReportData = async (dataPage = 1) => {
-    try {
-      setLoader(true);
-      setError(null);
+  try {
+    setIsFetching(true);
+    setLoader(true);
+    setError(null);
 
-      let url = `/report/getNoticePaymentReport?page=${dataPage}&limit=${pageSize}&ulbId=${import.meta.env.VITE_ULBID}&userId=${user.userId}`;
+    let url =
+      `/report/getNoticePaymentReport` +
+      `?page=${dataPage}` +
+      `&limit=${pageSize}` +
+      `&ulbId=${import.meta.env.VITE_ULBID}` +
+      `&userId=${user.userId}`;
 
-      if (filters.fromDate) {
-        url += `&fromDate=${encodeURIComponent(filters.fromDate)}`;
-      }
-      if (filters.toDate) {
-        url += `&toDate=${encodeURIComponent(filters.toDate)}`;
-      }
-      if (filters.noticeNo) {
-        url += `&notgenNo=${encodeURIComponent(filters.noticeNo)}`;
-      }
-      if (filters.ward) {
-        url += `&ward=${encodeURIComponent(filters.ward)}`;
-      }
-      if (filters.paymentStatus) {
-        url += `&payMode=${encodeURIComponent(filters.paymentStatus)}`;
-      }
+    if (filters.fromDate) {
+      url += `&fromDate=${encodeURIComponent(filters.fromDate)}`;
+    }
 
-      const response = await apiClient.get(url);
+    if (filters.toDate) {
+      url += `&toDate=${encodeURIComponent(filters.toDate)}`;
+    }
 
-      if (response?.success && response?.data) {
-        const participantData = response.data.data || [];
-        const pagination = response.data.pagination || {};
-        const excelData = participantData.map((item) => ({
-          noticeId: item.NUM_NOTGEN_ID,
-          noticeNumber: item.VAR_NOTGEN_NO,
-          name: item.VAR_NOTGEN_DETAIL,
-          ward: item.NUM_NOTGEN_WARD,
-          amount: item.NUM_ILLEGALHOARD_COLL_AMT,
-          paymentStatus: item.VAR_NOTGEN_PAYMENTSTATUS,
-          paymentDate: formatDateIntoStr(item.PAYMENT_DATE),
-          paymentMethod: item.NUM_ILLEGALHOARD_PAYMODE,
-          transactionId: item.VAR_ILLEGALHOARD_TRANID,
-        }));
-        setExcelData(excelData);
-        setParticipants(participantData);
-        setCurrentPage(Number(pagination.page) || dataPage);
-        setTotalPages(Number(pagination.totalPages) || 1);
-        setTotalRecords(Number(pagination.total) || 0);
-      } else {
-        setExcelData([]);
+    if (filters.noticeNo) {
+      url += `&notgenNo=${encodeURIComponent(filters.noticeNo)}`;
+    }
+
+    if (filters.ward) {
+      url += `&ward=${encodeURIComponent(filters.ward)}`;
+    }
+
+    if (filters.paymentStatus && filters.paymentStatus !== "all") {
+      url += `&payMode=${encodeURIComponent(filters.paymentStatus)}`;
+    }
+
+    console.log("Notice Payment API URL:", url);
+
+    const response = await apiClient.get(url);
+
+    console.log("Notice Payment API Response:", response);
+
+    if (response?.success) {
+      const participantData = response?.data?.data || [];
+      const pagination = response?.data?.pagination || {};
+
+      // ============================================
+      // API SUCCESS BUT NO DATA
+      // ============================================
+
+      if (participantData.length === 0) {
         setParticipants([]);
+        setExcelData([]);
+
         setCurrentPage(1);
         setTotalPages(1);
         setTotalRecords(0);
+
+        return;
       }
-    } catch (err) {
-      console.error("Error fetching report data:", err);
-      setExcelData([]);
+
+      // ============================================
+      // API SUCCESS WITH DATA
+      // ============================================
+
+      const newExcelData = participantData.map((item) => ({
+        noticeId: item.NUM_NOTGEN_ID,
+        noticeNumber: item.VAR_NOTGEN_NO,
+        name: item.VAR_NOTGEN_DETAIL,
+        ward: item.NUM_NOTGEN_WARD,
+        amount: item.NUM_ILLEGALHOARD_COLL_AMT,
+        paymentStatus: item.VAR_NOTGEN_PAYMENTSTATUS,
+        paymentDate: formatDateIntoStr(item.PAYMENT_DATE),
+        paymentMethod: item.NUM_ILLEGALHOARD_PAYMODE,
+        transactionId: item.VAR_ILLEGALHOARD_TRANID,
+      }));
+
+      // Replace old data with new data
+      setParticipants(participantData);
+      setExcelData(newExcelData);
+
+      setCurrentPage(Number(pagination.page) || dataPage);
+      setTotalPages(Number(pagination.totalPages) || 1);
+      setTotalRecords(Number(pagination.total) || 0);
+    } else {
+      // API response unsuccessful
       setParticipants([]);
+      setExcelData([]);
+
       setCurrentPage(1);
       setTotalPages(1);
       setTotalRecords(0);
-      setError(err?.message || "Failed to fetch report data");
-    } finally {
-      setLoader(false);
+
+      setError(
+        response?.message || "Failed to fetch notice payment report"
+      );
     }
+  } catch (err) {
+    console.error("Error fetching notice payment report:", err);
+
+    setParticipants([]);
+    setExcelData([]);
+
+    setCurrentPage(1);
+    setTotalPages(1);
+    setTotalRecords(0);
+
+    setError(
+      err?.response?.data?.message ||
+      err?.message ||
+      "Failed to fetch notice payment report"
+    );
+  } finally {
+    setIsFetching(false);
+    setLoader(false);
+  }
+};
+
+useEffect(() => {
+  const handler = setTimeout(() => {
+    setFilters((prev) => ({
+      ...prev,
+      noticeNo: noticeNoInput,
+    }));
+  }, 500);
+
+  return () => {
+    clearTimeout(handler);
   };
-
-  //   debounc for only Notice number input box field
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setFilters((prev) => ({ ...prev, noticeNo: noticeNoInput }));
-    }, 500);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [noticeNoInput]);
+}, [noticeNoInput]);
 
   useEffect(() => {
     fetchReportData(1);
@@ -240,7 +325,7 @@ const NoticePaymentReport = () => {
                   className="form-control form-control-sm"
                   style={{ width: "150px" }}
                   value={filters.fromDate}
-                  onChange={handleDateChangeFilter}
+                  onChange={handleFilterChange}
                 />
               </div>
 
@@ -256,7 +341,7 @@ const NoticePaymentReport = () => {
                   className="form-control form-control-sm"
                   style={{ width: "150px" }}
                   value={filters.toDate}
-                  onChange={handleDateChangeFilter}
+                  onChange={handleFilterChange}
                 />
               </div>
 
@@ -289,7 +374,7 @@ const NoticePaymentReport = () => {
                   value={filters.paymentStatus}
                   onChange={handleFilterChange}
                 >
-                  <option value="all">All</option>
+                  <option value="">All</option>
                   <option value="Cash">Cash</option>
                   <option value="Cheque">Cheque</option>
                   <option value="Online">Online</option>
@@ -302,12 +387,25 @@ const NoticePaymentReport = () => {
               <div className="col-auto d-flex flex-column">
                 <label className="form-label mb-0 small">Notice No</label>
                 <input
-                  type="text"
-                  name="noticeNo"
-                  value={noticeNoInput}
-                  onChange={(e) => setNoticeNoInput(e.target.value)}
-                  className="form-text-input"
-                />
+  type="text"
+  name="noticeNo"
+  value={noticeNoInput}
+  onChange={(e) => {
+    const value = e.target.value;
+
+    setNoticeNoInput(value);
+
+    // Immediately clear old data
+    setParticipants([]);
+    setExcelData([]);
+
+    setCurrentPage(1);
+    setTotalPages(1);
+    setTotalRecords(0);
+    setError(null);
+  }}
+  className="form-text-input"
+/>
               </div>
               {/* Clear Button */}
               <div className="col-auto">
@@ -377,7 +475,7 @@ const NoticePaymentReport = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="8" className="text-center text-muted py-5">
+                  <td colSpan="9" className="text-center text-muted py-5">
                     <div>
                       <i
                         className="bi bi-inbox"
@@ -411,10 +509,19 @@ const NoticePaymentReport = () => {
               className="form-select form-select-sm"
               style={{ width: "75px" }}
               value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value));
-                setCurrentPage(1);
-              }}
+             onChange={(e) => {
+  // Clear old data
+  setParticipants([]);
+  setExcelData([]);
+
+  // Reset pagination
+  setCurrentPage(1);
+  setTotalPages(1);
+  setTotalRecords(0);
+
+  // New page size
+  setPageSize(Number(e.target.value));
+}}
             >
               <option value={5}>5</option>
               <option value={10}>10</option>

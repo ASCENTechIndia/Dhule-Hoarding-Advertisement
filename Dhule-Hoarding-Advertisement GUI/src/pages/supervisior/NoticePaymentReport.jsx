@@ -38,8 +38,8 @@ const NoticePaymentReport = () => {
   // Filters
   const [noticeNoInput, setNoticeNoInput] = useState("");
   const [filters, setFilters] = useState({
-    fromDate: getToday(),
-    toDate: getToday(),
+    fromDate: '',
+    toDate: '',
     noticeNo: "",
     ward: "",
     paymentStatus: "",
@@ -306,7 +306,7 @@ useEffect(() => {
           <div>
             <h2 className="h5 mb-1 section-title">
               <i className="bi bi-people me-2" aria-hidden="true"></i>
-              <span>सूचना देयकाचा अहवाल ({totalRecords})</span>
+              <span>नोटीस भरणा अहवाल ({totalRecords})</span>
             </h2>
             <p className="text-muted mb-0">संपूर्ण यादी पहा</p>
           </div>

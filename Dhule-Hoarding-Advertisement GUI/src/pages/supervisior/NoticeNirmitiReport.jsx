@@ -34,8 +34,8 @@ const NoticeNirmitiReport = () => {
 
   // Filters
   const [filters, setFilters] = useState({
-    fromDate: getToday(),
-    toDate: getToday(),
+    fromDate: '',
+    toDate: '',
     regionalOffice: "",
     ward: "",
     paymentStatus: "",

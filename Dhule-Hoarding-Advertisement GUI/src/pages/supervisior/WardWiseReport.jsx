@@ -34,8 +34,8 @@ const WardWiseReport = () => {
 
   // Filters
   const [filters, setFilters] = useState({
-    fromDate: getToday(),
-    toDate: getToday(),
+    fromDate: '',
+    toDate: '',
     ward: "",
   });
 

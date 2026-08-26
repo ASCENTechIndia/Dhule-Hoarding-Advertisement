@@ -36,8 +36,8 @@ const NoticeList = () => {
 
   // Filters
   const [filters, setFilters] = useState({
-    fromDate: getToday(),
-    toDate: getToday(),
+    fromDate: '',
+    toDate: '',
   });
 
   // Image modal

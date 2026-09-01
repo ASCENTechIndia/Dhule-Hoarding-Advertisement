@@ -9,6 +9,7 @@ const {
   repoGetNoticeById,
   repoGenerateNotice,
   repoGetCorporationInfo,
+  repoGetGeneratedNoticeByPanchanama
 } = require("./notice.repo");
 
 const {
@@ -1386,8 +1387,434 @@ const mergedData = {
 |--------------------------------------------------------------------------
 */
 
+async function generateNoticeFromDbService(payload) {
+  if (!payload) {
+    throw new Error(
+      "Request payload is required"
+    );
+  }
+
+  const panchanamaNo =
+    payload.PANCHANAMA_NO ||
+    payload.panchanamaNo ||
+    payload.VAR_ILLEGALHOARD_PANCHANAMA_NO;
+
+  if (!panchanamaNo) {
+    throw new Error(
+      "Panchanama number is required"
+    );
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Get already generated notice data from DB
+  |--------------------------------------------------------------------------
+  */
+
+  const noticeData =
+    await repoGetGeneratedNoticeByPanchanama(
+      panchanamaNo
+    );
+
+  if (!noticeData) {
+    throw new Error(
+      "Generated notice data not found"
+    );
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Current Date + Time
+  |--------------------------------------------------------------------------
+  */
+
+  const getCurrentDateTime = () => {
+    const now = new Date();
+
+    const day = String(
+      now.getDate()
+    ).padStart(2, "0");
+
+    const month = String(
+      now.getMonth() + 1
+    ).padStart(2, "0");
+
+    const year =
+      now.getFullYear();
+
+    let hours =
+      now.getHours();
+
+    const minutes = String(
+      now.getMinutes()
+    ).padStart(2, "0");
+
+    const seconds = String(
+      now.getSeconds()
+    ).padStart(2, "0");
+
+    const ampm =
+      hours >= 12
+        ? "PM"
+        : "AM";
+
+    hours =
+      hours % 12;
+
+    hours =
+      hours || 12;
+
+    hours =
+      String(hours).padStart(
+        2,
+        "0"
+      );
+
+    return `${day}-${month}-${year} ${hours}:${minutes}:${seconds} ${ampm}`;
+  };
+
+  const formatDateTime = (dateValue) => {
+  if (!dateValue) {
+    return "-";
+  }
+
+  const date = new Date(dateValue);
+
+  if (isNaN(date.getTime())) {
+    return "-";
+  }
+
+  const day = String(
+    date.getDate()
+  ).padStart(2, "0");
+
+  const month = String(
+    date.getMonth() + 1
+  ).padStart(2, "0");
+
+  const year =
+    date.getFullYear();
+
+  let hours =
+    date.getHours();
+
+  const minutes = String(
+    date.getMinutes()
+  ).padStart(2, "0");
+
+  const seconds = String(
+    date.getSeconds()
+  ).padStart(2, "0");
+
+  const ampm =
+    hours >= 12
+      ? "PM"
+      : "AM";
+
+  hours =
+    hours % 12;
+
+  hours =
+    hours || 12;
+
+  hours =
+    String(hours).padStart(
+      2,
+      "0"
+    );
+
+  return `${day}-${month}-${year} ${hours}:${minutes}:${seconds} ${ampm}`;
+};
+  /*
+  |--------------------------------------------------------------------------
+  | Map DB data to existing HTML data structure
+  |--------------------------------------------------------------------------
+  */
+
+  const mergedData = {
+    /*
+    | Basic
+    */
+
+    ...payload,
+
+    id:
+      noticeData.NUM_ILLEGALHOARD_ID ||
+      null,
+
+    ADDRESS:
+      noticeData.VAR_ILLEGALHOARD_ADD ||
+      "-",
+
+    REGIONAL_OFFICE_NO:
+      noticeData.VAR_ILLEGALHOARD_WARD ||
+      "-",
+
+    ADVERTISER_NAME:
+      noticeData.VAR_USER1 ||
+      "-",
+
+    AMOUNT_DATA:
+      noticeData.AMOUNT ||
+      "0",
+
+    LATITUDE:
+      noticeData.LATITUDE ||
+      "-",
+
+    LONGITUDE:
+      noticeData.LONGITUDE ||
+      "-",
+
+    SIZE:
+      noticeData.NUM_SIZE_LENGTH &&
+      noticeData.NUM_SIZE_WIDTH
+        ? `${noticeData.NUM_SIZE_LENGTH} x ${noticeData.NUM_SIZE_WIDTH}`
+        : "-",
+
+    PANCHANAMA_NO:
+      noticeData.VAR_ILLEGALHOARD_PANCHANAMA_NO ||
+      panchanamaNo,
+
+    NOTICE_NO:
+      noticeData.VAR_NOTGEN_NO ||
+      "-",
+
+    FROM_DATE:
+      noticeData.FROM_DATE ||
+      "-",
+
+    TO_DATE:
+      noticeData.TO_DATE ||
+      "-",
+
+    /*
+    | This is officer division
+    */
+
+    REGIONAL_OFFICE:
+      noticeData.VAR_OFFICER_DIVISION ||
+      "-",
+
+    /*
+    | Marathi username
+    */
+
+    MARATHI_USERNAME:
+      noticeData.VAR_MARATHI_USERNAME ||
+      "-",
+
+    /*
+    | ULB
+    */
+
+    ULB_ID:
+      noticeData.NUM_ILLEGALHOARD_ULBID ||
+      null,
+
+    /*
+    | Notice date
+    */
+
+    NOTICE_DATE:
+       formatDateTime(
+    noticeData.DT_NOTGEN_DATE
+  ) ||
+      "-",
+
+    /*
+    | Current date time
+    */
+
+    CURRENT_DATE_TIME:
+       formatDateTime(
+    noticeData.DT_NOTGEN_DATE
+  ) ||
+      "-",
+
+    /*
+    | Zonal / Officer division
+    */
+
+    ZONAL_NAME:
+      noticeData.VAR_OFFICER_DIVISION ||
+      "-",
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Generate HTML
+  |--------------------------------------------------------------------------
+  */
+
+  const html =
+    await renderNoticeHtmlService(
+      mergedData
+    );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Generate PDF
+  |--------------------------------------------------------------------------
+  */
+
+  let browser = null;
+
+  try {
+
+    const result =
+      await generatePdfFromHtml(
+        html
+      );
+
+    const pdfBuffer =
+      result.pdfBuffer;
+
+    const page =
+      result.page;
+
+    browser =
+      result.browser;
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validate PDF
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      !Buffer.isBuffer(pdfBuffer)
+    ) {
+      throw new Error(
+        "PDF generation failed: result is not a Buffer"
+      );
+    }
+
+    if (
+      pdfBuffer.length === 0
+    ) {
+      throw new Error(
+        "PDF generation failed: empty PDF"
+      );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Digital Signature
+    |--------------------------------------------------------------------------
+    */
+
+    console.log(
+      "[SIGNATURE] Starting global digital signature..."
+    );
+
+    const signedResult =
+      await digitallySignPdf({
+        pdfBuffer,
+
+        page,
+
+        pfxPath:
+          path.join(
+            __dirname,
+            "DS Dhule Municipal Corporation.pfx"
+          ),
+
+        password:
+          "Pro452",
+
+        selector:
+          "#signature-anchor",
+      });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Final Signed PDF
+    |--------------------------------------------------------------------------
+    */
+
+    let signedPdfBuffer =
+      signedResult.pdfBuffer;
+
+    /*
+    |--------------------------------------------------------------------------
+    | Convert to Buffer if required
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      !Buffer.isBuffer(
+        signedPdfBuffer
+      )
+    ) {
+      if (
+        signedPdfBuffer instanceof
+        Uint8Array
+      ) {
+        signedPdfBuffer =
+          Buffer.from(
+            signedPdfBuffer.buffer,
+            signedPdfBuffer.byteOffset,
+            signedPdfBuffer.byteLength
+          );
+      } else {
+        signedPdfBuffer =
+          Buffer.from(
+            signedPdfBuffer
+          );
+      }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validate Signed PDF
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      !Buffer.isBuffer(
+        signedPdfBuffer
+      )
+    ) {
+      throw new Error(
+        "PDF signing failed: result is not a Buffer"
+      );
+    }
+
+    if (
+      signedPdfBuffer.length === 0
+    ) {
+      throw new Error(
+        "PDF signing failed: empty signed PDF"
+      );
+    }
+
+    return signedPdfBuffer;
+
+  } finally {
+
+    if (browser) {
+      try {
+        await browser.close();
+
+        console.log(
+          "[PUPPETEER] Browser closed."
+        );
+
+      } catch (closeError) {
+
+        console.error(
+          "[PUPPETEER] Browser close error:",
+          closeError.message
+        );
+      }
+    }
+  }
+}
+
 module.exports = {
   renderNoticeHtmlService,
   getNoticeByIdService,
   generateNoticeService,
+  generateNoticeFromDbService
 };

@@ -25,6 +25,7 @@ const {
   getPanchanamalistRepo,
   illegalHoardRepo,
   getPanchanamaDetailsRepo,
+  getNoticelistRepo
 } = require("./registerComplaint.repo");
 
 const TEMPLATE_PATH = path.join(
@@ -315,6 +316,24 @@ async function getPanchanamalistService(
   userId
 ) {
   return getPanchanamalistRepo(
+    fromDate,
+    toDate,
+    page,
+    limit,
+    ulbId,
+    userId
+  );
+}
+
+async function getNoticelistService(
+  fromDate,
+  toDate,
+  page,
+  limit,
+  ulbId,
+  userId
+) {
+  return getNoticelistRepo(
     fromDate,
     toDate,
     page,
@@ -1183,5 +1202,7 @@ module.exports = {
   getPanchanamaDetailsService,
 
   generatePanchnamaPdfService,
+
+  getNoticelistService
 
 };

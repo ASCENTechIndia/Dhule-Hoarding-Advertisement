@@ -2,6 +2,7 @@ const {
   renderNoticeHtmlService,
   getNoticeByIdService,
   generateNoticeService,
+  generateNoticeFromDbService
 } = require('./notice.service');
 
 const {repoGetNoticeData} = require('./notice.repo')
@@ -103,8 +104,54 @@ async function generateNotice(req, res, next) {
   }
 }
 
+async function generateNoticeFromDb(req, res, next) {
+  try {
+    const payload = req.body;
+
+    const signedPdfBuffer =
+      await generateNoticeFromDbService(payload);
+
+    if (
+      !Buffer.isBuffer(signedPdfBuffer) ||
+      signedPdfBuffer.length === 0
+    ) {
+      throw new Error("Signed PDF was not generated");
+    }
+
+    res.setHeader(
+      "Content-Type",
+      "application/pdf"
+    );
+
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="notice-${
+        payload.PANCHANAMA_NO || "document"
+      }.pdf"`
+    );
+
+    res.setHeader(
+      "Content-Length",
+      signedPdfBuffer.length
+    );
+
+    return res.send(signedPdfBuffer);
+
+  } catch (error) {
+    logApiError(
+      req,
+      500,
+      error.message,
+      "Generate Notice From DB error"
+    );
+
+    return next(error);
+  }
+}
+
 module.exports = {
   renderNoticeHtml,
   getNotice,
   generateNotice,
+  generateNoticeFromDb
 };

@@ -57,6 +57,7 @@ const NoticeList = () => {
   const [noticeHtml, setNoticeHtml] = useState("");
   const [activeModalTab, setActiveModalTab] = useState("notice");
   const [generatingNoticeId, setGeneratingNoticeId] = useState(null);
+    const [generatingViewNoticeId, setGeneratingViewNoticeId] = useState(null);
   // Response modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState("info");
@@ -116,7 +117,7 @@ const NoticeList = () => {
       setLoader(true);
       setError(null);
 
-      let url = `/advertisement/getPanchanamalist?page=${dataPage}&limit=${pageSize}&ulbId=${import.meta.env.VITE_ULBID}&userId=${user.userId}`;
+      let url = `/advertisement/getNoticelist?page=${dataPage}&limit=${pageSize}&ulbId=${import.meta.env.VITE_ULBID}&userId=${user.userId}`;
 
       if (filters.fromDate) {
         url += `&fromDate=${encodeURIComponent(filters.fromDate)}`;
@@ -139,6 +140,7 @@ const NoticeList = () => {
           captureDateTime: formatDateTime(item.DAT_CAP_DT, item.VAR_CAP_TIME),
           address: item.VAR_ILLEGALHOARD_ADD,
           ward: item.VAR_ILLEGALHOARD_WARD,
+          noticeNO: item.VAR_NOTGEN_NO,
         }));
         setExcelData(excelData);
         setParticipants(participantData);
@@ -920,6 +922,204 @@ const NoticeList = () => {
   }
 };
 
+const handleNoticeView = async (panchanama) => {
+    const id =
+    panchanama?.NUM_ILLEGALHOARD_ID;
+
+  const panchanamaNo =
+    panchanama?.VAR_ILLEGALHOARD_PANCHANAMA_NO;
+
+  if (!id) {
+    setModalType("error");
+    setModalTitle("Error");
+    setModalMessage(
+      "Panchanama ID not found."
+    );
+    setIsModalOpen(true);
+
+    return;
+  }
+
+  if (!panchanamaNo) {
+    setModalType("error");
+    setModalTitle("Error");
+    setModalMessage(
+      "Panchanama number not found."
+    );
+    setIsModalOpen(true);
+
+    return;
+  }
+
+  try {
+    setGeneratingViewNoticeId(id);
+
+    // ===================================================
+    // GENERATE EXISTING NOTICE PDF FROM DB
+    // ===================================================
+
+    const response =
+      await apiClient.post(
+        "/notice/generate-from-db",
+        {
+          PANCHANAMA_NO:
+            panchanamaNo,
+        },
+        {
+          responseType: "blob",
+          timeout: 300000,
+        }
+      );
+
+    // ===================================================
+    // CHECK RESPONSE
+    // ===================================================
+
+    console.log(
+      "Notice View API response:",
+      response
+    );
+
+    console.log(
+      "Response type:",
+      typeof response
+    );
+
+    console.log(
+      "Is Blob:",
+      response instanceof Blob
+    );
+
+    if (
+      !(response instanceof Blob)
+    ) {
+      throw new Error(
+        "Invalid PDF response from server."
+      );
+    }
+
+    // ===================================================
+    // PDF BLOB
+    // ===================================================
+
+    const pdfBlob =
+      new Blob(
+        [response],
+        {
+          type:
+            "application/pdf",
+        }
+      );
+
+    console.log(
+      "PDF size:",
+      pdfBlob.size
+    );
+
+    if (pdfBlob.size === 0) {
+      throw new Error(
+        "Generated PDF is empty."
+      );
+    }
+
+    // ===================================================
+    // CREATE PDF URL
+    // ===================================================
+
+    const pdfUrl =
+      window.URL.createObjectURL(
+        pdfBlob
+      );
+
+    // ===================================================
+    // OPEN PDF
+    // ===================================================
+
+    const pdfWindow =
+      window.open(
+        pdfUrl,
+        "_blank"
+      );
+
+    // ===================================================
+    // POPUP BLOCKED
+    // ===================================================
+
+    if (!pdfWindow) {
+      const link =
+        document.createElement(
+          "a"
+        );
+
+      link.href =
+        pdfUrl;
+
+      link.download =
+        `notice-${panchanamaNo}.pdf`;
+
+      document.body.appendChild(
+        link
+      );
+
+      link.click();
+
+      document.body.removeChild(
+        link
+      );
+    }
+
+    // ===================================================
+    // SUCCESS
+    // ===================================================
+
+    setModalType("success");
+
+    setModalTitle(
+      "Notice View"
+    );
+
+    setModalMessage(
+      "Already generated and digitally signed notice opened successfully."
+    );
+
+    setIsModalOpen(true);
+
+    // ===================================================
+    // CLEAN URL
+    // ===================================================
+
+    setTimeout(() => {
+      window.URL.revokeObjectURL(
+        pdfUrl
+      );
+    }, 60000);
+
+  } catch (err) {
+    console.error(
+      "Error viewing notice:",
+      err
+    );
+
+    setModalType("error");
+
+    setModalTitle(
+      "Error"
+    );
+
+    setModalMessage(
+      err?.message ||
+      "Failed to view notice."
+    );
+
+    setIsModalOpen(true);
+
+  } finally {
+    setGeneratingViewNoticeId(
+      null
+    );
+  }
+};
+
   const handleViewDetails = async (panchanama) => {
     const id = panchanama?.NUM_ILLEGALHOARD_ID;
 
@@ -1407,6 +1607,7 @@ const NoticeList = () => {
               <tr>
                 <th>अनुक्रमांक</th>
                 <th>पंचनामा क्र.</th>
+                <th>नोटीस क्र.</th>
                 <th>नाव</th>
                 <th>पद</th>
                 <th>पंचनामा दिनांक व वेळ</th>
@@ -1424,9 +1625,12 @@ const NoticeList = () => {
                     <td>
                       <strong>{panchanama.NUM_ILLEGALHOARD_ID || "-"}</strong>
                     </td>
-
+                   
                     {/* PANCHANAMA NO */}
                     <td>{panchanama.VAR_ILLEGALHOARD_PANCHANAMA_NO || "-"}</td>
+
+                        {/* NOTICE NO */}
+                    <td>{panchanama.VAR_NOTGEN_NO || "-"}</td>
 
                     {/* USER NAME */}
                     <td>
@@ -1455,40 +1659,94 @@ const NoticeList = () => {
                     {/* ACTION */}
                     <td>
                       <div className="d-flex gap-1 align-items-center">
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-primary"
-                          onClick={() => handleViewDetails(panchanama)}
-                        >
-                          <i className="bi bi-eye me-1"></i>
-                          View
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-success"
-                          onClick={() => handleGenerateNotice(panchanama)}
-                          disabled={
-                            generatingNoticeId ===
-                            panchanama.NUM_ILLEGALHOARD_ID
-                          }
-                        >
-                          {generatingNoticeId ===
-                          panchanama.NUM_ILLEGALHOARD_ID ? (
-                            <>
-                              <span
-                                className="spinner-border spinner-border-sm me-1"
-                                role="status"
-                                aria-hidden="true"
-                              ></span>
-                              Generating...
-                            </>
-                          ) : (
-                            <>
-                              <i className="bi bi-file-earmark-pdf me-1"></i>
-                              Generate
-                            </>
-                          )}
-                        </button>
+                       {/* VIEW */}
+<button
+  type="button"
+  className={`btn btn-sm ${
+    panchanama.IS_GENERATED === "True"
+      ? "btn-secondary"
+      : "btn-primary"
+  }`}
+  onClick={() =>
+    handleViewDetails(panchanama)
+  }
+  disabled={
+    panchanama.IS_GENERATED === "True"
+  }
+>
+  <i className="bi bi-eye me-1"></i>
+  View
+</button>
+
+
+{/* GENERATE */}
+<button
+  type="button"
+  className={`btn btn-sm ${
+    panchanama.IS_GENERATED === "True"
+      ? "btn-secondary"
+      : "btn-success"
+  }`}
+  onClick={() =>
+    handleGenerateNotice(panchanama)
+  }
+  disabled={
+    panchanama.IS_GENERATED === "True" ||
+    generatingNoticeId ===
+      panchanama.NUM_ILLEGALHOARD_ID
+  }
+>
+  {generatingNoticeId ===
+  panchanama.NUM_ILLEGALHOARD_ID ? (
+    <>
+      <span
+        className="spinner-border spinner-border-sm me-1"
+        role="status"
+      ></span>
+      Generating...
+    </>
+  ) : (
+    <>
+      <i className="bi bi-file-earmark-pdf me-1"></i>
+      Generate
+    </>
+  )}
+</button>
+
+
+{/* NOTICE */}
+<button
+  type="button"
+  className={`btn btn-sm ${
+    panchanama.IS_GENERATED !== "True"
+      ? "btn-secondary"
+      : "btn-warning"
+  }`}
+  onClick={() =>
+    handleNoticeView(panchanama)
+  }
+  disabled={
+    panchanama.IS_GENERATED !== "True" ||
+    generatingViewNoticeId ===
+      panchanama.NUM_ILLEGALHOARD_ID
+  }
+>
+  {generatingViewNoticeId ===
+  panchanama.NUM_ILLEGALHOARD_ID ? (
+    <>
+      <span
+        className="spinner-border spinner-border-sm me-1"
+        role="status"
+      ></span>
+      Opening...
+    </>
+  ) : (
+    <>
+      <i className="bi bi-eye me-1"></i>
+      Notice
+    </>
+  )}
+</button>
                       </div>
                     </td>
                   </tr>

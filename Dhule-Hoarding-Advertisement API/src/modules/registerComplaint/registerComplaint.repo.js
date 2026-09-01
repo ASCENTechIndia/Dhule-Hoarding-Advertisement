@@ -512,6 +512,112 @@ async function getPanchanamalistRepo(
   };
 }
 
+async function getNoticelistRepo(
+  fromDate,
+  toDate,
+  page = 1,
+  limit = 10,
+  ulbId,
+  userId
+) {
+  const pageNumber = Number(page) || 1;
+  const limitNumber = Number(limit) || 10;
+
+  const offset = (pageNumber - 1) * limitNumber;
+
+  // =========================================================
+  // MAIN QUERY
+  // =========================================================
+
+  let sql = `
+    SELECT num_illegalhoard_id, var_illegalhoard_panchanama_no, var_user1, var_user1_post, dat_cap_dt, var_cap_time, var_illegalhoard_add, var_illegalhoard_ward,
+    var_notgen_no , is_generated
+    FROM VW_ILLEGALHOARDING_NOTICE_LIST a where a.num_illegalhoard_ulbid = :ulbId and a.var_userid = :userId
+  `;
+
+  const binds = {ulbId:ulbId,userId:userId};
+
+  // =========================================================
+  // DATE FILTER
+  // =========================================================
+
+  if (fromDate && toDate) {
+    sql += `
+      AND TRUNC(a.DAT_CAP_DT) BETWEEN
+        TO_DATE(:fromDate, 'YYYY-MM-DD')
+        AND TO_DATE(:toDate, 'YYYY-MM-DD')
+    `;
+
+    binds.fromDate = fromDate;
+    binds.toDate = toDate;
+  }
+
+  // =========================================================
+  // PAGINATION
+  // =========================================================
+
+  sql += `
+    ORDER BY a.num_illegalhoard_id DESC
+    OFFSET :offset ROWS
+    FETCH NEXT :limit ROWS ONLY
+  `;
+
+  binds.offset = offset;
+  binds.limit = limitNumber;
+
+  const result = await executeQuery(sql, binds);
+
+  const rows = result.rows || [];
+
+  // =========================================================
+  // COUNT QUERY
+  // =========================================================
+
+  let countSql = `
+    SELECT COUNT(*) AS TOTAL
+    FROM VW_ILLEGALHOARDING_NOTICE_LIST a where a.num_illegalhoard_ulbid = :ulbId and a.var_userid = :userId
+  `;
+
+  const countBinds = {ulbId:ulbId,userId:userId};
+
+
+  if (fromDate && toDate) {
+    countSql += `
+      AND TRUNC(a.DAT_CAP_DT) BETWEEN
+        TO_DATE(:fromDate, 'YYYY-MM-DD')
+        AND TO_DATE(:toDate, 'YYYY-MM-DD')
+    `;
+
+    countBinds.fromDate = fromDate;
+    countBinds.toDate = toDate;
+  }
+
+  const countResult = await executeQuery(
+    countSql,
+    countBinds
+  );
+
+  const total =
+    Number(countResult.rows?.[0]?.TOTAL) || 0;
+
+  // =========================================================
+  // RESPONSE
+  // =========================================================
+
+  return {
+    data: rows,
+
+    pagination: {
+      page: pageNumber,
+      limit: limitNumber,
+      total: total,
+      totalPages: Math.ceil(
+        total / limitNumber
+      ),
+    },
+  };
+}
+
 async function illegalHoardRepo(payload) {
 
     const statement = `
@@ -757,5 +863,6 @@ async function getPanchanamaDetailsRepo(id) {
 }
 
 module.exports = { repoWardList, repoToiletList, repoComplaintTypeList, regComplaintRepo, compListRepo,assignComplaintRepo,
-  repoSupervisorList,repoVendorList,regParticipantRepo,getPanchanamalistRepo,illegalHoardRepo,getPanchanamaDetailsRepo
+  repoSupervisorList,repoVendorList,regParticipantRepo,getPanchanamalistRepo,illegalHoardRepo,getPanchanamaDetailsRepo,
+  getNoticelistRepo
  };

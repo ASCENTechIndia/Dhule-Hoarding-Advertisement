@@ -300,9 +300,123 @@ async function repoGetNoticeData(illegalHoardId) {
   }
 }
 
+async function repoGetGeneratedNoticeByPanchanama(
+  panchanamaNo
+) {
+  const sql = `
+    SELECT
+      NUM_ILLEGALHOARD_ID,
+      VAR_ILLEGALHOARD_ADD,
+      VAR_ILLEGALHOARD_WARD,
+      VAR_USER1,
+      AMOUNT,
+      LATITUDE,
+      LONGITUDE,
+      NUM_SIZE_LENGTH,
+      NUM_SIZE_WIDTH,
+      VAR_ILLEGALHOARD_PANCHANAMA_NO,
+      VAR_NOTGEN_NO,
+      FROM_DATE,
+      TO_DATE,
+      VAR_MARATHI_USERNAME,
+      VAR_OFFICER_DIVISION,
+      NUM_ILLEGALHOARD_ULBID,
+      DT_NOTGEN_DATE
+    FROM VW_ILLEGALHOARD_PANCH_NOTI_DETAILS
+    WHERE VAR_ILLEGALHOARD_PANCHANAMA_NO = :panchanamaNo
+  `;
+
+  const binds = {
+    panchanamaNo: String(panchanamaNo),
+  };
+
+  try {
+    const result = await executeQuery(
+      sql,
+      binds
+    );
+
+    console.log(
+      "Generated Notice DB Data:",
+      result.rows
+    );
+
+    if (
+      !result.rows ||
+      result.rows.length === 0
+    ) {
+      return null;
+    }
+
+    const row = result.rows[0];
+
+    return {
+      NUM_ILLEGALHOARD_ID:
+        row.NUM_ILLEGALHOARD_ID,
+
+      VAR_ILLEGALHOARD_ADD:
+        row.VAR_ILLEGALHOARD_ADD,
+
+      VAR_ILLEGALHOARD_WARD:
+        row.VAR_ILLEGALHOARD_WARD,
+
+      VAR_USER1:
+        row.VAR_USER1,
+
+      AMOUNT:
+        row.AMOUNT,
+
+      LATITUDE:
+        row.LATITUDE,
+
+      LONGITUDE:
+        row.LONGITUDE,
+
+      NUM_SIZE_LENGTH:
+        row.NUM_SIZE_LENGTH,
+
+      NUM_SIZE_WIDTH:
+        row.NUM_SIZE_WIDTH,
+
+      VAR_ILLEGALHOARD_PANCHANAMA_NO:
+        row.VAR_ILLEGALHOARD_PANCHANAMA_NO,
+
+      VAR_NOTGEN_NO:
+        row.VAR_NOTGEN_NO,
+
+      FROM_DATE:
+        row.FROM_DATE,
+
+      TO_DATE:
+        row.TO_DATE,
+
+      VAR_MARATHI_USERNAME:
+        row.VAR_MARATHI_USERNAME,
+
+      VAR_OFFICER_DIVISION:
+        row.VAR_OFFICER_DIVISION,
+
+      NUM_ILLEGALHOARD_ULBID:
+        row.NUM_ILLEGALHOARD_ULBID,
+
+      DT_NOTGEN_DATE:
+        row.DT_NOTGEN_DATE,  
+    };
+
+  } catch (error) {
+    console.error(
+      "Error fetching generated notice data:",
+      error
+    );
+
+    throw error;
+  }
+}
+
 module.exports = {
   repoGetNoticeById,
   repoGenerateNotice,
   repoGetCorporationInfo,
-  repoGetNoticeData
+  repoGetNoticeData,
+  repoGetGeneratedNoticeByPanchanama
 };

@@ -1,5 +1,6 @@
 const {serviceWardList,serviceToiletList,serviceComplaintTypeList,regComplaintService, assignComplaintService, compListService,
-  serviceSupervisorList,serviceVendorList,regParticipantService,getPanchanamalistService,illegalHoardService,getPanchanamaDetailsService, generatePanchnamaPdfService
+  serviceSupervisorList,serviceVendorList,regParticipantService,getPanchanamalistService,illegalHoardService,getPanchanamaDetailsService, generatePanchnamaPdfService,
+  getNoticelistService
 } = require('./registerComplaint.service');
 const { auditLog } = require('../../utils/audit-log');
 const { logApiSuccess, logApiError } = require('../../utils/log');
@@ -270,6 +271,48 @@ async function getPanchanamalist(req, res, next) {
   }
 }
 
+async function getNoticelist(req, res, next) {
+  try {
+    const {
+      fromDate = null,
+      toDate = null,
+      page = 1,
+      limit = 10,
+      ulbId,
+      userId
+    } = req.query;
+
+    const rows = await getNoticelistService(
+      fromDate,
+      toDate,
+      page,
+      limit,
+      ulbId,
+      userId
+    );
+
+    logApiSuccess(
+      req,
+      200,
+      { count: rows?.data?.length || 0 },
+      'Participant List completed'
+    );
+
+    return res.ok(rows);
+
+  } catch (error) {
+
+    logApiError(
+      req,
+      500,
+      error.message,
+      'Participant List search error'
+    );
+
+    return next(error);
+  }
+}
+
 async function registerIllegalHoard(req, res, next) {
 
     try {
@@ -415,5 +458,5 @@ async function generatePanchnamaPdf(req, res, next) {
 }
 
 module.exports = { getWardList, getToiletList, getComplaintTypeList, registerComplaint, assignComplaint, getComplaintList ,
-  getSupervisorList,getVendorList,registerParticipant,getPanchanamalist,registerIllegalHoard,getPanchanamaDetails,generatePanchnamaPdf
+  getSupervisorList,getVendorList,registerParticipant,getPanchanamalist,registerIllegalHoard,getPanchanamaDetails,generatePanchnamaPdf,getNoticelist
 };

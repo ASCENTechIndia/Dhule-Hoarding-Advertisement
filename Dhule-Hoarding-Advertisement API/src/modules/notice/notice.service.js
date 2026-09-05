@@ -1551,7 +1551,7 @@ async function generateNoticeFromDbService(payload) {
       "-",
 
     ADVERTISER_NAME:
-      noticeData.VAR_USER1 ||
+      noticeData.DEMONSTATOR_NAME ||
       "-",
 
     AMOUNT_DATA:

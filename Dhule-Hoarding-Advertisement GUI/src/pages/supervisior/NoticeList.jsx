@@ -68,6 +68,7 @@ const NoticeList = () => {
   const tableHeaders = [
     "अनुक्र.",
     "पंचनामा क्र.",
+    "नोटीस क्र.",
     "नाव",
     "पद",
     "पंचनामा दिनांक व वेळ",
@@ -77,6 +78,7 @@ const NoticeList = () => {
   const keyMapping = {
     "अनुक्र.": "id",
     "पंचनामा क्र.": "panchanamaNo",
+    "नोटीस क्र.": "noticeNO",
     नाव: "name",
     पद: "post",
     "पंचनामा दिनांक व वेळ": "captureDateTime",

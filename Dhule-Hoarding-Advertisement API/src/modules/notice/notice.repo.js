@@ -321,7 +321,8 @@ async function repoGetGeneratedNoticeByPanchanama(
       VAR_MARATHI_USERNAME,
       VAR_OFFICER_DIVISION,
       NUM_ILLEGALHOARD_ULBID,
-      DT_NOTGEN_DATE
+      DT_NOTGEN_DATE,
+      DEMONSTATOR_NAME
     FROM VW_ILLEGALHOARD_PANCH_NOTI_DETAILS
     WHERE VAR_ILLEGALHOARD_PANCHANAMA_NO = :panchanamaNo
   `;
@@ -401,6 +402,8 @@ async function repoGetGeneratedNoticeByPanchanama(
 
       DT_NOTGEN_DATE:
         row.DT_NOTGEN_DATE,  
+      DEMONSTATOR_NAME:
+        row.DEMONSTATOR_NAME  
     };
 
   } catch (error) {

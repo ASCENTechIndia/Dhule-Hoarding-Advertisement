@@ -1581,11 +1581,11 @@ async function generateNoticeFromDbService(payload) {
       "-",
 
     FROM_DATE:
-      noticeData.FROM_DATE ||
+      noticeData.TO_DATE || 
       "-",
 
     TO_DATE:
-      noticeData.TO_DATE ||
+      noticeData.FROM_DATE ||
       "-",
 
     /*

@@ -96,6 +96,7 @@ async function getIllegalHoardPaymentList(req, res, next) {
       limit = 10,
       ulbId,
       userId,
+      search
     } = req.query;
 
     const rows =
@@ -105,7 +106,8 @@ async function getIllegalHoardPaymentList(req, res, next) {
         fromDate,
         toDate,
         page,
-        limit
+        limit,
+        search
       );
 
     logApiSuccess(

@@ -13,7 +13,8 @@ async function getIllegalHoardPaymentListService(
   fromDate,
   toDate,
   page,
-  limit
+  limit,
+  search
 ) {
   return getIllegalHoardPaymentListRepo(
     ulbId,
@@ -21,7 +22,8 @@ async function getIllegalHoardPaymentListService(
     fromDate,
     toDate,
     page,
-    limit
+    limit,
+    search
   );
 }
 

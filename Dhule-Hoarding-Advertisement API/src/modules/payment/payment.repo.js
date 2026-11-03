@@ -153,16 +153,18 @@ async function illegalHoardPaymentRepo(payload) {
   };
 }
 
+
 async function getIllegalHoardPaymentListRepo(
   ulbId,
   userId,
   fromDate,
   toDate,
   page = 1,
-  limit = 10
+  limit = 10,
+  search = ""
 ) {
-  const pageNumber = Number(page) || 1;
-  const limitNumber = Number(limit) || 10;
+  const pageNumber = Math.max(1, Number(page) || 1);
+  const limitNumber = Math.max(1, Number(limit) || 10);
   const offset = (pageNumber - 1) * limitNumber;
 
   let sql = `
@@ -192,6 +194,7 @@ async function getIllegalHoardPaymentListRepo(
     userId,
   };
 
+  // Date filter
   if (fromDate && toDate) {
     sql += `
       AND TRUNC(dat_cap_dt) BETWEEN
@@ -203,6 +206,22 @@ async function getIllegalHoardPaymentListRepo(
     binds.toDate = toDate;
   }
 
+  // Search filter
+  if (search && search.trim()) {
+    sql += `
+      AND (
+        UPPER(var_illegalhoard_panchanama_no)
+          LIKE UPPER(:search)
+        OR
+        UPPER(var_notgen_no)
+          LIKE UPPER(:search)
+      )
+    `;
+
+    binds.search = `%${search.trim()}%`;
+  }
+
+  // Pagination
   sql += `
     ORDER BY num_illegalhoard_id DESC
     OFFSET :offset ROWS
@@ -220,7 +239,7 @@ async function getIllegalHoardPaymentListRepo(
 
   const rows = result.rows || [];
 
-  // Count
+  // Count query
   let countSql = `
     SELECT COUNT(*) AS TOTAL
     FROM VW_ILLEGALHOARD_PAY_VIEW
@@ -233,6 +252,7 @@ async function getIllegalHoardPaymentListRepo(
     userId,
   };
 
+  // Date filter
   if (fromDate && toDate) {
     countSql += `
       AND TRUNC(dat_cap_dt) BETWEEN
@@ -244,28 +264,40 @@ async function getIllegalHoardPaymentListRepo(
     countBinds.toDate = toDate;
   }
 
+  // Search filter
+  if (search && search.trim()) {
+    countSql += `
+      AND (
+        UPPER(var_illegalhoard_panchanama_no)
+          LIKE UPPER(:search)
+        OR
+        UPPER(var_notgen_no)
+          LIKE UPPER(:search)
+      )
+    `;
+
+    countBinds.search = `%${search.trim()}%`;
+  }
+
   const countResult = await executeQuery(
     countSql,
     countBinds,
     { dbName: "db3" }
   );
 
-  const total =
-    Number(countResult.rows?.[0]?.TOTAL) || 0;
+  const total = Number(countResult.rows?.[0]?.TOTAL) || 0;
 
   return {
     data: rows,
-
     pagination: {
       page: pageNumber,
       limit: limitNumber,
       total,
-      totalPages: Math.ceil(
-        total / limitNumber
-      ),
+      totalPages: Math.ceil(total / limitNumber),
     },
   };
 }
+
 
 module.exports = {
   illegalHoardPaymentRepo,

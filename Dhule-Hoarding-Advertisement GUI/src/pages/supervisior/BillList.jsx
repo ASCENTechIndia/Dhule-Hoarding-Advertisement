@@ -37,6 +37,17 @@ const BillList = () => {
     toDate: '',
   });
 
+  const [searchTerm, setSearchTerm] = useState("");
+const [debouncedSearch, setDebouncedSearch] = useState("");
+
+useEffect(() => {
+  const timer = setTimeout(() => {
+    setDebouncedSearch(searchTerm.trim());
+  }, 500);
+
+  return () => clearTimeout(timer);
+}, [searchTerm]);
+
   // Image modal
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImages, setSelectedImages] = useState([]);
@@ -120,71 +131,93 @@ const BillList = () => {
   };
 
   const handleClearFilters = () => {
-    setFilters({
-      fromDate: "",
-      toDate: "",
+  setFilters({
+    fromDate: "",
+    toDate: "",
+  });
+
+  setSearchTerm("");
+  setDebouncedSearch("");
+  setCurrentPage(1);
+};
+  const fetchPanchanamalist = async (
+  dataPage = 1,
+  search = debouncedSearch
+) => {
+  try {
+    setLoader(true);
+    setError(null);
+
+    const params = new URLSearchParams({
+      page: dataPage,
+      limit: pageSize,
+      ulbId: import.meta.env.VITE_ULBID,
+      userId: user.userId,
     });
-  };
 
-  const fetchPanchanamalist = async (dataPage = 1) => {
-    try {
-      setLoader(true);
-      setError(null);
+    if (filters.fromDate) {
+      params.append("fromDate", filters.fromDate);
+    }
 
-      let url = `/payment/getIllegalHoardPaymentList?page=${dataPage}&limit=${pageSize}&ulbId=${import.meta.env.VITE_ULBID}&userId=${user.userId}`;
+    if (filters.toDate) {
+      params.append("toDate", filters.toDate);
+    }
 
-      if (filters.fromDate) {
-        url += `&fromDate=${encodeURIComponent(filters.fromDate)}`;
-      }
+    if (search) {
+      params.append("search", search);
+    }
 
-      if (filters.toDate) {
-        url += `&toDate=${encodeURIComponent(filters.toDate)}`;
-      }
+    const response = await apiClient.get(
+      `/payment/getIllegalHoardPaymentList?${params.toString()}`
+    );
 
-      const response = await apiClient.get(url);
+    if (response?.success && response?.data) {
+      const participantData = response.data.data || [];
+      const pagination = response.data.pagination || {};
 
-      if (response?.success && response?.data) {
-        const participantData = response.data.data || [];
-        const pagination = response.data.pagination || {};
-        const excelData = participantData.map((item) => ({
-          id: item.NUM_ILLEGALHOARD_ID,
-          panchanamaNo: item.VAR_ILLEGALHOARD_PANCHANAMA_NO,
-          name: item.VAR_USER1,
-          post: item.VAR_USER1_POST,
-          captureDateTime: formatDateTime(item.DAT_CAP_DT, item.VAR_CAP_TIME),
-          address: item.VAR_ILLEGALHOARD_ADD,
-          ward: item.VAR_ILLEGALHOARD_WARD,
-        }));
-        setExcelData(excelData);
-        setParticipants(participantData);
-        setCurrentPage(Number(pagination.page) || dataPage);
-        setTotalPages(Number(pagination.totalPages) || 1);
-        setTotalRecords(Number(pagination.total) || 0);
-      } else {
-        setExcelData([]);
-        setParticipants([]);
-        setCurrentPage(1);
-        setTotalPages(1);
-        setTotalRecords(0);
-      }
-    } catch (err) {
-      console.error("Error fetching participants:", err);
+      const excelData = participantData.map((item) => ({
+        id: item.NUM_ILLEGALHOARD_ID,
+        panchanamaNo: item.VAR_ILLEGALHOARD_PANCHANAMA_NO,
+        name: item.VAR_USER1,
+        post: item.VAR_USER1_POST,
+        captureDateTime: formatDateTime(
+          item.DAT_CAP_DT,
+          item.VAR_CAP_TIME
+        ),
+        address: item.VAR_ILLEGALHOARD_ADD,
+        ward: item.VAR_ILLEGALHOARD_WARD,
+      }));
 
+      setExcelData(excelData);
+      setParticipants(participantData);
+      setCurrentPage(Number(pagination.page) || dataPage);
+      setTotalPages(Number(pagination.totalPages) || 1);
+      setTotalRecords(Number(pagination.total) || 0);
+    } else {
       setExcelData([]);
       setParticipants([]);
       setCurrentPage(1);
       setTotalPages(1);
       setTotalRecords(0);
-
-      setError(err?.message || "Failed to fetch participant list");
-    } finally {
-      setLoader(false);
     }
-  };
+  } catch (err) {
+    console.error("Error fetching participants:", err);
 
-  useEffect(() => {
-    fetchPanchanamalist(1);
-  }, [filters, pageSize]);
+    setExcelData([]);
+    setParticipants([]);
+    setCurrentPage(1);
+    setTotalPages(1);
+    setTotalRecords(0);
+
+    setError(err?.message || "Failed to fetch participant list");
+  } finally {
+    setLoader(false);
+  }
+};
+
+useEffect(() => {
+  fetchPanchanamalist(1, debouncedSearch);
+}, [filters, pageSize, debouncedSearch]);
 
   const formatDateTime = (dateString, timeString) => {
     if (!dateString) {
@@ -225,10 +258,10 @@ const BillList = () => {
       : formattedDate;
   };
   const handlePageChange = (page) => {
-    if (page >= 1 && page <= totalPages && page !== currentPage) {
-      fetchPanchanamalist(page);
-    }
-  };
+  if (page >= 1 && page <= totalPages && page !== currentPage) {
+    fetchPanchanamalist(page, debouncedSearch);
+  }
+};
 
   const getPaginationPages = () => {
     const pages = [];
@@ -891,6 +924,22 @@ const BillList = () => {
               {/* FROM DATE */}
 
               <div className="filter-group">
+              <label htmlFor="paymentSearch">
+                Search Panchanama / Notice No.
+              </label>
+
+              <input
+                type="search"
+                id="paymentSearch"
+                className="filter-input"
+                placeholder="Enter Panchanama or Notice No."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{ width: "220px" }}
+              />
+            </div>
+
+              <div className="filter-group">
                 <label htmlFor="fromDate">From Date</label>
 
                 <input
@@ -938,7 +987,6 @@ const BillList = () => {
                   onClick={handleClearFilters}
                 >
                   <i className="bi bi-x-lg me-1"></i>
-                  Clear
                 </button>
               </div>
 
